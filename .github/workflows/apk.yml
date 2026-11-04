@@ -3,7 +3,7 @@ name: APK Android
 on:
   push:
     branches: [ccr-c09a962e-axs1lp, main]
-    paths: ['dist/**', '.github/workflows/apk.yml']
+    paths: ['dist/**', 'pwa/android/**', '.github/workflows/apk.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -26,14 +26,9 @@ jobs:
           npx cap add android
       - name: Íconos de la app
         run: |
-          cd app/android/app/src/main/res
-          for d in mdpi:48:108 hdpi:72:162 xhdpi:96:216 xxhdpi:144:324 xxxhdpi:192:432; do
-            n=${d%%:*}; r=${d#*:}; s=${r%%:*}; f=${r#*:}
-            convert "$GITHUB_WORKSPACE"/dist/icon-512.png -resize ${s}x${s} mipmap-$n/ic_launcher.png
-            convert "$GITHUB_WORKSPACE"/dist/icon-512.png -resize ${s}x${s} mipmap-$n/ic_launcher_round.png
-            convert "$GITHUB_WORKSPACE"/dist/icon-maskable-512.png -resize ${f}x${f} mipmap-$n/ic_launcher_foreground.png
-          done
-          if [ -f values/ic_launcher_background.xml ]; then sed -i 's/#[0-9A-Fa-f]\{6\}/#0B0B0F/' values/ic_launcher_background.xml; fi
+          cp -r pwa/android/res/. app/android/app/src/main/res/
+          f=app/android/app/src/main/res/values/ic_launcher_background.xml
+          if [ -f "$f" ]; then sed -i 's/#[0-9A-Fa-f]\{6\}/#0B0B0F/' "$f"; fi
       - name: Compilar APK
         run: |
           cd app && npx cap sync android
