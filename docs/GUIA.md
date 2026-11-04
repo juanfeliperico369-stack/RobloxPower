@@ -82,6 +82,7 @@ tools/check.js  Verificador estático (acorn): sintaxis + identificadores sin de
 tools/sim.js    Pruebas unitarias + 120 partidas simuladas con invariantes y métricas de balance.
 tools/bot.js    Bot QA en Chromium: juega el HTML real (todas las zonas, paneles, minijuegos, torneo, guardar/cargar, exportar, modo sin conexión).
 tools/assets.js Genera íconos y compartir.png con el propio motor de dibujo.
+tools/verify.js Verifica el sitio publicado (carga, service worker, sin conexión, instalabilidad en Chrome, metas y archivos PWA).
 .github/workflows/apk.yml  Construye el APK (Capacitor) en GitHub Actions y lo publica como Release.
 ```
 - game.js y ui.js se concatenan dentro de un mismo IIFE (comparten variables). `window.__bdp` expone ganchos de prueba para el bot.
