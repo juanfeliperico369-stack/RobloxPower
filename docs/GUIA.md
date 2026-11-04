@@ -110,7 +110,7 @@ node tools/assets.js       # (si cambia el arte) regenerar íconos → luego bui
 
 ## 9. Port a Roblox (en marcha · carpeta `roblox/`)
 - **Hecho (v0.2.1):** proyecto Rojo con `Reglas.luau` (port fiel de core.js), `Datos.luau` y `Golden.luau` GENERADOS por `tools/gen-roblox.js` (918 casos calculados con JS), `Pruebas.server.luau` que los compara al dar Play en Studio, `Servidor.server.luau` (DataStore + acciones validadas + compras idempotentes) y un cliente mínimo. `tools/luacheck.js` revisa la estructura de los .luau sin ejecutarlos. Ver `roblox/README.md`.
-- **Limitación del entorno:** aquí no se puede ejecutar Luau (descargar el ejecutable `luau` o el paquete `fengari` fue bloqueado por la política de código externo). La verificación real ocurre en Studio con las pruebas incluidas, o aquí si el autor autoriza esa herramienta.
+- **Verificación con Luau real (autorizada por el autor):** `sh tools/roblox-test.sh` descarga el Luau oficial (luau-lang/luau 0.745) en `.cache/luau`, regenera los datos, corre `roblox/tests/run.luau` (mismo núcleo de pruebas que Studio: `PruebasNucleo.luau`) y `luau-analyze` con `roblox/.luaurc`. Resultado actual: **2388/2388 casos idénticos a JS** y análisis sin errores. Así se encontró y corrigió un error (`cnt.tours` se perdía al migrar en Luau).
 - Convención clave: los índices guardados en la partida son base 0 como en JS (`story.i`, `friends[].bi`, `party[]`, `dailyClaim(i)`); en Roblox el día de las misiones diarias cambia a medianoche UTC.
 
 ### Plan original

@@ -1,0 +1,5 @@
+{
+  "languageMode": "nonstrict",
+  "lint": { "SameLineStatement": false },
+  "globals": ["script", "game", "workspace", "DateTime", "Enum", "Instance", "task", "UDim2", "Color3", "Vector3", "CFrame", "warn", "typeof"]
+}

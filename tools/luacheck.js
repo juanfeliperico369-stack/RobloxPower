@@ -19,7 +19,9 @@ function strip(src) { // quita comentarios y cadenas, conservando saltos de lín
 }
 for (const f of files) {
   const rel = path.relative(path.join(__dirname, '..'), f), src = fs.readFileSync(f, 'utf8'), code = strip(src), errs = [];
-  const words = code.match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
+  // `if` dentro de una expresión (Luau: x = if c then a else b) no abre bloque
+  const code2 = code.replace(/([=(,{]|\breturn|\band|\bor|\bnot)(\s*)if\b/g, '$1$2__ifexpr');
+  const words = code2.match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
   let open = 0, close = 0; for (const w of words) { if (w === 'function' || w === 'do' || w === 'if' || w === 'repeat') open++; else if (w === 'end' || w === 'until') close++; }
   if (open !== close) errs.push('bloques abiertos ' + open + ' ≠ cerrados ' + close);
   const pairs = { '(': ')', '{': '}', '[': ']' }, st = [];

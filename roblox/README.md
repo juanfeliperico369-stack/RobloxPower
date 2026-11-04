@@ -22,11 +22,11 @@ roblox/
 6. En Play prueba el HUD: **F** golpea el saco, **G** golpea el yunque, **B** compra el Puesto de Pan.
 7. Para guardar partidas en Studio activa *Game Settings → Security → Enable Studio Access to API Services*.
 
-## Regenerar después de cambiar la versión HTML
+## Regenerar y probar después de cambiar la versión HTML
 ```
-TZ=UTC node tools/gen-roblox.js   # vuelve a crear Datos.luau y Golden.luau desde src/core.js
-node tools/luacheck.js            # revisión estática (bloques, paréntesis, sintaxis de JS colada)
+sh tools/roblox-test.sh   # regenera Datos/Golden, corre las pruebas con Luau oficial y luau-analyze
 ```
+Estado actual: **2388/2388 casos idénticos a la versión HTML**, análisis de Luau sin errores.
 Si cambias una fórmula en `core.js`, cámbiala igual en `Reglas.luau`: las pruebas de Studio te dirán si quedó distinta.
 
 ## Qué ya está y qué falta

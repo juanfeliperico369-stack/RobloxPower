@@ -7,7 +7,8 @@
 	- No usa nada exclusivo de Roblox salvo DateTime (con respaldo a os.time) → se puede probar fuera de Studio.
 	- Verificación: ServerScriptService.Server.Pruebas compara cientos de casos contra el núcleo JS (Golden).
 ]]
-local D = require(script.Parent.Datos)
+-- En Roblox se usa script.Parent; fuera de Studio (luau CLI, pruebas) se usa la ruta relativa.
+local D = if script then require(script.Parent.Datos) else require("./Datos")
 local Reglas = {}
 Reglas.D = D
 
@@ -169,7 +170,7 @@ local function merge(t, f)
 	for k, tv in pairs(t) do
 		local fv = f[k]
 		if fv ~= nil then
-			if ARR[k] then if type(fv) == "table" then t[k] = fv end
+			if ARR[k] and type(tv) == "table" then if type(fv) == "table" then t[k] = fv end -- (cnt.tours es número: no es la lista tours)
 			elseif type(tv) == "table" then
 				if type(fv) == "table" then if next(tv) == nil then t[k] = fv else merge(tv, fv) end end
 			elseif type(tv) == "number" then if isNum(fv) then t[k] = fv end

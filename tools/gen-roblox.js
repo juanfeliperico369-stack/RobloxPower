@@ -74,7 +74,7 @@ const fn = (f, a, r) => cases.fn.push({ f, a, r: r === undefined ? null : r });
 for (let r = 0; r < 5; r++) [0, .3, .999, 1].forEach(f => fn('rankLoss', [r, f], C.rankLoss(r, f)));
 [0, 1, 7, 25, 60].forEach(n => { fn('bMile', [n], C.bMile(n)); fn('gearCost', [n % 21], C.gearCost(n % 21)); fn('gearMul', [n % 21], C.gearMul(n % 21)); fn('elixCost', [n], C.elixCost(n)); fn('cajaCost', [n % 9], C.cajaCost(n % 9)); });
 C.BLD.forEach(d => [0, 3, 40].forEach(n => fn('bCost', [d.id, n], C.bCost(d.id, n))));
-[0, NOW, Date.UTC(2024, 1, 29, 23, 59), Date.UTC(2030, 11, 31, 5)].forEach(t => fn('today', [t], C.today(t)));
+[NOW, Date.UTC(2024, 1, 29, 23, 59), Date.UTC(2030, 11, 31, 5), Date.UTC(1999, 0, 1)].forEach(t => fn('today', [t], C.today(t)));
 ['  Nova<script>  ', 'idiota123', 'Ñandú   Pro', 'José_María-99 extra largo', '', 'ÁÉÍÓÚ áéíóú ñÑüÜ'].forEach(n => fn('cleanName', [n], C.cleanName(n)));
 [0, 59, 60, 1500, 999999, 1e6].forEach(p => fn('rankOf', [p], C.rankOf(p)));
 [1, 300, 1e6].forEach(p => fn('statsOfPower', [p], C.statsOfPower(p)));
