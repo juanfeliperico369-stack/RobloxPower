@@ -2,6 +2,15 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-04 · v0.2.1 · Port a Roblox + error de guardado corregido
+1. Corregido (importante): al cargar una partida se perdían los desbloqueos de la historia (Sombra/Luz), el avance de las secundarias y los consejos vistos (`migrate` ignoraba mapas vacíos por defecto). Lo detectó el port a Luau.
+2. Prueba de guardado ahora estricta: cargar(guardar(partida)) debe ser idéntico byte a byte en las 120 partidas simuladas → OK.
+3. Nuevo: carpeta `roblox/` (Rojo): `Reglas.luau` (port fiel), `Datos.luau` y `Golden.luau` generados desde core.js, pruebas que corren en Studio, servidor con DataStore y acciones validadas, cliente mínimo.
+4. Nuevo: `tools/gen-roblox.js` (918 casos de oro: generador aleatorio, fórmulas, 780 operaciones de juego en 3 partidas) y `tools/luacheck.js` (revisión estática de .luau).
+5. Bloqueado por el entorno: ejecutar Luau aquí (binario `luau` y paquete `fengari` = código externo). Verificación pendiente: dar Play en Studio.
+6. Probado: check OK, sim 120×8 h OK, bot 2 partidas OK, luacheck OK, Datos.luau se relee idéntico a los datos JS.
+7. Falta: correr las pruebas en Studio, construir mapas/combate/interfaz en Roblox, clanes, más historia.
+
 ## 2026-11-04 · v0.2.0 · Mundo social y pulido
 1. Cambió: **amigos y grupo** — chat «¿Amigos?» cerca de jugadores, pestaña Amigos, hasta 2 aliados que te siguen y pelean en Tierras Rotas; la amistad regala gemas.
 2. Cambió: **7 misiones secundarias** con historias cortas y lecciones (gato de Pip, disciplina, trabajo honesto, proteger a otros, la verdad del Coliseo, ayudar a Dax, autoestima con Nima); marcadores `?`/`✓`.

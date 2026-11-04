@@ -85,6 +85,8 @@ tools/check.js  Verificador estático (acorn): sintaxis + identificadores sin de
 tools/sim.js    Pruebas unitarias + 120 partidas simuladas con invariantes y métricas de balance.
 tools/bot.js    Bot QA en Chromium: juega el HTML real (todas las zonas, paneles, minijuegos, torneo, guardar/cargar, exportar, modo sin conexión).
 tools/assets.js Genera íconos y compartir.png con el propio motor de dibujo.
+tools/gen-roblox.js Genera roblox/src/shared/Datos.luau y roblox/src/server/Golden.luau desde core.js (verifica releyendo el literal).
+tools/luacheck.js Revisión estática de los .luau (bloques, paréntesis, JS colado, funciones faltantes).
 tools/verify.js Verifica el sitio publicado (carga, service worker, sin conexión, instalabilidad en Chrome, metas y archivos PWA).
 .github/workflows/apk.yml  Construye el APK (Capacitor) en GitHub Actions y lo publica como Release.
 ```
@@ -106,7 +108,12 @@ node tools/assets.js       # (si cambia el arte) regenerar íconos → luego bui
 ```
 **Publicar:** copiar `dist/` a la rama `gh-pages` (incluye `.nojekyll`) y subir. Subir `VERSION` en `src/core.js` en cada publicación (cambia el nombre de la caché del service worker).
 
-## 9. Port a Roblox (plan)
+## 9. Port a Roblox (en marcha · carpeta `roblox/`)
+- **Hecho (v0.2.1):** proyecto Rojo con `Reglas.luau` (port fiel de core.js), `Datos.luau` y `Golden.luau` GENERADOS por `tools/gen-roblox.js` (918 casos calculados con JS), `Pruebas.server.luau` que los compara al dar Play en Studio, `Servidor.server.luau` (DataStore + acciones validadas + compras idempotentes) y un cliente mínimo. `tools/luacheck.js` revisa la estructura de los .luau sin ejecutarlos. Ver `roblox/README.md`.
+- **Limitación del entorno:** aquí no se puede ejecutar Luau (descargar el ejecutable `luau` o el paquete `fengari` fue bloqueado por la política de código externo). La verificación real ocurre en Studio con las pruebas incluidas, o aquí si el autor autoriza esa herramienta.
+- Convención clave: los índices guardados en la partida son base 0 como en JS (`story.i`, `friends[].bi`, `party[]`, `dailyClaim(i)`); en Roblox el día de las misiones diarias cambia a medianoche UTC.
+
+### Plan original
 - Herramientas: Roblox Studio + **Rojo** (sincroniza archivos `.luau` del repo con Studio). Opcional: el conector MCP oficial de Roblox Studio para que una IA opere Studio desde el PC del autor.
 - Mapeo: `core.js` → ModuleScript `Rules` (mismas fórmulas en Luau, servidor autoritativo); guardado → DataStoreService (con reintentos y bloqueo de sesión); gemas → Robux vía MarketplaceService (Developer Products para consumibles, Game Passes para brazaletes permanentes); torneo → servidor dedicado por evento (TeleportService a un lugar “Coliseo”), 100 jugadores reales o rellenados con NPC; chat → TextChatService (filtro obligatorio de Roblox).
 - Zonas → Places o regiones del mismo Place con StreamingEnabled. La Noche → iluminación `Lighting` + linterna `SpotLight` + IA de sombras que se congela con raycast de visión.

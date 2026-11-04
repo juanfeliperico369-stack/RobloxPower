@@ -225,7 +225,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px}
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.2.0';
+var VERSION = '0.2.1';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -409,7 +409,7 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
@@ -772,7 +772,8 @@ var API = {
   mentor: mentor, stepObj: stepObj, stepHint: stepHint, stepDialog: stepDialog, ev: ev, stepProg: stepProg, stepDone: stepDone, advance: advance, choose: choose, who: who,
   dailyCheck: dailyCheck, dailyClaim: dailyClaim, tick: tick, offline: offline,
   SIDE: SIDE, SIDEI: SIDEI, sideFor: sideFor, sideAccept: sideAccept, sideReady: sideReady, sideFinish: sideFinish, giveChispas: giveChispas,
-  addFriend: addFriend, friendXP: friendXP, setParty: setParty
+  addFriend: addFriend, friendXP: friendXP, setParty: setParty,
+  NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

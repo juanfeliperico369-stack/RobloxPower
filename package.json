@@ -8,6 +8,7 @@
     "check": "node tools/check.js",
     "sim": "node tools/sim.js",
     "bot": "node tools/bot.js",
+    "roblox": "TZ=UTC node tools/gen-roblox.js && node tools/luacheck.js",
     "test": "node tools/build.js && node tools/check.js && node tools/sim.js && node tools/bot.js"
   },
   "devDependencies": { "acorn": "^8.12.0", "acorn-walk": "^8.3.0" }
