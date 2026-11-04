@@ -154,13 +154,13 @@ function Reglas.newState(o)
 		stats = { fue = O.st.fue, tec = O.st.tec, esp = O.st.esp }, legado = 0, en = 100, hp = -1,
 		oro = O.oro, gemas = 10, chispas = 0,
 		brz = { { id = 1, el = el, t = 0 } }, eq = 1, nid = 2,
-		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {},
+		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {},
 		zone = O.z, story = { i = 0, n = 0, seen = "" }, unlock = {}, ending = "",
 		daily = { day = "", q = {} },
 		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0 },
 		tours = {}, title = "", pend = nil,
 		bots = makeBots(seed),
-		cfg = { snd = 1, mus = 1, q = 1, vib = 1 },
+		cfg = { snd = 1, mus = 1, q = 1, vib = 1, big = 0, calm = 0 },
 	}
 	for _, d in ipairs(D.BLD) do s.tyc[d.id] = 0 end
 	return s
@@ -208,6 +208,7 @@ function Reglas.migrate(o)
 	end
 	d.party = pa
 	for sid, v in pairs(d.side) do if not SIDEI[sid] or type(v) ~= "table" or not isNum(v.n) then d.side[sid] = nil end end
+	for fid in pairs(d.frag) do if not Reglas.FRAGI[fid] then d.frag[fid] = nil end end
 	d.story.i = clamp(trunc(isNum(d.story.i) and d.story.i or 0), 0, #D.STORY - 1)
 	if not D.ZONES[d.zone] then d.zone = "plaza" end
 	local nm = Reglas.cleanName(d.name); d.name = nm ~= "" and nm or "Heroe"; d.v = 1; d.ver = D.VERSION
@@ -546,6 +547,36 @@ function Reglas.giveChispas(s, id)
 	local st, q = s.side[id], SIDEI[id]
 	if not st or st.s ~= 1 or q.o.k ~= "giveCh" or s.chispas < q.o.n then return false end
 	s.chispas = s.chispas - q.o.n; st.n = q.o.n; return true
+end
+
+---------------------------------------------------------------- afinidades elementales
+local function idxOf(t, v) for i, x in ipairs(t) do if x == v then return i - 1 end end return -1 end
+function Reglas.afin(a, d)
+	if not T(a) or not T(d) or a == d then return 1 end
+	if (a == "sombra" and d == "luz") or (a == "luz" and d == "sombra") then return 1.25 end
+	local ia, id = idxOf(D.CYCLE, a), idxOf(D.CYCLE, d)
+	if ia < 0 or id < 0 then return 1 end
+	if (ia + 1) % 5 == id then return 1.25 end
+	if (id + 1) % 5 == ia then return 0.8 end
+	return 1
+end
+function Reglas.strongVs(el)
+	local i = idxOf(D.CYCLE, el)
+	if i < 0 then return el == "sombra" and "luz" or el == "luz" and "sombra" or "" end
+	return D.CYCLE[(i + 1) % 5 + 1]
+end
+function Reglas.weakVs(el) local i = idxOf(D.CYCLE, el); if i < 0 then return "" end return D.CYCLE[(i + 4) % 5 + 1] end
+
+---------------------------------------------------------------- fragmentos del Origen (Códice)
+local FRAGI = {}
+for _, f in ipairs(D.FRAG) do FRAGI[f.id] = f end
+Reglas.FRAGI = FRAGI
+function Reglas.fragCount(s) local n = 0 for k in pairs(s.frag) do if FRAGI[k] then n += 1 end end return n end
+function Reglas.fragTake(s, id)
+	if not FRAGI[id] or T(s.frag[id]) then return false end
+	s.frag[id] = 1; s.legado += 10; s.gemas += 5; ev(s, "frag", { id = id })
+	if Reglas.fragCount(s) == #D.FRAG then s.legado += 200; s.title = "Guardián del Origen"; return "all" end
+	return true
 end
 
 ---------------------------------------------------------------- amigos y grupo (bi = índice base 0 en s.bots)

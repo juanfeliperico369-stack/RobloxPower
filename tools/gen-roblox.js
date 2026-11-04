@@ -50,7 +50,7 @@ const norm = v => JSON.parse(JSON.stringify(v, (k, x) => (x && typeof x === 'obj
 /* ---------- 1. Datos.luau ---------- */
 const DATA = { VERSION: C.VERSION, SAVE_KEY: C.SAVE_KEY, M: C.M, EL: C.EL, ELK5: C.ELK5, TIERS: C.TIERS, RANKS: C.RANKS, ORIG: C.ORIG, NPC: C.NPC, ZONES: C.ZONES, FOES: C.FOES, RINGS: C.RINGS,
   BLD: C.BLD, ACT: C.ACT, GEAR: C.GEAR, SHOP: C.SHOPL, TOUR: C.TOUR, LOOK: C.LOOK, CHAT: C.CHAT, BOTCHAT: C.BOTCHAT, REPLY: C.REPLY, STORY: C.STORY, SIDE: C.SIDE, DQ: C.DQ,
-  FORGE: C.FORGE.slice(1), NEWB: C.NEWB, NA: C.NA, NB: C.NB, BAD: C.BAD };
+  FORGE: C.FORGE.slice(1), NEWB: C.NEWB, NA: C.NA, NB: C.NB, BAD: C.BAD, CYCLE: C.CYCLE, FOE_EL: C.FOE_EL, FRAG: C.FRAG };
 const datosSrc = '--!nonstrict\n-- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.\n-- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.\nreturn ' + lua(DATA) + '\n';
 const back = parseLua(datosSrc.slice(datosSrc.indexOf('return ') + 7));
 if (JSON.stringify(norm(back)) !== JSON.stringify(norm(DATA))) { console.error('✖ Datos.luau no coincide al releerlo'); process.exit(1); }
@@ -80,6 +80,7 @@ C.BLD.forEach(d => [0, 3, 40].forEach(n => fn('bCost', [d.id, n], C.bCost(d.id, 
 [1, 300, 1e6].forEach(p => fn('statsOfPower', [p], C.statsOfPower(p)));
 Object.keys(C.EL).forEach(el => fn('fighter', [{ fue: 120, tec: 80, esp: 60 }, 1.7, el], C.fighter({ fue: 120, tec: 80, esp: 60 }, 1.7, el)));
 Object.keys(C.FOES).forEach(t => [15, 500].forEach(eP => fn('foeStats', [t, eP], C.foeStats(t, eP))));
+Object.keys(C.EL).forEach(a => { fn('strongVs', [a], C.strongVs(a)); fn('weakVs', [a], C.weakVs(a)); Object.keys(C.EL).forEach(d => fn('afin', [a, d], C.afin(a, d))); });
 { const R = C.mulberry(5), used = {}; fn('botNames', [5], Array.from({ length: 12 }, () => C.botName(R, used))); }
 
 /* escenarios: operaciones aleatorias deterministas sobre un estado */
@@ -120,6 +121,7 @@ function scenario(origin, seed, el, nops) {
     else if (x < .83) { f = 'giveChispas'; a = [pk(C.SIDE).id]; r = C.giveChispas(s, a[0]); }
     else if (x < .85) { f = 'addFriend'; a = [Math.floor(R() * 110)]; r = C.addFriend(s, a[0]); }
     else if (x < .86) { f = 'setParty'; a = [s.friends.length ? pk(s.friends).bi : 3, R() < .7]; r = C.setParty(s, a[0], a[1]); }
+    else if (x < .865) { f = 'fragTake'; a = [R() < .9 ? pk(C.FRAG).id : 'zz']; r = C.fragTake(s, a[0]); }
     else if (x < .87) { f = 'friendXP'; a = [s.friends.length ? pk(s.friends).bi : 3, Math.round(R() * 40)]; r = C.friendXP(s, a[0], a[1]); }
     else if (x < .89) { f = 'cheat'; a = [{ oro: Math.round(R() * 5e4), gemas: Math.round(R() * 200), chispas: Math.round(R() * 60), fue: Math.round(R() * 300) }];
       s.oro += a[0].oro; s.gemas += a[0].gemas; s.chispas += a[0].chispas; s.stats.fue += a[0].fue; }

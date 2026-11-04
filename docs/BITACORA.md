@@ -2,6 +2,15 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-04 · v0.3.0 · Estrategia elemental, Códice y accesibilidad
+1. Roblox: el autor autorizó descargar Luau oficial (0.745). `sh tools/roblox-test.sh` corre las pruebas y `luau-analyze`. Primer resultado 2371/2388 → encontró un error real (`cnt.tours` se perdía al migrar en Luau, choque de nombres con la lista `tours`) → corregido → 2388/2388.
+2. Nuevo: **afinidades elementales** (ciclo de 5 + Sombra/Luz) en todo el combate; textos “¡EFICAZ!/RESISTE”; en el torneo se ve la ventaja y se cambia de brazalete antes de cada duelo; la Forja y la creación muestran fuerte/débil.
+3. Nuevo: **Códice** — 7 fragmentos del Origen escondidos (haz de luz azul) con páginas de historia que maduran el relato (la infancia de Vant, la letra pequeña del torneo…); título “Guardián del Origen”.
+4. Nuevo: **accesibilidad** — texto grande, modo calma (sin destellos/sacudidas), avisos de ataque con rayas (daltonismo).
+5. Port a Luau de todo lo nuevo (afin, strongVs, weakVs, fragTake, fragCount, cfg): **2451/2451 casos idénticos a JS**, análisis Luau sin errores.
+6. Probado: check OK; sim 120×8 h OK con nuevas pruebas unitarias de afinidad y Códice; bot 3 partidas OK (recoge fragmentos, abre Códice); celular modesto 57–61 fps en calidad baja.
+7. Falta: clanes, jefes por anillo, más historia, exportar a Roblox Studio (mapas 3D, combate, interfaz).
+
 ## 2026-11-04 · v0.2.1 · Port a Roblox + error de guardado corregido
 1. Corregido (importante): al cargar una partida se perdían los desbloqueos de la historia (Sombra/Luz), el avance de las secundarias y los consejos vistos (`migrate` ignoraba mapas vacíos por defecto). Lo detectó el port a Luau.
 2. Prueba de guardado ahora estricta: cargar(guardar(partida)) debe ser idéntico byte a byte en las 120 partidas simuladas → OK.

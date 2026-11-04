@@ -7,7 +7,7 @@ function banner(big, small) { $('banner').innerHTML = '<div class="mega">' + big
 function whisper(t) { $('banner').innerHTML = '<span class="kick" style="color:#c77dff;font-size:24px">' + t + '</span>'; }
 function feed(h) { var f = $('feed'), d = document.createElement('div'); d.innerHTML = h; f.appendChild(d); while (f.children.length > 5) f.removeChild(f.firstChild); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 7000); }
 function tbar(h) { $('tbar').innerHTML = h; }
-function flashScreen() { var f = $('fade'); f.style.background = '#5a0010'; f.classList.add('on'); setTimeout(function () { f.classList.remove('on'); setTimeout(function () { f.style.background = '#000'; }, 300); }, 90); }
+function flashScreen() { if (S && S.cfg.calm) return; var f = $('fade'); f.style.background = '#5a0010'; f.classList.add('on'); setTimeout(function () { f.classList.remove('on'); setTimeout(function () { f.style.background = '#000'; }, 300); }, 90); }
 var tipQ = [], tipT = 0;
 function tip(id, text, now) { if (!S || S.tips[id]) return; S.tips[id] = 1; if (now) { tipQ.unshift(text); nextTip(); return; } tipQ.push(text); if (!tipT) nextTip(); }
 function nextTip() {
@@ -127,13 +127,14 @@ function openPanel(n, a) { if ($('ov').hidden) paused++; $('ov').hidden = false;
 function closePanel() { if (!$('ov').hidden) { $('ov').hidden = true; paused = Math.max(0, paused - 1); } var p = PANEL; PANEL = null; if (S) hudFull(); return p; }
 function renderPanel() {
   if (!PANEL) return; var sh = $('ov').querySelector('.sheet'), sc = sh ? sh.scrollTop : 0, fn = PANELS[PANEL.n];
-  var h = fn(PANEL.a), pap = ['res', 'cine', 'choice'].indexOf(PANEL.n) >= 0, nox = ['strat', 'res', 'cine', 'choice'].indexOf(PANEL.n) >= 0;
+  var h = fn(PANEL.a), pap = ['res', 'cine', 'choice', 'page'].indexOf(PANEL.n) >= 0, nox = ['strat', 'res', 'cine', 'choice', 'page'].indexOf(PANEL.n) >= 0;
   $('ov').innerHTML = '<div class="sheet' + (pap ? ' pap' : '') + '">' + (nox ? '' : '<button class="x" data-a="close" aria-label="Cerrar">✕</button>') + h + '</div>';
   var s2 = $('ov').querySelector('.sheet'); s2.scrollTop = sc; afford();
   var pc = $('ov').querySelector('canvas[data-av]'); if (pc) { var g = pc.getContext('2d'); g.save(); g.translate(pc.width / 2, pc.height - 12); g.scale(2.4, 2.4); drawAvatar(g, 0, 0, playerLook(), { dir: 0, el: brzColor(), aura: S.cos.aura ? brzColor() : 0 }); g.restore(); }
 }
 function afford() { var bs = $('ov').querySelectorAll('[data-cost]'); for (var i = 0; i < bs.length; i++) { var c = +bs[i].dataset.cost, k = bs[i].dataset.cur || 'oro'; bs[i].disabled = (S[k] < c) || bs[i].dataset.lock === '1'; } var ls = $('ov').querySelectorAll('[data-live]'); for (i = 0; i < ls.length; i++) ls[i].textContent = C.fmt(S[ls[i].dataset.live]); }
 function head(k, t, sub) { return '<div class="band"><span class="spaced">' + k + '</span><span class="spaced">' + C.fmt(S.oro) + ' ●</span></div><h2 class="mega">' + t + '</h2>' + (sub ? '<p class="kick">' + sub + '</p>' : ''); }
+function afTxt(el) { var s1 = C.strongVs(el), w1 = C.weakVs(el); return (s1 ? '<br><span class="ok">Fuerte vs ' + C.EL[s1].ic + ' ' + C.EL[s1].n + '</span>' : '') + (w1 ? ' · <span class="bad">débil vs ' + C.EL[w1].ic + ' ' + C.EL[w1].n + '</span>' : ''); }
 function item(ic, nm, ds, btn) { return '<div class="it"><div class="ic">' + ic + '</div><div class="tx"><div class="nm">' + nm + '</div><div class="ds">' + ds + '</div></div>' + (btn || '') + '</div>'; }
 function bt(a, v, label, cost, cur, cls, lock) { return '<button class="btn sm ' + (cls || '') + '" data-a="' + a + '" data-v="' + (v || '') + '"' + (cost !== undefined ? ' data-cost="' + cost + '" data-cur="' + (cur || 'oro') + '"' : '') + (lock ? ' data-lock="1"' : '') + '>' + label + '</button>'; }
 var PANELS = {
@@ -167,7 +168,7 @@ var PANELS = {
     h += '<p class="m">Chispas: <b class="ok">' + S.chispas + ' ✧</b> · Oro: <b class="gold" data-live="oro"></b></p><div class="list">';
     S.brz.forEach(function (b) {
       var E = C.EL[b.el], Tr = C.TIERS[b.t], nx = C.FORGE[b.t + 1], on = b.id === S.eq;
-      h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + E.ic + '</div><div class="tx"><div class="nm" style="color:' + Tr.c + '">' + E.n + ' · ' + Tr.n + ' ×' + Tr.m + '</div><div class="ds">' + E.sk + ': ' + E.d + '</div></div><div style="display:grid;gap:4px">' + (on ? '<span class="tag gold">Equipado</span>' : bt('equip', b.id, 'Equipar')) + (b.t < 3 ? bt('up', b.id, '↑ ' + C.fmt(nx.o) + '● ' + nx.ch + '✧', nx.o, 'oro', 'red', S.chispas < nx.ch) : '') + '</div></div>';
+      h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + E.ic + '</div><div class="tx"><div class="nm" style="color:' + Tr.c + '">' + E.n + ' · ' + Tr.n + ' ×' + Tr.m + '</div><div class="ds">' + E.sk + ': ' + E.d + afTxt(b.el) + '</div></div><div style="display:grid;gap:4px">' + (on ? '<span class="tag gold">Equipado</span>' : bt('equip', b.id, 'Equipar')) + (b.t < 3 ? bt('up', b.id, '↑ ' + C.fmt(nx.o) + '● ' + nx.ch + '✧', nx.o, 'oro', 'red', S.chispas < nx.ch) : '') + '</div></div>';
     });
     h += '</div><div class="spaced gold" style="margin:14px 0 6px">Forjar nuevo elemento · ' + C.NEWB.o + ' ● + ' + C.NEWB.ch + ' ✧</div><div class="row">';
     Object.keys(C.EL).forEach(function (k) { if (C.brzOf(S, k)) return; var lk = C.elLocked(S, k); h += bt('newb', k, C.EL[k].ic + ' ' + C.EL[k].n + (lk ? ' 🔒' : ''), C.NEWB.o, 'oro', 'pap', lk || S.chispas < C.NEWB.ch); });
@@ -205,6 +206,9 @@ var PANELS = {
   strat: function (a) {
     var b = a.b, h = '<div class="band"><span class="spaced">TORNEO · ' + a.name + '</span><span class="spaced">PAUSA ESTRATÉGICA</span></div>';
     h += '<h2 class="mega">VS ' + esc(b.n) + '</h2><p class="kick">' + C.EL[b.el].ic + ' ' + C.EL[b.el].n + ' · Poder ' + C.fmt(b.p) + ' · Tú: ' + C.fmt(C.poder(S)) + '</p>';
+    var me = C.eqB(S).el, af = C.afin(me, b.el), ad = C.afin(b.el, me);
+    h += '<div class="film">TU ' + C.EL[me].n + ' VS SU ' + C.EL[b.el].n + ': ' + (af > 1 ? 'TÚ HACES ×1.25 ✔' : af < 1 ? 'TÚ HACES ×0.8 ✖' : 'DAÑO NORMAL') + ' · ' + (ad > 1 ? 'ÉL TE HACE ×1.25 ✖' : ad < 1 ? 'ÉL TE HACE ×0.8 ✔' : 'ÉL: NORMAL') + '</div>';
+    if (S.brz.length > 1) { h += '<p class="m" style="margin-bottom:4px">Cambia de brazalete según su elemento:</p><div class="row">'; S.brz.forEach(function (x) { var a2 = C.afin(x.el, b.el); h += '<button class="btn sm ' + (x.id === S.eq ? '' : 'pap') + '" data-a="stratEq" data-v="' + x.id + '">' + C.EL[x.el].ic + ' ' + C.TIERS[x.t].n + (a2 > 1 ? ' ✔' : a2 < 1 ? ' ✖' : '') + '</button>'; }); h += '</div>'; }
     h += '<p class="m">Elige una ventaja. Se acumulan durante todo el torneo.</p><div class="list">';
     h += item('🎯', 'Concentración', 'Daño +12% (llevas ×' + TR.buf.atk.toFixed(2) + ')', bt('strat', 'atk', 'Elegir', undefined, '', 'red'));
     h += item('🛡️', 'Guardia', 'Vida máxima +15% (llevas ×' + TR.buf.hp.toFixed(2) + ')', bt('strat', 'hp', 'Elegir', undefined, '', 'tea'));
@@ -225,9 +229,14 @@ var PANELS = {
       '<button class="it" data-a="choose" data-v="compartir" style="background:#0f5c66;color:#fff"><div class="ic">💛</div><div class="tx"><div class="nm">Romperlo y devolver el poder</div><div class="ds" style="color:#e3d3b0">Ánima entera se fortalece. Tú ganas un gran Legado.</div></div></button>' +
       '<button class="it" data-a="choose" data-v="corona" style="background:#12061f;color:#fff"><div class="ic">👑</div><div class="tx"><div class="nm">Quedártelo</div><div class="ds" style="color:#c77dff">Brazalete de Origen ×4.5 para ti. Te conviertes en el nuevo Anfitrión.</div></div></button></div>';
   },
+  page: function (a) {
+    var f = a.f, n = C.fragCount(S);
+    return '<div class="band"><span class="spaced">CÓDICE DEL ORIGEN</span><span class="spaced">FRAGMENTO ' + n + ' / ' + C.FRAG.length + '</span></div><h2 class="mega">' + f.t + '</h2>' + f.p.map(function (x) { return '<p style="font-size:16px">' + x + '</p>'; }).join('') +
+      '<p class="kick" style="color:#8a1219">+10 Legado · +5 ◆' + (a.all ? ' · ¡Códice completo! +200 Legado y título “Guardián del Origen”' : '') + '</p><button class="btn red" data-a="pageOk">Guardar en el Códice</button>';
+  },
   chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
-    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
+    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'rank') return h + PANELS.rank(); if (t === 'shop') return h + PANELS.shop(); if (t === 'brz') return h + PANELS.forge().replace(/data-a="(up|newb)"[^>]*>/g, 'disabled>');
     if (t === 'perfil') {
@@ -252,14 +261,19 @@ var PANELS = {
       S.friends.forEach(function (f) { var b = S.bots[f.bi], inP = S.party.indexOf(f.bi) >= 0; h += item(C.EL[b.el].ic, esc(b.n) + (inP ? ' · en tu grupo' : ''), '⚡ ' + C.fmt(b.p) + ' · amistad ' + Math.floor(f.af) + '/100 ' + '❤'.repeat(Math.floor(f.af / 25)), bt('party', f.bi, inP ? 'Sacar' : 'Invitar', undefined, '', inP ? 'pap' : 'tea', !inP && S.party.length >= 2)); });
       return h + '</div>';
     }
+    if (t === 'codice') {
+      h += '<h2 class="mega">Códice</h2><p class="m">Fragmentos del Brazalete del Origen: ' + C.fragCount(S) + ' / ' + C.FRAG.length + '. Busca haces de luz azul en las zonas.</p><div class="list">';
+      C.FRAG.forEach(function (f, i) { var ok = S.frag[f.id]; h += ok ? '<div class="film"><b style="color:#f0b429">' + (i + 1) + '. ' + f.t + '</b><br>' + f.p.join(' ') + '</div>' : item('❔', (i + 1) + '. ???', 'Aún no encontrado · en algún lugar de ' + C.ZONES[f.z].n); });
+      return h + '</div>';
+    }
     if (t === 'cfg') {
       var on = function (k) { return S.cfg[k] ? 'Sí' : 'No'; };
-      h += '<h2 class="mega">Ajustes</h2><div class="list">' + item('🔊', 'Sonido', 'Efectos sintetizados', bt('cfg', 'snd', on('snd'))) + item('🎵', 'Música', 'Melodías por zona', bt('cfg', 'mus', on('mus'))) + item('📱', 'Calidad alta', 'Desactívala en celulares modestos', bt('cfg', 'q', on('q'))) + item('📳', 'Vibración', 'En golpes y daño', bt('cfg', 'vib', on('vib'))) + '</div>';
+      h += '<h2 class="mega">Ajustes</h2><div class="list">' + item('🔊', 'Sonido', 'Efectos sintetizados', bt('cfg', 'snd', on('snd'))) + item('🎵', 'Música', 'Melodías por zona', bt('cfg', 'mus', on('mus'))) + item('📱', 'Calidad alta', 'Desactívala en celulares modestos', bt('cfg', 'q', on('q'))) + item('📳', 'Vibración', 'En golpes y daño', bt('cfg', 'vib', on('vib'))) + item('🔠', 'Texto grande', 'Diálogos, misiones y avisos más grandes', bt('cfg', 'big', on('big'))) + item('🕊️', 'Modo calma', 'Sin destellos ni sacudidas de pantalla (fotosensibilidad)', bt('cfg', 'calm', on('calm'))) + '</div>';
       h += '<div class="spaced gold" style="margin:14px 0 6px">Tu partida</div><div class="row">' + bt('exp', '', '⬇ Exportar partida', undefined, '', 'tea') + bt('imp', '', '⬆ Importar', undefined, '', 'pap') + bt('reset', '', 'Borrar partida', undefined, '', 'red') + '</div><p class="m">Se guarda sola en este dispositivo. Exporta un archivo para respaldarla o pasarla a otro teléfono.</p><p class="pag">Versión ' + C.VERSION + '</p>';
       return h;
     }
     return h + '<h2 class="mega">Cómo jugar</h2><div class="film">MOVER: joystick (izquierda) o WASD · GOLPE: ⚔ o J/espacio · PODER: K · ESQUIVA: » o L/shift · INTERACTUAR: botón amarillo o E · MENÚ: M</div>' +
-      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
+      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
   }
 };
 var ACTS = {
@@ -279,10 +293,12 @@ var ACTS = {
   strat: function (v) { if (v === 'atk') TR.buf.atk *= 1.12; else if (v === 'hp') TR.buf.hp *= 1.15; else TR.buf.au *= 1.3; var cb = PANEL.a.cb; closePanel(); cb(); },
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
+  stratEq: function (v) { C.equip(S, +v); refreshCombat(); sfx('up'); renderPanel(); },
+  pageOk: function () { var all = PANEL.a.all; closePanel(); if (all) { banner('¡GUARDIÁN DEL ORIGEN!', 'Completaste el Códice'); sfx('win'); } hudFull(); },
   choose: function (v) { closePanel(); C.choose(S, v); refreshCombat(); save(); sfx('win'); dialog(ENDS[S.ending], function () { banner('FIN', S.title); hudFull(); }); },
   say: function (v) { closePanel(); quickChat(C.CHAT[+v]); },
   party: function (v) { var bi = +v, on = S.party.indexOf(bi) < 0; if (C.setParty(S, bi, on)) { toast(on ? S.bots[bi].n + ' se une a tu grupo 🤝' : S.bots[bi].n + ' salió del grupo', 'ok'); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'ally'; }); spawnParty(); } save(); } renderPanel(); },
-  cfg: function (v) { S.cfg[v] = S.cfg[v] ? 0 : 1; if (v === 'q') { MAPS = {}; resize(); document.body.classList.toggle('low', !S.cfg.q); if (mode === 'world') { var z = MAP.id; MAP = null; loadZone(z); } } save(); renderPanel(); },
+  cfg: function (v) { S.cfg[v] = S.cfg[v] ? 0 : 1; applyA11y(); if (v === 'q') { MAPS = {}; resize(); document.body.classList.toggle('low', !S.cfg.q); if (mode === 'world') { var z = MAP.id; MAP = null; loadZone(z); } } save(); renderPanel(); },
   exp: function () { exportSave(); },
   imp: function () { $('fileIn').click(); },
   reset: function () { if (confirm('¿Borrar tu partida? Exporta antes si quieres conservarla.') && confirm('¿Seguro? No se puede deshacer.')) { try { localStorage.removeItem(C.SAVE_KEY); } catch (e) { } location.reload(); } }
@@ -488,7 +504,7 @@ function showCreate() {
   h += '<canvas id="coverCv" width="560" height="560" style="width:min(48vw,200px);height:min(48vw,200px);margin:0 auto"></canvas>';
   h += '<div class="spaced gold">Tu nombre</div><input class="inp" id="crName" maxlength="14" placeholder="Ej: Nova" value="' + esc(CR.name) + '" autocomplete="off">';
   h += '<div class="spaced gold" style="margin-top:14px">¿Dónde empieza tu historia?</div><div class="opts">' + Object.keys(C.ORIG).map(function (k) { var o = C.ORIG[k]; return '<button class="card' + (CR.origin === k ? ' on' : '') + '" data-o="' + k + '"><div class="nm">' + o.ic + ' ' + o.n + '</div><div class="ds">' + o.d + '</div><div class="ds gold">Empiezas en: ' + C.ZONES[o.z].n + '</div></button>'; }).join('') + '</div>';
-  h += '<div class="spaced gold" style="margin-top:14px">Tu primer brazalete</div><div class="opts">' + C.ELK5.map(function (k) { var e = C.EL[k]; return '<button class="card' + (CR.el === k ? ' on' : '') + '" data-e="' + k + '"><div class="nm" style="color:' + e.c + '">' + e.ic + ' ' + e.n + '</div><div class="ds">' + e.sk + ': ' + e.d + '</div></button>'; }).join('') + '</div>';
+  h += '<div class="spaced gold" style="margin-top:14px">Tu primer brazalete</div><div class="opts">' + C.ELK5.map(function (k) { var e = C.EL[k]; return '<button class="card' + (CR.el === k ? ' on' : '') + '" data-e="' + k + '"><div class="nm" style="color:' + e.c + '">' + e.ic + ' ' + e.n + '</div><div class="ds">' + e.sk + ': ' + e.d + afTxt(k) + '</div></button>'; }).join('') + '</div>';
   h += '<div class="spaced gold" style="margin-top:14px">Piel</div>' + sw('skin', C.LOOK.skin) + '<div class="spaced gold" style="margin-top:10px">Ropa</div>' + sw('shirt', C.LOOK.shirt) + '<div class="spaced gold" style="margin-top:10px">Cabello</div>' + sw('hair', C.LOOK.hair);
   h += '<div class="cbtns" style="margin:18px auto"><button class="btn red" id="crGo">¡Comenzar la historia!</button><button class="btn pap" id="crBack">Volver</button></div></div>';
   c.innerHTML = h; coverAnim = 1;
@@ -502,9 +518,11 @@ function showCreate() {
     var sc = c.scrollTop; showCreate(); c.scrollTop = sc;
   };
 }
+function applyA11y() { document.body.classList.toggle('big', !!S.cfg.big); document.body.classList.toggle('calm', !!S.cfg.calm); }
+function showPage(f, all) { openPanel('page', { f: f, all: all }); }
 function startGame(st, isNew) {
   S = st; if (isNew && ((navigator.deviceMemory || 8) <= 3 || (navigator.hardwareConcurrency || 8) <= 4)) S.cfg.q = 0;
-  au(); resize(); document.body.classList.toggle('low', !S.cfg.q); $('cover').hidden = true; coverAnim = 0; MAPS = {}; P = null; MAP = null;
+  au(); resize(); document.body.classList.toggle('low', !S.cfg.q); applyA11y(); $('cover').hidden = true; coverAnim = 0; MAPS = {}; P = null; MAP = null;
   var off = isNew ? null : C.offline(S, Date.now()); S.last = Date.now();
   var gift = C.dailyCheck(S, Date.now());
   $('hud').hidden = false; $('ctl').hidden = false;

@@ -130,11 +130,25 @@ function scatter(m, R, n, fn, x0, y0, x1, y1, avoid) {
     fn(m, x, y); k++;
   }
 }
+/* fragmentos del Brazalete del Origen: brillan con un haz de luz visible desde lejos */
+function fragsIn(m) {
+  C.FRAG.forEach(function (f) {
+    if (f.z !== m.id) return;
+    var w = function () { return !S.frag[f.id]; };
+    tSet(m, f.x, f.y, 0); deco(m, 'frag', f.x, f.y, { when: w });
+    inter(m, 'frag:' + f.id, (f.x + .5) * T, (f.y + 1) * T, 'FRAGMENTO DEL ORIGEN', function () { takeFrag(f); }, w);
+  });
+}
+function takeFrag(f) {
+  var r = C.fragTake(S, f.id); if (!r) return;
+  sfx('win'); vib([20, 40, 20]); parts(P.x, P.y - 30, '#39c8ff', 18, 260); refreshCombat(); save();
+  showPage(f, r === 'all');
+}
 var MAPS = {};
 function buildPlaza() {
   var m = newMap('plaza', 35, 29), R = C.mulberry(11);
   tRect(m, 1, 13, 33, 3, 1); tRect(m, 16, 1, 3, 27, 1); tRect(m, 12, 9, 11, 11, 1);
-  border(m, [[17, 0], [17, 28], [0, 14], [34, 14]]);
+  border(m, [[17, 0], [17, 28], [0, 14], [34, 14]]); fragsIn(m);
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
   npc(m, 'pip', 13, 10);
@@ -151,7 +165,7 @@ function buildPlaza() {
 }
 function buildDojo() {
   var m = newMap('dojo', 31, 23), R = C.mulberry(22);
-  tRect(m, 1, 10, 29, 3, 1); border(m, [[30, 11]]);
+  tRect(m, 1, 10, 29, 3, 1); border(m, [[30, 11]]); fragsIn(m);
   tRect(m, 18, 1, 11, 3, 2); deco(m, 'fall', 23, 1);
   [[19, 5], [22, 5], [25, 5]].forEach(function (p) { tRect(m, p[0], p[1], 2, 2, 3); inter(m, 'medita', (p[0] + 1) * T, (p[1] + 1) * T, 'MEDITAR · ESPÍRITU', function () { mgStart('medita'); }); });
   [5, 8, 11].forEach(function (x) { station(m, 'saco', x, 5, 'SACO · FUERZA'); station(m, 'kata', x, 15, 'KATAS · TÉCNICA'); });
@@ -164,7 +178,7 @@ function buildDojo() {
 var PADS = [[3, 3], [9, 3], [21, 3], [3, 17], [9, 17], [21, 17]];
 function buildForja() {
   var m = newMap('forja', 33, 27), R = C.mulberry(33);
-  tRect(m, 1, 12, 31, 3, 1); tRect(m, 15, 1, 3, 25, 1); border(m, [[0, 13]]);
+  tRect(m, 1, 12, 31, 3, 1); tRect(m, 15, 1, 3, 25, 1); border(m, [[0, 13]]); fragsIn(m);
   PADS.forEach(function (p) { tRect(m, p[0], p[1], 5, 5, 3); });
   block(m, 19, 9, 2, 1, 26, ['#f0b429', '#a8740c'], { sign: 'TYCOON' }); inter(m, 'mesa', 20 * T, 10.6 * T, 'MESA DEL TYCOON', function () { openPanel('tycoon'); });
   tSet(m, 28, 8, 8); deco(m, 'yunque', 28, 8); inter(m, 'yunque', 28.5 * T, 9.8 * T, 'YUNQUE · GANA ORO', function () { mgStart('yunque'); });
@@ -187,7 +201,7 @@ function refreshForja() {
 }
 function buildTierras() {
   var m = newMap('tierras', 45, 37), R = C.mulberry(44);
-  tRect(m, 1, 17, 7, 3, 1); border(m, [[0, 18]]);
+  tRect(m, 1, 17, 7, 3, 1); border(m, [[0, 18]]); fragsIn(m);
   m.ringOf = function (x) { return x < 15 * T ? 0 : x < 30 * T ? 1 : 2; };
   for (var j = 2; j < 35; j += 2) { if (j % 8 !== 0) { rock(m, 15, j, .7); rock(m, 30, j, .7); } }
   [[35, 13], [41, 13], [35, 23], [41, 23]].forEach(function (p) { block(m, p[0], p[1], 2, 1, 34, ['#2a2433', '#15111f'], { ruin: 1 }); });
@@ -201,7 +215,7 @@ function buildTierras() {
 }
 function buildColiseo() {
   var m = newMap('coliseo', 31, 25), R = C.mulberry(55);
-  tRect(m, 14, 5, 3, 19, 1); tRect(m, 7, 7, 17, 7, 1); border(m, [[15, 24]]);
+  tRect(m, 14, 5, 3, 19, 1); tRect(m, 7, 7, 17, 7, 1); border(m, [[15, 24]]); fragsIn(m);
   block(m, 4, 1, 23, 4, 74, ['#a42cff', '#4d1785'], { arches: 1, sign: 'COLISEO DEL ECLIPSE' });
   npc(m, 'heraldo', 15, 7);
   block(m, 7, 9, 2, 2, 92, ['#2c2542', '#16121f'], { statue: 2 }); inter(m, 'estatua', 8 * T, 11.8 * T, 'ESTATUA DE VANT', function () { dialog([['nar', 'Una estatua de Vant, el Anfitrión. La placa dice: “El poder es lo único que vale”. Alguien rayó debajo: “mentira”.']]); });
@@ -397,6 +411,12 @@ function drawObj(g, o) {
       g.fillStyle = 'rgba(255,255,255,.55)'; for (var k2 = 0; k2 < 6; k2++) { var yy = (time * 90 + k2 * 22) % 120; g.fillRect(X - 50 + k2 * 18, Y - 30 + yy * .5, 3, 10); }
     } else if (o.d === 'sign') {
       rr(g, X - 2, Y - 30, 4, 30, '#5a3825'); rr(g, X - 46, Y - 44, 92, 18, PAP); g.fillStyle = INK; g.font = '700 10px Cuerpo, sans-serif'; g.textAlign = 'center'; g.fillText(o.txt, X, Y - 31);
+    } else if (o.d === 'frag') {
+      var fy2 = Math.sin(time * 3 + X) * 4;
+      g.globalAlpha = .18 + Math.sin(time * 2) * .06; g.fillStyle = '#39c8ff'; g.fillRect(X - 7, Y - 260, 14, 250); g.globalAlpha = 1;
+      g.fillStyle = '#39c8ff'; g.beginPath(); g.moveTo(X, Y - 40 + fy2); g.lineTo(X + 11, Y - 22 + fy2); g.lineTo(X, Y - 4 + fy2); g.lineTo(X - 11, Y - 22 + fy2); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#fff'; g.beginPath(); g.moveTo(X - 2, Y - 32 + fy2); g.lineTo(X + 4, Y - 24 + fy2); g.lineTo(X - 2, Y - 18 + fy2); g.closePath(); g.fill();
+      if (Math.random() < .2) parts(X + rnd(-10, 10), Y - 30, '#bfefff', 1, 40);
     } else if (o.d === 'gato') {
       var j = Math.sin(time * 5) * 2; g.fillStyle = '#f0b429'; g.beginPath(); g.ellipse(X, Y - 8, 11, 7, 0, 0, TAU); g.fill(); g.stroke();
       g.beginPath(); g.arc(X + 10, Y - 16 + j * .3, 7, 0, TAU); g.fill(); g.stroke();
@@ -426,6 +446,7 @@ function mkFoe(type, x, y, eP, ex) {
   var st = C.foeStats(type, eP, ex && ex.el), F = C.FOES[type];
   var e = { k: 'foe', type: type, x: x, y: y, hx: x, hy: y, r: F.r, eP: eP, hp: st.hp, maxHp: st.hp, dmg: st.dmg, crit: st.crit, sp: F.sp, st: 'idle', t: rnd(0, 2), dir: 0, walk: 0, mv: 0, flash: 0, kbT: 0, ph: rnd(0, 6), aggro: F.boss ? 260 : 210, ring: 0, aura: 0, skCd: 3, dodgeCd: 0, atkA: 0, spm: 1, pvp: F.pvp, boss: F.boss };
   for (var q in ex || {}) e[q] = ex[q];
+  if (!e.el) e.el = C.FOE_EL[type] || 'fuego';
   return e;
 }
 function foes() { return ents.filter(function (e) { return e.k === 'foe' && e.hp > 0; }); }
@@ -452,7 +473,7 @@ function burst(x, y, c, big) { addFx({ k: 'burst', x: x, y: y, c: c || '#fff', l
 function txt(x, y, s, c, size, life) { addFx({ k: 'txt', x: x + rnd(-6, 6), y: y, s: s, c: c || '#fff', size: size || 18, life: life || .8, rot: rnd(-.2, .2) }); }
 function parts(x, y, c, n, sp) { for (var i = 0; i < (S.cfg.q ? n : n / 2); i++) { var a = rnd(0, TAU), v = rnd(40, sp || 220); addFx({ k: 'part', x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, c: c, life: rnd(.3, .6), sz: rnd(3, 6) }); } }
 function ring(x, y, r, c, life) { addFx({ k: 'ring', x: x, y: y, r: r, c: c, life: life || .35 }); }
-function shake(v) { cam.sh = Math.max(cam.sh, v); }
+function shake(v) { if (S && S.cfg.calm) return; cam.sh = Math.max(cam.sh, v); }
 function updFx(dt) {
   for (var i = fx.length - 1; i >= 0; i--) {
     var f = fx[i]; f.t += dt;
@@ -496,6 +517,8 @@ function dmgFoe(f, d, big, kx, ky, kb) {
   if (f.type === 'sombra') { f.burn += .5; f.kbx = kx * 200; f.kby = ky * 200; f.kbT = .15; burst(f.x, f.y - 26, '#ddd'); sfx('hit'); return; }
   if (f.pvp && f.st !== 'wind' && !f.frozen && Math.random() < .22) { d *= .3; txt(f.x, f.y - 70, '¡BLOQUEO!', '#39c8ff', 16, .6); kb *= .3; }
   var kf = f.boss ? .25 : f.pvp ? (f.st === 'wind' ? 0 : .4) : 1; /* los rivales no se interrumpen al cargar su golpe */
+  var af = C.afin(C.eqB(S).el, f.el); d *= af;
+  if (af !== 1 && time - (f.afT || -9) > 1.2) { f.afT = time; txt(f.x + 26, f.y - 88, af > 1 ? '¡EFICAZ!' : 'RESISTE', af > 1 ? '#2dffb3' : '#9b917c', 15, .8); }
   d = Math.max(1, d); f.hp -= d; f.flash = .12; f.kbx = kx * kb * kf; f.kby = ky * kb * kf; f.kbT = kf ? .12 : 0;
   if (f.st === 'idle' || f.st === 'home') f.st = 'chase';
   txt(f.x, f.y - 50, C.fmt(d), big ? '#f0b429' : '#fff', big ? 24 : 17);
@@ -523,7 +546,7 @@ function heal(n) { P.hp = Math.min(P.cs.maxHp, P.hp + n); }
 function hurtP(d, src) {
   if (P.dead || mode === 'off') return;
   if (P.iT > 0) { if (P.dashT > 0) txt(P.x, P.y - 60, '¡ESQUIVA!', '#2dffb3', 18, .6); return; }
-  d = d * (1 - P.cs.def) * (P.shieldT > 0 ? .4 : 1); tip('esquiva', 'Las zonas ROJAS avisan un ataque. Toca » ESQUIVA: eres invulnerable un instante.');
+  d = d * (1 - P.cs.def) * (P.shieldT > 0 ? .4 : 1) * (src && src.el ? C.afin(src.el, C.eqB(S).el) : 1); tip('esquiva', 'Las zonas ROJAS avisan un ataque. Toca » ESQUIVA: eres invulnerable un instante.');
   P.hp -= d; P.iT = .35; P.flash = .15; P.lastHurt = time; shake(6); vib(30); sfx('hurt');
   txt(P.x, P.y - 56, '-' + C.fmt(d), '#e0262f', 19);
   if (src) { var dx = P.x - src.x, dy = P.y - src.y, l = Math.hypot(dx, dy) || 1; P.kbx = dx / l * 220; P.kby = dy / l * 220; P.kbT = .12; }
@@ -641,7 +664,7 @@ function foeStrike(f) {
 }
 function foeSkill(f) {
   f.aura -= 45; f.skCd = f.type === 'vant' ? 3 : 4.5; var d = dist(f, P) || 1, c = C.EL[f.el || 'fuego'].c;
-  ents.push({ k: 'proj', team: 'foe', x: f.x, y: f.y - 22, vx: (P.x - f.x) / d * 360, vy: (P.y - f.y) / d * 360, r: 13, dmg: f.dmg * 1.8, life: 1.2, c: c });
+  ents.push({ k: 'proj', team: 'foe', x: f.x, y: f.y - 22, vx: (P.x - f.x) / d * 360, vy: (P.y - f.y) / d * 360, r: 13, dmg: f.dmg * 1.8, life: 1.2, c: c, el: f.el });
   txt(f.x, f.y - 70, f.type === 'vant' ? '¡ECLIPSE!' : '¡TOMA!', c, 18, .7); sfx('skill');
 }
 function updProj(p, dt) {
@@ -865,6 +888,9 @@ function drawTele(g, e) {
   var F = C.FOES[e.type], p = 1 - e.t / F.wind; g.globalAlpha = .25 + p * .35; g.fillStyle = '#e0262f';
   if (e.type === 'golem') { g.beginPath(); g.ellipse(e.x, e.y, F.rng * p, F.rng * p * .55, 0, 0, TAU); g.fill(); g.globalAlpha = .8; g.strokeStyle = '#e0262f'; g.lineWidth = 2; g.beginPath(); g.ellipse(e.x, e.y, F.rng, F.rng * .55, 0, 0, TAU); g.stroke(); }
   else { var a = Math.atan2(e.ay, e.ax); g.beginPath(); g.moveTo(e.x, e.y); g.arc(e.x, e.y, (F.rng + 14) * (.5 + p * .5), a - 1, a + 1); g.closePath(); g.fill(); }
+  /* rayas blancas: el aviso se entiende sin depender del color (daltonismo) */
+  g.save(); g.clip(); g.globalAlpha = .45; g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath();
+  for (var k = -90; k < 90; k += 12) { g.moveTo(e.x + k, e.y - 60); g.lineTo(e.x + k + 60, e.y + 60); } g.stroke(); g.restore();
   g.globalAlpha = 1;
 }
 function nameTag(x, y, t, c) { ctx.font = '700 11px Cuerpo, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.strokeText(t, x, y); ctx.fillStyle = c; ctx.fillText(t, x, y); }

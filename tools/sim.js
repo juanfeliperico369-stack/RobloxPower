@@ -26,6 +26,17 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
   const o0 = s.oro; s.last = 1e12; const off = C.offline(s, 1e12 + 30 * 3600e3); ok(off && off.capped, 'offline con tope'); ok(s.oro >= o0, 'offline no resta');
   s.daily.day = ''; C.dailyCheck(s, Date.now()); eq(s.daily.q.length, 3, '3 misiones diarias');
 }
+{ // afinidades: ciclo de 5 + sombra/luz, simétricas
+  for (const a of C.CYCLE) { eq(C.afin(a, C.strongVs(a)), 1.25, a + ' fuerte'); eq(C.afin(C.strongVs(a), a), 0.8, a + ' débil inverso'); eq(C.afin(a, C.weakVs(a)), 0.8, a + ' débil'); eq(C.afin(a, a), 1, a + ' neutro'); }
+  eq(C.afin('sombra', 'luz'), 1.25, 'sombra>luz'); eq(C.afin('luz', 'sombra'), 1.25, 'luz>sombra'); eq(C.afin('sombra', 'fuego'), 1, 'sombra neutra');
+}
+{ // fragmentos del Códice
+  const s = C.newState({ name: 'F', seed: 8 }); const l0 = s.legado;
+  C.FRAG.forEach((f, i) => eq(C.fragTake(s, f.id), i === C.FRAG.length - 1 ? 'all' : true, 'fragmento ' + f.id));
+  eq(C.fragTake(s, 'f1'), false, 'fragmento no se repite'); eq(C.fragTake(s, 'zz'), false, 'fragmento inválido');
+  eq(s.legado - l0, 270, 'legado del Códice'); eq(s.title, 'Guardián del Origen', 'título del Códice');
+  const m = C.migrate(JSON.parse(JSON.stringify(Object.assign({}, s, { frag: { f1: 1, falso: 1 } })))); eq(Object.keys(m.frag).join(), 'f1', 'migrate limpia fragmentos');
+}
 { // misiones secundarias y amigos
   const s = C.newState({ name: 'Q', origin: 'discipulo', seed: 4 }); s.story.i = C.STORY.length - 1;
   for (const q of C.SIDE) {
@@ -65,8 +76,9 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
 function fight(s, ring, R, sk) {
   const types = [['eco', 'lobo'], ['lobo', 'bandido'], ['bandido', 'rival']][ring], type = types[R() < .6 ? 0 : 1];
   const eP = C.ringPower(s, ring) * (0.9 + R() * .2), e = C.foeStats(type, eP), cs = C.combat(s), F = C.FOES[type];
-  const dps = cs.atk * (1 + cs.crit * .8) / cs.cd * (0.55 + sk * .4), ttk = e.hp / dps + 1.5;
-  const taken = e.dmg / (F.cd + F.wind) * (0.75 - sk * .5) * ttk;
+  const fe = C.FOE_EL[type] || C.ELK5[Math.floor(R() * 5)], me = C.eqB(s).el;
+  const dps = cs.atk * (1 + cs.crit * .8) / cs.cd * (0.55 + sk * .4) * C.afin(me, fe), ttk = e.hp / dps + 1.5;
+  const taken = e.dmg / (F.cd + F.wind) * (0.75 - sk * .5) * ttk * C.afin(fe, me);
   return { type, eP, ttk, taken: taken * (1 - cs.def), max: cs.maxHp };
 }
 function tourney(s, R, sk) {

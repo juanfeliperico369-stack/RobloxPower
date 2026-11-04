@@ -2,7 +2,7 @@
 -- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.
 -- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.
 return {
-	VERSION = "0.2.1",
+	VERSION = "0.3.0",
 	SAVE_KEY = "bdp.save.v1",
 	M = "@m",
 	EL = {
@@ -935,5 +935,64 @@ return {
 	},
 	NA = {"Neo", "Kai", "Luna", "Dragon", "Sofi", "Mati", "Zero", "Nova", "Pixel", "Rex", "Mia", "Leo", "Vale", "Juli", "Thiago", "Emi", "Lucas", "Sami", "Ghost", "Blaze", "Storm", "Frost", "Ninja", "Crystal", "Moon", "Star", "Turbo", "Mega", "Cami", "Nico", "Isa", "Bruno", "Ari", "Dani", "Ozzy", "Kira", "Yuki", "Toto", "Pau", "Gabo"},
 	NB = {"", "Pro", "YT", "_x", "XD", "Gamer", "777", "_RBX", "Kun", "Chan", "Master", "99", "Crack", "Real", "Sama", "2014", "_Oficial", "Dark", "Kid", "Max"},
-	BAD = {"puta", "mierda", "idiota", "estupid", "fuck", "shit", "pendej", "marica", "culo", "verga", "nazi", "sex"}
+	BAD = {"puta", "mierda", "idiota", "estupid", "fuck", "shit", "pendej", "marica", "culo", "verga", "nazi", "sex"},
+	CYCLE = {"fuego", "viento", "tierra", "rayo", "agua"},
+	FOE_EL = {
+		eco = "sombra",
+		lobo = "fuego",
+		bandido = "tierra",
+		golem = "tierra",
+		sombra = "sombra",
+		vant = "sombra"
+	},
+	FRAG = {{
+			id = "f1",
+			z = "plaza",
+			x = 2,
+			y = 26,
+			t = "El reparto",
+			p = {"Hace mil años, el Brazalete del Origen se rompió en mil luces.", "Cada recién nacido de Ánima recibió una. Nadie recibió más que nadie.", "Por eso los brazaletes responden a lo que haces, no a quién eres."}
+		}, {
+			id = "f2",
+			z = "dojo",
+			x = 28,
+			y = 4,
+			t = "La primera competencia",
+			p = {"Los primeros torneos eran fiestas en la cumbre.", "Se peleaba por honor y, al final, ganadores y perdedores comían juntos.", "Nadie perdía nada. Solo se aprendía."}
+		}, {
+			id = "f3",
+			z = "forja",
+			x = 31,
+			y = 24,
+			t = "El oro y la magia",
+			p = {"Un día alguien descubrió que la magia podía volverse pan, herramientas y oro.", "Fue un gran invento. Hubo comida para todos.", "Pero algunos empezaron a guardar más de lo que necesitaban."}
+		}, {
+			id = "f4",
+			z = "tierras",
+			x = 9,
+			y = 33,
+			t = "Los Ecos",
+			p = {"Cuando alguien abandona su poder por miedo o tristeza, queda un Eco.", "Los Ecos no son malos: están perdidos. Buscan a quien eran.", "Derrotarlos los libera. Por eso brillan al desaparecer."}
+		}, {
+			id = "f5",
+			z = "tierras",
+			x = 24,
+			y = 3,
+			t = "El niño sin luz",
+			p = {"Una noche nació un bebé sin brazalete. Se llamaba Vant.", "Las otras familias apartaban a sus hijos de él, como si fuera contagioso.", "Vant aprendió a sonreír sin que la sonrisa le llegara a los ojos."}
+		}, {
+			id = "f6",
+			z = "tierras",
+			x = 42,
+			y = 32,
+			t = "La regla del cien",
+			p = {"Ya adulto, Vant ofreció al Consejo un torneo grandioso: cien entran, uno gana.", "Todos aplaudieron. Nadie leyó la letra pequeña:", "“El poder perdido será custodiado por el Anfitrión”."}
+		}, {
+			id = "f7",
+			z = "coliseo",
+			x = 27,
+			y = 21,
+			t = "Lo que no se cuenta",
+			p = {"En el palco, Vant guarda frascos de luz con nombres escritos a mano.", "Cada frasco es un pedazo de alguien que confió en él.", "A veces, de noche, les habla. Les pide perdón. Y vuelve a empezar."}
+		}}
 }

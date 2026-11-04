@@ -2,7 +2,7 @@
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.2.1';
+var VERSION = '0.3.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -29,6 +29,19 @@ var EL = {
   luz:    { n: 'Luz',    ic: '✨', c: '#fff1a8', sk: 'Aurora',     d: 'Estallido ×2.2 en área y cura 15%', cd: 10, cost: 50, x: 2.2, lock: 'act3' }
 };
 var ELK5 = ['fuego', 'agua', 'rayo', 'tierra', 'viento'];
+/* afinidades: cada uno es FUERTE (×1.25) contra el siguiente del ciclo y DÉBIL (×0.8) contra el anterior; Sombra y Luz se dañan ×1.25 entre sí */
+var CYCLE = ['fuego', 'viento', 'tierra', 'rayo', 'agua'];
+var FOE_EL = { eco: 'sombra', lobo: 'fuego', bandido: 'tierra', golem: 'tierra', sombra: 'sombra', vant: 'sombra' };
+function afin(a, d) {
+  if (!a || !d || a === d) return 1;
+  if ((a === 'sombra' && d === 'luz') || (a === 'luz' && d === 'sombra')) return 1.25;
+  var ia = CYCLE.indexOf(a), id = CYCLE.indexOf(d); if (ia < 0 || id < 0) return 1;
+  if ((ia + 1) % 5 === id) return 1.25;
+  if ((id + 1) % 5 === ia) return 0.8;
+  return 1;
+}
+function strongVs(el) { var i = CYCLE.indexOf(el); return i < 0 ? (el === 'sombra' ? 'luz' : el === 'luz' ? 'sombra' : '') : CYCLE[(i + 1) % 5]; }
+function weakVs(el) { var i = CYCLE.indexOf(el); return i < 0 ? '' : CYCLE[(i + 4) % 5]; }
 var TIERS = [{ n: 'Bronce', m: 1, c: '#c87f4a' }, { n: 'Plata', m: 1.4, c: '#d6dee9' }, { n: 'Oro', m: 2, c: '#ffc23a' }, { n: 'Mítico', m: 3, c: '#ff2fb3' }, { n: 'Origen', m: 4.5, c: '#ffffff' }];
 var RANKS = [[0, 'Novato'], [60, 'Aprendiz'], [300, 'Luchador'], [1500, 'Guerrero'], [8000, 'Élite'], [40000, 'Maestro'], [200000, 'Campeón'], [1000000, 'Leyenda']];
 var ORIG = {
@@ -186,13 +199,13 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
     tours: [], title: '', pend: null,
     bots: makeBots(seed),
-    cfg: { snd: 1, mus: 1, q: 1, vib: 1 }
+    cfg: { snd: 1, mus: 1, q: 1, vib: 1, big: 0, calm: 0 }
   };
   BLD.forEach(function (d) { s.tyc[d.id] = 0; });
   return s;
@@ -222,6 +235,7 @@ function migrate(o) {
   d.friends = d.friends.filter(function (f) { return f && isNum(f.bi) && f.bi >= 0 && f.bi < 99; }).slice(0, 12);
   d.party = d.party.filter(function (bi) { return d.friends.some(function (f) { return f.bi === bi; }); }).slice(0, 2);
   for (var sid in d.side) if (!SIDEI[sid] || !d.side[sid] || !isNum(d.side[sid].n)) delete d.side[sid];
+  for (var fid in d.frag) if (!FRAGI[fid]) delete d.frag[fid];
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -488,6 +502,25 @@ function sideReady(s, id) { var st = s.side[id], q = SIDEI[id]; return !!(st && 
 function sideFinish(s, id) { if (!sideReady(s, id)) return false; var q = SIDEI[id]; s.side[id].s = 2; giveReward(s, q.r); if (q.title) s.title = q.title; return true; }
 function giveChispas(s, id) { var st = s.side[id], q = SIDEI[id]; if (!st || st.s !== 1 || q.o.k !== 'giveCh' || s.chispas < q.o.n) return false; s.chispas -= q.o.n; st.n = q.o.n; return true; }
 
+/* ---------- fragmentos del Brazalete del Origen (exploración + Códice de historia) ---------- */
+var FRAG = [
+  { id: 'f1', z: 'plaza', x: 2, y: 26, t: 'El reparto', p: ['Hace mil años, el Brazalete del Origen se rompió en mil luces.', 'Cada recién nacido de Ánima recibió una. Nadie recibió más que nadie.', 'Por eso los brazaletes responden a lo que haces, no a quién eres.'] },
+  { id: 'f2', z: 'dojo', x: 28, y: 4, t: 'La primera competencia', p: ['Los primeros torneos eran fiestas en la cumbre.', 'Se peleaba por honor y, al final, ganadores y perdedores comían juntos.', 'Nadie perdía nada. Solo se aprendía.'] },
+  { id: 'f3', z: 'forja', x: 31, y: 24, t: 'El oro y la magia', p: ['Un día alguien descubrió que la magia podía volverse pan, herramientas y oro.', 'Fue un gran invento. Hubo comida para todos.', 'Pero algunos empezaron a guardar más de lo que necesitaban.'] },
+  { id: 'f4', z: 'tierras', x: 9, y: 33, t: 'Los Ecos', p: ['Cuando alguien abandona su poder por miedo o tristeza, queda un Eco.', 'Los Ecos no son malos: están perdidos. Buscan a quien eran.', 'Derrotarlos los libera. Por eso brillan al desaparecer.'] },
+  { id: 'f5', z: 'tierras', x: 24, y: 3, t: 'El niño sin luz', p: ['Una noche nació un bebé sin brazalete. Se llamaba Vant.', 'Las otras familias apartaban a sus hijos de él, como si fuera contagioso.', 'Vant aprendió a sonreír sin que la sonrisa le llegara a los ojos.'] },
+  { id: 'f6', z: 'tierras', x: 42, y: 32, t: 'La regla del cien', p: ['Ya adulto, Vant ofreció al Consejo un torneo grandioso: cien entran, uno gana.', 'Todos aplaudieron. Nadie leyó la letra pequeña:', '“El poder perdido será custodiado por el Anfitrión”.'] },
+  { id: 'f7', z: 'coliseo', x: 27, y: 21, t: 'Lo que no se cuenta', p: ['En el palco, Vant guarda frascos de luz con nombres escritos a mano.', 'Cada frasco es un pedazo de alguien que confió en él.', 'A veces, de noche, les habla. Les pide perdón. Y vuelve a empezar.'] }
+];
+var FRAGI = {}; FRAG.forEach(function (f) { FRAGI[f.id] = f; });
+function fragCount(s) { var n = 0; for (var k in s.frag) if (FRAGI[k]) n++; return n; }
+function fragTake(s, id) {
+  if (!FRAGI[id] || s.frag[id]) return false;
+  s.frag[id] = 1; s.legado += 10; s.gemas += 5; ev(s, 'frag', { id: id });
+  if (fragCount(s) === FRAG.length) { s.legado += 200; s.title = 'Guardián del Origen'; return 'all'; }
+  return true;
+}
+
 /* ---------- amigos y grupo ---------- */
 function addFriend(s, bi) { if (!s.bots[bi] || s.friends.length >= 12 || s.friends.some(function (f) { return f.bi === bi; })) return false; s.friends.push({ bi: bi, af: 0 }); return true; }
 function friendXP(s, bi, n) {
@@ -550,7 +583,8 @@ var API = {
   dailyCheck: dailyCheck, dailyClaim: dailyClaim, tick: tick, offline: offline,
   SIDE: SIDE, SIDEI: SIDEI, sideFor: sideFor, sideAccept: sideAccept, sideReady: sideReady, sideFinish: sideFinish, giveChispas: giveChispas,
   addFriend: addFriend, friendXP: friendXP, setParty: setParty,
-  NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP
+  NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
+  CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

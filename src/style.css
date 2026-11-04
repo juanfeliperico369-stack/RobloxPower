@@ -166,4 +166,6 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px}
 .tb tr.me td{background:var(--mus);color:var(--ink);font-weight:800}
 @media(min-width:900px){.abtns{transform:scale(1.05);transform-origin:bottom right}}
 @media(max-height:480px){#quest .qh{display:none}.bars{width:170px}.abtns{transform:scale(.82);transform-origin:bottom right}#bAct{bottom:calc(170px + var(--sab))}}
+.big .panel .say{font-size:19px}.big .panel .who{font-size:26px}.big #quest .qh{font-size:14.5px}.big #quest .qt{font-size:19px}.big #toast div{font-size:17px}.big #coach{font-size:16px}.big .it .ds,.big .card .ds{font-size:14px}.big .sheet p{font-size:17px}.big #feed div{font-size:14px}
+.calm #banner .mega,.calm #banner .kick{animation-duration:2.6s}.calm .ab,#bAct{animation:none}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
