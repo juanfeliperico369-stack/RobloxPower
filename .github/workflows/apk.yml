@@ -1,0 +1,46 @@
+# Construye el APK de Android (Capacitor) a partir de dist/ y lo publica como Release del repositorio.
+name: APK Android
+on:
+  push:
+    branches: [ccr-c09a962e-axs1lp, main]
+    paths: ['dist/**', '.github/workflows/apk.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Crear proyecto Capacitor
+        run: |
+          mkdir app && cd app
+          npm init -y >/dev/null
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          mkdir www && cp -r ../dist/. www/
+          npx cap init "Brazaletes del Poder" com.juanfeliperico.brazaletes --web-dir www
+          npx cap add android
+      - name: Íconos de la app
+        continue-on-error: true
+        run: |
+          cd app && mkdir -p assets
+          cp ../dist/icon-512.png assets/icon-only.png
+          cp ../dist/icon-maskable-512.png assets/icon-foreground.png
+          npx -y @capacitor/assets@3 generate --android --iconBackgroundColor '#0b0b0f' --splashBackgroundColor '#0b0b0f'
+      - name: Compilar APK
+        run: |
+          cd app && npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../../brazaletes-del-poder.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: brazaletes-del-poder-apk, path: brazaletes-del-poder.apk }
+      - name: Publicar Release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          VER=$(grep -o "VERSION = '[^']*'" dist/index.html | head -1 | cut -d"'" -f2)
+          TAG="apk-v${VER}-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" brazaletes-del-poder.apk --target "$GITHUB_SHA" --title "Brazaletes del Poder v${VER} (APK)" --notes "APK de prueba (debug) generado automáticamente desde dist/. Instalar en Android permitiendo 'orígenes desconocidos'."

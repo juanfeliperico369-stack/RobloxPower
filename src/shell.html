@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0b0f"><meta name="color-scheme" content="dark">
+<meta name="description" content="Brazaletes del Poder: RPG de acción estilo cómic y anime. Entrena, forja tu negocio, sobrevive a la Noche y gana el Torneo Mundial. Funciona sin internet.">
+<meta name="application-name" content="Brazaletes del Poder">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brazaletes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Brazaletes del Poder">
+<meta property="og:description" content="¿Cuánto vale tu poder? Entrena, forja, sobrevive a la Noche y conquista el Torneo Mundial.">
+<meta property="og:url" content="{{SITE}}">
+<meta property="og:image" content="{{SITE}}compartir.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<title>Brazaletes del Poder</title>
+<style>
+{{CSS}}
+</style></head><body><noscript>Brazaletes del Poder necesita JavaScript activado.</noscript>
+<canvas id="cv"></canvas><div id="tone"></div>
+<div id="hud" hidden>
+  <div class="htop">
+    <div class="zbox"><div class="spaced" id="zK">ZONA</div><div class="mega" id="zN">Plaza</div></div>
+    <div class="chips"><span class="chip pw"><i>⚡</i><b id="cP">0</b></span><span class="chip"><i>●</i><b id="cO">0</b></span><span class="chip"><i>◆</i><b id="cG">0</b></span><span class="chip"><i>✧</i><b id="cC">0</b></span></div>
+    <button id="bChat" aria-label="Chat rápido">💬</button><button id="bMenu" aria-label="Menú">☰</button>
+  </div>
+  <div class="bars"><div class="bar"><i id="bHp"></i><span>VIDA</span></div><div class="bar au"><i id="bAu"></i><span>AURA</span></div><div class="bar en"><i id="bEn"></i><span>ENERGÍA</span></div></div>
+  <button id="quest"><div class="spaced" id="qA">MISIÓN</div><div class="qt" id="qT"></div><div class="qh" id="qH"></div><div class="qp"><i id="qP"></i></div></button>
+</div>
+<div id="tbar" hidden></div>
+<div id="ctl" hidden>
+  <div id="joyHint">MOVER</div><div id="joy"><i></i></div>
+  <button id="bAct" hidden></button>
+  <div class="abtns">
+    <button class="ab" id="bAtk" aria-label="Atacar">⚔<small>Golpe</small></button>
+    <button class="ab" id="bSk" aria-label="Poder"><span id="skI">🔥</span><small>Poder</small><div class="cd" id="skCd"></div></button>
+    <button class="ab" id="bDash" aria-label="Esquivar">»<small>Esquiva</small></button>
+  </div>
+</div>
+<div id="feed"></div>
+<div id="banner"></div>
+<div id="toast"></div>
+<div id="dlg" hidden></div>
+<div id="mg" hidden><div class="mgtop"><div class="mega" id="mgT">Entrenamiento</div><span class="chip" id="mgS"></span><button class="btn sm red" id="mgX">Salir</button></div><canvas id="mgc"></canvas><div class="mgbot"><div class="m" id="mgH"></div><button class="btn" id="mgB">¡Golpe!</button></div></div>
+<div id="ov" class="ov" hidden></div>
+<div id="cover" class="cover" hidden></div>
+<div id="fade"></div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<script>
+{{CORE}}
+</script>
+<script>
+{{GAME}}
+</script>
+</body></html>

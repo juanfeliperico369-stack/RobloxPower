@@ -1,0 +1,14 @@
+{
+  "name": "brazaletes-del-poder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Brazaletes del Poder · prototipo HTML offline (versión alterna del juego de Roblox)",
+  "scripts": {
+    "build": "node tools/build.js",
+    "check": "node tools/check.js",
+    "sim": "node tools/sim.js",
+    "bot": "node tools/bot.js",
+    "test": "node tools/build.js && node tools/check.js && node tools/sim.js && node tools/bot.js"
+  },
+  "devDependencies": { "acorn": "^8.12.0", "acorn-walk": "^8.3.0" }
+}
