@@ -144,6 +144,9 @@ function buildPlaza() {
   npc(m, 'nima', 17, 21, function () { return S.story.i >= C.STI.c1; });
   [[6, 11], [28, 11], [6, 17], [28, 17], [14, 4], [20, 4], [14, 24], [20, 24]].forEach(function (p) { deco(m, 'lamp', p[0], p[1]); });
   scatter(m, R, 26, tree, 2, 2, 33, 27);
+  var gs = [[3, 3], [31, 25], [30, 4]][S.seed % 3], gw = function () { return S.side.gato && S.side.gato.s === 1 && S.side.gato.n < 1; };
+  tSet(m, gs[0], gs[1], 0); deco(m, 'gato', gs[0], gs[1], { when: gw });
+  inter(m, 'gato', (gs[0] + .5) * T, (gs[1] + 1) * T, '¿UN MAULLIDO?', function () { C.ev(S, 'find', { id: 'gato' }); sfx('up'); toast('¡Encontraste a Bigotes! Llévalo con Pip 🐱', 'gold'); }, gw);
   MAPS.plaza = m; return m;
 }
 function buildDojo() {
@@ -247,6 +250,20 @@ function renderGround(m) {
   g.fillStyle = 'rgba(0,0,0,.07)';
   for (var yy = 0; yy < m.h * T; yy += 8) for (var xx = (yy / 8 & 1) * 4; xx < m.w * T; xx += 8) g.fillRect(xx, yy, 1.6, 1.6);
   m.ground = c; m.gq = q;
+  var mc = document.createElement('canvas'), mg2; mc.width = m.w * 3; mc.height = m.h * 3; mg2 = mc.getContext('2d');
+  for (j = 0; j < m.h; j++) for (i = 0; i < m.w; i++) { var t2 = tAt(m, i, j); mg2.fillStyle = t2 === 9 ? '#0b0b0f' : t2 === 8 ? shade(th.w[0], .6) : t2 === 2 ? th.wa : t2 === 1 ? th.p : (th.rf ? th.rf[i < 15 ? 0 : i < 30 ? 1 : 2][0] : th.f[0]); mg2.fillRect(i * 3, j * 3, 3, 3); }
+  m.mini = mc;
+}
+function drawMini() {
+  var c = $('mini'); if (!c || !MAP || !MAP.mini) return; var g = c.getContext('2d'), mw = MAP.mini.width, mh = MAP.mini.height, k = Math.min(c.width / mw, c.height / mh);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0b0b0f'; g.fillRect(0, 0, c.width, c.height);
+  var ox = (c.width - mw * k) / 2, oy = (c.height - mh * k) / 2; g.imageSmoothingEnabled = false; g.drawImage(MAP.mini, ox, oy, mw * k, mh * k);
+  var pt = function (x, y, col, r) { g.fillStyle = col; g.fillRect(ox + x / T * 3 * k - r, oy + y / T * 3 * k - r, r * 2, r * 2); };
+  MAP.portals.forEach(function (p) { pt(p.x, p.y, '#a42cff', 3); });
+  MAP.npcs.forEach(function (n) { if (!n.when || n.when()) pt(n.x, n.y, '#f0b429', 2.5); });
+  if (mode === 'world') ents.forEach(function (e) { if (e.k === 'foe' && !e.dead) pt(e.x, e.y, e.boss ? '#ff2fb3' : '#e0262f', e.boss ? 3 : 1.5); else if (e.k === 'ally') pt(e.x, e.y, '#2dffb3', 2); });
+  var ob = objTarget(); if (ob && Math.sin(time * 8) > 0) pt(ob.x, ob.y + 40, '#ffffff', 3.5);
+  pt(P.x, P.y, '#39c8ff', 3); g.strokeStyle = '#fff'; g.lineWidth = 1; g.strokeRect(ox + P.x / T * 3 * k - 4, oy + P.y / T * 3 * k - 4, 8, 8);
 }
 
 /* ---------- dibujo cómic ---------- */
@@ -380,6 +397,12 @@ function drawObj(g, o) {
       g.fillStyle = 'rgba(255,255,255,.55)'; for (var k2 = 0; k2 < 6; k2++) { var yy = (time * 90 + k2 * 22) % 120; g.fillRect(X - 50 + k2 * 18, Y - 30 + yy * .5, 3, 10); }
     } else if (o.d === 'sign') {
       rr(g, X - 2, Y - 30, 4, 30, '#5a3825'); rr(g, X - 46, Y - 44, 92, 18, PAP); g.fillStyle = INK; g.font = '700 10px Cuerpo, sans-serif'; g.textAlign = 'center'; g.fillText(o.txt, X, Y - 31);
+    } else if (o.d === 'gato') {
+      var j = Math.sin(time * 5) * 2; g.fillStyle = '#f0b429'; g.beginPath(); g.ellipse(X, Y - 8, 11, 7, 0, 0, TAU); g.fill(); g.stroke();
+      g.beginPath(); g.arc(X + 10, Y - 16 + j * .3, 7, 0, TAU); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(X + 5, Y - 21); g.lineTo(X + 7, Y - 28); g.lineTo(X + 10, Y - 22); g.moveTo(X + 11, Y - 22); g.lineTo(X + 14, Y - 28); g.lineTo(X + 16, Y - 20); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(X - 10, Y - 10); g.quadraticCurveTo(X - 20, Y - 22 + j, X - 14, Y - 26); g.stroke();
+      if (Math.sin(time * 1.3) > .6) ctext(g, '¡miau!', X, Y - 42, 13, PAP);
     } else if (o.d === 'llama') {
       var fy = Math.sin(time * 6 + X) * 3; g.fillStyle = '#ffb02e'; g.beginPath(); g.moveTo(X, Y - 26 + fy); g.quadraticCurveTo(X + 10, Y - 10, X, Y - 4); g.quadraticCurveTo(X - 10, Y - 10, X, Y - 26 + fy); g.fill(); g.stroke();
       g.fillStyle = '#fff3b0'; g.beginPath(); g.arc(X, Y - 10, 3, 0, TAU); g.fill();
@@ -398,7 +421,7 @@ function mkPlayer() {
   var cs = C.combat(S);
   return { k: 'pl', x: 0, y: 0, r: 12, dir: 0, fx: 0, fy: 1, walk: 0, mv: 0, cs: cs, hp: S.hp > 0 ? Math.min(S.hp, cs.maxHp) : cs.maxHp, aura: 30, atkCd: 0, skCd: 0, dashCd: 0, dashT: 0, iT: 0, combo: 0, lastAtk: -9, atkA: 0, flash: 0, shieldT: 0, lastHurt: -9, buf: { atk: 1, hp: 1, au: 1 } };
 }
-function refreshCombat() { if (!P) return; var r = P.hp / P.cs.maxHp; P.cs = C.combat(S); P.cs.atk *= P.buf.atk; P.cs.maxHp = Math.round(P.cs.maxHp * P.buf.hp); P.cs.aura *= P.buf.au; P.hp = Math.max(1, Math.min(P.cs.maxHp, r * P.cs.maxHp)); }
+function refreshCombat() { if (!P) return; var r = P.hp / P.cs.maxHp; P.cs = C.combat(S); P.cs.atk *= P.buf.atk; P.cs.maxHp = Math.round(P.cs.maxHp * P.buf.hp * (mode === 'duel' ? C.TOUR.duelHp : 1)); P.cs.aura *= P.buf.au; P.hp = Math.max(1, Math.min(P.cs.maxHp, r * P.cs.maxHp)); }
 function mkFoe(type, x, y, eP, ex) {
   var st = C.foeStats(type, eP, ex && ex.el), F = C.FOES[type];
   var e = { k: 'foe', type: type, x: x, y: y, hx: x, hy: y, r: F.r, eP: eP, hp: st.hp, maxHp: st.hp, dmg: st.dmg, crit: st.crit, sp: F.sp, st: 'idle', t: rnd(0, 2), dir: 0, walk: 0, mv: 0, flash: 0, kbT: 0, ph: rnd(0, 6), aggro: F.boss ? 260 : 210, ring: 0, aura: 0, skCd: 3, dodgeCd: 0, atkA: 0, spm: 1, pvp: F.pvp, boss: F.boss };
@@ -431,7 +454,15 @@ function parts(x, y, c, n, sp) { for (var i = 0; i < (S.cfg.q ? n : n / 2); i++)
 function ring(x, y, r, c, life) { addFx({ k: 'ring', x: x, y: y, r: r, c: c, life: life || .35 }); }
 function shake(v) { cam.sh = Math.max(cam.sh, v); }
 function updFx(dt) {
-  for (var i = fx.length - 1; i >= 0; i--) { var f = fx[i]; f.t += dt; if (f.k === 'part') { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 400 * dt; } if (f.t >= f.life) fx.splice(i, 1); }
+  for (var i = fx.length - 1; i >= 0; i--) {
+    var f = fx[i]; f.t += dt;
+    if (f.k === 'part') { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 400 * dt; }
+    else if (f.k === 'orb') {
+      if (f.t < .3) { f.x += f.vx * dt; f.y += f.vy * dt; f.vx *= .9; f.vy *= .9; }
+      else { var dx = P.x - f.x, dy = P.y - 24 - f.y, l = Math.hypot(dx, dy) || 1, sp = 260 + f.t * 500; f.x += dx / l * Math.min(l, sp * dt); f.y += dy / l * Math.min(l, sp * dt); if (l < 14) { f.t = f.life; if (Math.random() < .3) tone(1200 + Math.random() * 400, .04, 'square', .03); } }
+    }
+    if (f.t >= f.life) fx.splice(i, 1);
+  }
 }
 function drawFx(g) {
   for (var i = 0; i < fx.length; i++) {
@@ -440,6 +471,7 @@ function drawFx(g) {
     if (f.k === 'burst') star(g, f.x, f.y, f.r * (.6 + p), f.r * .45 * (.6 + p), 9, f.c);
     else if (f.k === 'txt') ctext(g, f.s, f.x, f.y - p * 40, f.size * (p < .15 ? .6 + p * 3 : 1.05), f.c, f.rot);
     else if (f.k === 'part') { g.fillStyle = f.c; g.fillRect(f.x - f.sz / 2, f.y - f.sz / 2, f.sz, f.sz); }
+    else if (f.k === 'orb') { g.globalAlpha = 1; g.fillStyle = f.c; g.beginPath(); g.arc(f.x, f.y, 5, 0, TAU); g.fill(); g.stroke(); }
     else if (f.k === 'ring') { g.strokeStyle = f.c; g.lineWidth = 5 * (1 - p) + 1; g.beginPath(); g.ellipse(f.x, f.y, f.r * (.3 + p * .7), f.r * (.3 + p * .7) * .55, 0, 0, TAU); g.stroke(); }
     else if (f.k === 'slash') { g.strokeStyle = f.c; g.lineWidth = 8 * (1 - p) + 2; g.lineCap = 'round'; g.beginPath(); g.arc(f.x, f.y, f.r, f.a - 1.1 + p * .4, f.a + 1.1 + p * .4); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.lineCap = 'butt'; }
     else if (f.k === 'lines') { g.strokeStyle = f.c; g.lineWidth = 2; g.beginPath(); for (var k = 0; k < 4; k++) { var o = (k - 1.5) * 8; g.moveTo(f.x - f.fy * o, f.y + f.fx * o - 20); g.lineTo(f.x - f.fx * 40 - f.fy * o, f.y - f.fy * 40 + f.fx * o - 20); } g.stroke(); }
@@ -462,7 +494,9 @@ function attack() {
 function dmgFoe(f, d, big, kx, ky, kb) {
   if (f.hp <= 0) return;
   if (f.type === 'sombra') { f.burn += .5; f.kbx = kx * 200; f.kby = ky * 200; f.kbT = .15; burst(f.x, f.y - 26, '#ddd'); sfx('hit'); return; }
-  d = Math.max(1, d); f.hp -= d; f.flash = .12; f.kbx = kx * kb * (f.boss ? .25 : 1); f.kby = ky * kb * (f.boss ? .25 : 1); f.kbT = .12;
+  if (f.pvp && f.st !== 'wind' && !f.frozen && Math.random() < .22) { d *= .3; txt(f.x, f.y - 70, '¡BLOQUEO!', '#39c8ff', 16, .6); kb *= .3; }
+  var kf = f.boss ? .25 : f.pvp ? (f.st === 'wind' ? 0 : .4) : 1; /* los rivales no se interrumpen al cargar su golpe */
+  d = Math.max(1, d); f.hp -= d; f.flash = .12; f.kbx = kx * kb * kf; f.kby = ky * kb * kf; f.kbT = kf ? .12 : 0;
   if (f.st === 'idle' || f.st === 'home') f.st = 'chase';
   txt(f.x, f.y - 50, C.fmt(d), big ? '#f0b429' : '#fff', big ? 24 : 17);
   burst(f.x + rnd(-6, 6), f.y - 22, big ? '#f0b429' : '#fff', big);
@@ -478,7 +512,8 @@ function killFoe(f) {
     if (r) {
       txt(f.x, f.y - 92, '+' + r.g.toFixed(1) + ' PODER', '#2dffb3', 16, 1.2); txt(f.x + 30, f.y - 60, '+' + r.o + ' ●', '#f0b429', 14, 1.1);
       if (r.ch) txt(f.x - 30, f.y - 60, '+' + r.ch + ' ✧', '#39c8ff', 16, 1.2); if (r.gem) toast('¡Encontraste 1 gema! ◆', 'gold');
-      sfx('coin'); refreshCombat(); if (f.type === 'rival' && f.bi >= 0 && S.bots[f.bi]) S.bots[f.bi].p *= .97;
+      sfx('coin'); orbs(f.x, f.y, '#2dffb3', 4); orbs(f.x, f.y, '#f0b429', 3); if (r.ch) orbs(f.x, f.y, '#39c8ff', 2);
+      refreshCombat(); if (f.type === 'rival' && f.bi >= 0 && S.bots[f.bi]) S.bots[f.bi].p *= .97;
       if (f.type === 'rival') feed('<b>' + S.name + '</b> venció a ' + f.name + ' en PvP');
     }
     if (f.type === 'golem') MAP.golemT = 60;
@@ -488,7 +523,7 @@ function heal(n) { P.hp = Math.min(P.cs.maxHp, P.hp + n); }
 function hurtP(d, src) {
   if (P.dead || mode === 'off') return;
   if (P.iT > 0) { if (P.dashT > 0) txt(P.x, P.y - 60, '¡ESQUIVA!', '#2dffb3', 18, .6); return; }
-  d = d * (1 - P.cs.def) * (P.shieldT > 0 ? .4 : 1);
+  d = d * (1 - P.cs.def) * (P.shieldT > 0 ? .4 : 1); tip('esquiva', 'Las zonas ROJAS avisan un ataque. Toca » ESQUIVA: eres invulnerable un instante.');
   P.hp -= d; P.iT = .35; P.flash = .15; P.lastHurt = time; shake(6); vib(30); sfx('hurt');
   txt(P.x, P.y - 56, '-' + C.fmt(d), '#e0262f', 19);
   if (src) { var dx = P.x - src.x, dy = P.y - src.y, l = Math.hypot(dx, dy) || 1; P.kbx = dx / l * 220; P.kby = dy / l * 220; P.kbT = .12; }
@@ -570,7 +605,7 @@ function updFoe(f, dt) {
     case 'idle':
       f.t -= dt; if (f.t <= 0) { f.tx = f.hx + rnd(-90, 90); f.ty = f.hy + rnd(-90, 90); f.t = rnd(1.5, 4); }
       if (f.tx !== undefined && Math.hypot(f.tx - f.x, f.ty - f.y) > 8) step(f.tx, f.ty, f.sp * .4);
-      if (alive && d < f.aggro) f.st = 'chase';
+      if (alive && d < f.aggro) { f.st = 'chase'; if (mode === 'world') tip('golpe', '¡Un enemigo! Toca ⚔ GOLPE. Tres golpes seguidos hacen un COMBO.'); }
       break;
     case 'chase':
       if (!alive) { f.st = 'idle'; break; }
@@ -649,8 +684,35 @@ function stepTo(e, tx, ty, sp, dt) { var dx = tx - e.x, dy = ty - e.y, l = Math.
 function say(e, t) { e.bub = { t: t, life: 4 }; if (e.name) feed('<b>' + e.name + ':</b> ' + t); }
 function quickChat(t) {
   say(P, t); P.name = S.name;
+  if (t.indexOf('Amigos') >= 0) {
+    ents.forEach(function (b) {
+      if (b.k !== 'bot' || dist(b, P) > 340) return;
+      setTimeout(function () { if (ents.indexOf(b) < 0) return; var ok = Math.random() < .6 && C.addFriend(S, b.bi); say(b, ok ? '¡Sí! 🤝' : S.friends.some(function (f) { return f.bi === b.bi; }) ? '¡ya somos amigos! :D' : 'jaja luego'); if (ok) { toast('¡Nuevo amigo: ' + b.name + '! Invítalo a tu grupo en Menú → Amigos', 'ok'); sfx('up'); save(); } }, rnd(600, 1800));
+    });
+    return;
+  }
   ents.forEach(function (b) { if (b.k === 'bot' && dist(b, P) < 320 && Math.random() < .6) setTimeout(function () { if (ents.indexOf(b) >= 0) say(b, C.REPLY[Math.random() * C.REPLY.length | 0]); }, rnd(700, 2200)); });
 }
+
+/* ---------- grupo de amigos (aliados que te siguen y pelean contigo) ---------- */
+function spawnParty() {
+  S.party.forEach(function (bi, k) { var b = S.bots[bi]; if (!b) return; ents.push({ k: 'ally', bi: bi, name: b.n, el: b.el, look: botLook(b.h), x: P.x - 40 + k * 80, y: P.y + 30, r: 12, dir: 0, walk: 0, mv: 0, atkA: 0, cd: 0, slot: k, stuck: 0 }); });
+}
+function updAlly(a, dt) {
+  a.mv = 0; a.atkA -= dt; a.cd -= dt;
+  var d = dist(a, P); if (d > 620) { a.x = P.x - 30; a.y = P.y + 30; }
+  if (MAP.id === 'tierras' && !P.dead) {
+    var f = null, bd = 240; foes().forEach(function (q) { var dd = Math.min(dist(q, P), dist(q, a)); if (dd < bd && dist(q, P) < 320) { bd = dd; f = q; } });
+    if (f) {
+      var df = dist(a, f); if (df > 40) stepTo(a, f.x, f.y, 175, dt);
+      else if (a.cd <= 0) { a.cd = .8; a.atkA = .16; face(a, f.x, f.y); var dm = f.maxHp * (f.boss ? .02 : .07); f.hp -= dm; f.flash = .1; burst(f.x, f.y - 22, C.EL[a.el].c); txt(f.x, f.y - 46, C.fmt(dm), '#2dffb3', 14, .6); if (f.st === 'idle') f.st = 'chase'; if (f.hp <= 0) { killFoe(f); var g = C.friendXP(S, a.bi, f.boss ? 5 : .5); if (g) toast(a.name + ' te regaló ' + g + ' ◆ (¡amistad!)', 'gold'); } }
+      return;
+    }
+  }
+  var tx = P.x - P.fx * 50 + (a.slot ? 34 : -34), ty = P.y - P.fy * 50;
+  if (Math.hypot(tx - a.x, ty - a.y) > 46) stepTo(a, tx, ty, d > 200 ? 260 : 175, dt);
+}
+function orbs(x, y, c, n) { for (var i = 0; i < n; i++) { var an = rnd(0, TAU); addFx({ k: 'orb', x: x, y: y - 20, vx: Math.cos(an) * rnd(80, 180), vy: Math.sin(an) * rnd(80, 180), c: c, life: 2.5 }); } }
 
 /* ---------- población de Tierras Rotas ---------- */
 var RINGX = [[3, 14], [16, 29], [31, 43]];
@@ -691,9 +753,11 @@ function loadZone(id, from) {
   if (from === 'respawn' && MAP.portals[0]) a = MAP.arrive[MAP.portals[0].to];
   if (!a) { var n = MAP.npcs[0]; a = n ? { x: n.x, y: n.y + T * 1.4 } : MAP.spawn; }
   P.x = a.x; P.y = a.y; P.portCd = 1; cam.x = P.x; cam.y = P.y;
-  ents.push(P); spawnBots(id); spawnT = 0;
+  ents.push(P); spawnParty(); spawnBots(id); spawnT = 0;
   if (id === 'tierras') { MAP.golemT = MAP.golemT || 0; for (var i = 0; i < 6; i++) spawnFoes(1); }
   C.ev(S, 'visit', { z: id });
+  var ZT = { plaza: 'En la Plaza puedes hacer amigos: toca 💬 y di «¿Amigos?» cerca de otros jugadores.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Mira el minimapa (arriba a la derecha).', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
+  if (ZT[id]) tip('z_' + id, ZT[id], 1);
   zoneTitle(); hudFull();
 }
 
@@ -736,6 +800,7 @@ function update(dt) {
     var e = ents[j];
     if (e.k === 'foe' && !e.dead) { if (e.type === 'sombra') updShadow(e, dt); else updFoe(e, dt); }
     else if (e.k === 'bot') updBot(e, dt);
+    else if (e.k === 'ally') updAlly(e, dt);
     else if (e.k === 'proj') updProj(e, dt);
     else if (e.k === 'cont') updCont(e, dt);
     if (e.bub) { e.bub.life -= dt; if (e.bub.life <= 0) e.bub = null; }
@@ -759,6 +824,7 @@ function render() {
   var list = [];
   MAP.objs.forEach(function (o) {
     if (o.t === 'portal') { if (o.x > vx0 && o.x < vx1 && o.y > vy0 && o.y < vy1) drawPortal(ctx, o); return; }
+    if (o.when && !o.when()) return;
     var ox = o.t === 'blk' || o.t === 'bld' ? o.x * T : o.x, oy = o.t === 'blk' || o.t === 'bld' ? o.y * T : o.y, ow = o.w ? o.w * T : 0;
     if (ox + ow < vx0 || ox > vx1 || o.k < vy0 || oy - 120 > vy1) return; list.push(o);
   });
@@ -774,7 +840,7 @@ function render() {
     if (typeof e.k === 'number') drawObj(ctx, e);
     else if (e.k === 'pl') { if (!P.dead || Math.sin(time * 20) > 0) drawAvatar(ctx, e.x, e.y, playerLook(), { dir: e.dir, walk: e.walk, mv: e.mv, atk: e.atkA, flash: e.flash, el: brzColor(), aura: S.cos.aura ? brzColor() : 0 }); if (e.shieldT > 0) { ctx.strokeStyle = '#d08a3c'; ctx.lineWidth = 3; ctx.globalAlpha = .7; ctx.beginPath(); ctx.ellipse(e.x, e.y - 22, 22, 30, 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; } }
     else if (e.k === 'npc') drawAvatar(ctx, e.x, e.y, e.look, { dir: Math.hypot(P.x - e.x, P.y - e.y) < 120 ? (P.y < e.y - 20 ? 1 : P.x < e.x - 30 ? 2 : P.x > e.x + 30 ? 3 : 0) : 0, el: C.NPC[e.key].c });
-    else if (e.k === 'bot' || e.k === 'cont') drawAvatar(ctx, e.x, e.y, e.look, { dir: e.dir, walk: e.walk, mv: e.mv, atk: e.atkA, el: C.EL[e.el].c });
+    else if (e.k === 'bot' || e.k === 'cont' || e.k === 'ally') drawAvatar(ctx, e.x, e.y, e.look, { dir: e.dir, walk: e.walk, mv: e.mv, atk: e.atkA, el: C.EL[e.el].c });
     else if (e.k === 'foe') drawFoe(ctx, e);
     else if (e.k === 'proj') { ctx.fillStyle = e.c; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x - 3, e.y - 3, e.r * .35, 0, TAU); ctx.fill(); }
   }
@@ -786,8 +852,9 @@ function render() {
     e = list[i]; if (typeof e.k === 'number') continue;
     var sc = (e.look && e.look.sc) || 1, top = e.y - 54 * sc;
     if (mode === 'night' && e !== P && dist(e, P) > lightR()) continue;
-    if (e.k === 'npc') { nameTag(e.x, top - 6, C.NPC[e.key].n, C.NPC[e.key].c); var ob = objTarget(); if (ob && !ob.por && Math.abs(ob.x - e.x) < 2 && Math.abs(ob.y + 40 - e.y) < 2) ctext(ctx, '!', e.x, top - 30 + Math.sin(time * 6) * 4, 30, '#f0b429'); }
+    if (e.k === 'npc') { nameTag(e.x, top - 6, C.NPC[e.key].n, C.NPC[e.key].c); var ob = objTarget(); if (ob && !ob.por && Math.abs(ob.x - e.x) < 2 && Math.abs(ob.y + 40 - e.y) < 2) ctext(ctx, '!', e.x, top - 30 + Math.sin(time * 6) * 4, 30, '#f0b429'); else { var sq = C.sideFor(S, e.key); if (sq) { var rd = sq.st && (C.sideReady(S, sq.q.id) || (sq.q.o.k === 'giveCh' && S.chispas >= sq.q.o.n)); if (!sq.st || rd) ctext(ctx, rd ? '✓' : '?', e.x, top - 30 + Math.sin(time * 5) * 3, 26, rd ? '#2dffb3' : '#f2e8d5'); } } }
     else if (e.k === 'bot' || e.k === 'cont') nameTag(e.x, top - 6, e.name, '#f2e8d5');
+    else if (e.k === 'ally') nameTag(e.x, top - 6, '🤝 ' + e.name, '#2dffb3');
     else if (e.k === 'foe' && !e.dead && e.type !== 'sombra') { var bw = e.boss ? 70 : 40; ctx.fillStyle = INK; ctx.fillRect(e.x - bw / 2 - 2, top - 12, bw + 4, 8); ctx.fillStyle = '#e0262f'; ctx.fillRect(e.x - bw / 2, top - 10, bw * Math.max(0, e.hp / e.maxHp), 4); if (e.name || e.boss) nameTag(e.x, top - 20, e.name || C.FOES[e.type].n, e.pvp ? '#ff2fb3' : '#f0b429'); }
     if (e.bub) bubble(e.x, top - (e.k === 'foe' ? 34 : 22), e.bub.t);
   }
@@ -827,7 +894,7 @@ function tourStart() {
 function loadNight() {
   MAP = buildArena('night'); renderGround(MAP); mode = 'night'; ents = []; fx = [];
   P.buf = TR.buf; refreshCombat(); P.hp = P.cs.maxHp; P.dead = 0; P.x = MAP.spawn.x; P.y = MAP.spawn.y; cam.x = P.x; cam.y = P.y; ents.push(P);
-  var vis = TR.order.slice(TR.order.length - 16); for (var i = 0; i < 16; i++) { var pos = freeSpot(120); if (!pos) continue; var b = TR.field[vis[i]]; ents.push({ k: 'cont', fi: vis[i], name: b.n, el: b.el, look: botLook(b.h), x: pos.x, y: pos.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); }
+  var nv = S.cfg.q ? 16 : 9, vis = TR.order.slice(TR.order.length - nv); for (var i = 0; i < nv; i++) { var pos = freeSpot(120); if (!pos) continue; var b = TR.field[vis[i]]; ents.push({ k: 'cont', fi: vis[i], name: b.n, el: b.el, look: botLook(b.h), x: pos.x, y: pos.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); }
   for (i = 0; i < 6; i++) addLlama();
   for (i = 0; i < 3; i++) addShadow();
   TR.shT = 0; zoneTitle(); hudFull(); $('tbar').hidden = false; document.body.classList.add('tour');
@@ -874,7 +941,7 @@ function updNight(dt) {
   if (left <= 0 && !P.dead) nightWin();
 }
 function drawDark() {
-  var q = .5, dw = Math.ceil(W * q), dh = Math.ceil(H * q);
+  var q = S.cfg.q ? .5 : .35, dw = Math.ceil(W * q), dh = Math.ceil(H * q);
   if (dark.width !== dw || dark.height !== dh) { dark.width = dw; dark.height = dh; }
   var g = dctx; g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(3,1,8,.97)'; g.fillRect(0, 0, dw, dh);
   g.globalCompositeOperation = 'destination-out';
@@ -928,6 +995,7 @@ function updDuel(dt) {
 }
 function duelEnd(won) {
   if (mode !== 'duel') return; var f = TR.opp, frac = 1 - Math.max(0, f.hp) / f.maxHp; mode = 'pause'; TR.ended = 0; $('tbar').hidden = true;
+  if (TR.duelTest) return;
   if (TR.boss) { vantEnd(won); return; }
   if (!won) { finishTour(C.rankLoss(TR.round, frac)); return; }
   sfx('win'); banner('¡VICTORIA!', '');

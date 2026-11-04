@@ -8,6 +8,14 @@ function whisper(t) { $('banner').innerHTML = '<span class="kick" style="color:#
 function feed(h) { var f = $('feed'), d = document.createElement('div'); d.innerHTML = h; f.appendChild(d); while (f.children.length > 5) f.removeChild(f.firstChild); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 7000); }
 function tbar(h) { $('tbar').innerHTML = h; }
 function flashScreen() { var f = $('fade'); f.style.background = '#5a0010'; f.classList.add('on'); setTimeout(function () { f.classList.remove('on'); setTimeout(function () { f.style.background = '#000'; }, 300); }, 90); }
+var tipQ = [], tipT = 0;
+function tip(id, text, now) { if (!S || S.tips[id]) return; S.tips[id] = 1; if (now) { tipQ.unshift(text); nextTip(); return; } tipQ.push(text); if (!tipT) nextTip(); }
+function nextTip() {
+  var c = $('coach'); clearTimeout(tipT); tipT = 0;
+  if (!tipQ.length) { c.hidden = true; return; }
+  c.innerHTML = '<b>PIP TE DICE:</b>' + esc(tipQ.shift()); c.hidden = false; tipT = setTimeout(nextTip, 6500);
+}
+$('coach').addEventListener('click', nextTip);
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
 /* ---------- HUD ---------- */
@@ -28,6 +36,8 @@ function hud() {
   var b = $('bAct'); if (curInter && !paused) { b.hidden = false; if (b.textContent !== curInter.label) b.textContent = curInter.label; } else b.hidden = true;
   var r = C.rankOf(p); if (lastRank >= 0 && r > lastRank) { banner('¡' + C.RANKS[r][1].toUpperCase() + '!', 'Nuevo rango alcanzado'); sfx('up'); vib([30, 30, 60]); }
   lastRank = r; questBox();
+  if (P && P.aura >= E.cost && mode === 'world') tip('poder', 'Tu AURA está lista: toca el botón morado de PODER (' + E.sk + ').');
+  if (time - (hud.mt || 0) > .2) { hud.mt = time; drawMini(); }
 }
 function questBox() {
   var st = C.STORY[S.story.i], pr = C.stepProg(S);
@@ -84,12 +94,18 @@ function talkTo(key) {
     return;
   }
   if (o && o.k === 'choice' && key === 'nima') { showChoice(); return; }
+  var sq = C.sideFor(S, key);
+  if (sq && sq.st && sq.q.o.k === 'giveCh' && C.giveChispas(S, sq.q.id)) toast('Entregaste ' + sq.q.o.n + ' chispas ✧', 'ok');
+  if (sq && sq.st && C.sideReady(S, sq.q.id)) { var q0 = sq.q; dialog(q0.e, function () { C.sideFinish(S, q0.id); sfx('win'); banner('¡SECUNDARIA COMPLETA!', q0.t); toast(rewardText(q0.r) + (q0.title ? ' · título: ' + q0.title : ''), 'gold'); refreshCombat(); save(); hudFull(); }); return; }
+  if (sq && !sq.st) { var q1 = sq.q; dialog(q1.d, function () { C.sideAccept(S, q1.id); sfx('up'); toast('Nueva misión secundaria: ' + q1.t, 'ok'); save(); }); return; }
+  if (sq && sq.st) { dialog([[key, '(' + sq.q.t + ') ' + sq.q.h + ' · ' + Math.min(sq.st.n, sq.q.o.n) + '/' + sq.q.o.n]]); return; }
   var f = FLAV[key] || [[key, '…']], l = f[(S.cnt.taps + S.cnt.kills + (time | 0)) % f.length];
   dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); });
 }
 function rewardText(r) { var a = []; if (r.oro) a.push('+' + C.fmt(r.oro) + ' oro'); if (r.gemas) a.push('+' + r.gemas + ' gemas'); if (r.chispas) a.push('+' + r.chispas + ' chispas'); return a.length ? 'Recompensa: ' + a.join(' · ') : 'Misión completada'; }
 function storyCheck(force) {
   if (!S || SC.busy || DLG.q || (mode !== 'world' && !force) || paused) return;
+  for (var sid in S.side) { var sx = S.side[sid]; if (sx.s === 1 && !sx.nt && C.sideReady(S, sid)) { sx.nt = 1; toast('Secundaria lista: vuelve con ' + C.NPC[C.SIDEI[sid].who].n + ' ✓', 'gold'); sfx('up'); } }
   var st = C.STORY[S.story.i];
   if (S.story.seen !== st.id) { S.story.seen = st.id; var i = C.stepDialog(S, 'i'); if (i) { SC.busy = 1; dialog(i, function () { SC.busy = 0; questBox(); }); return; } }
   if (C.stepDone(S)) {
@@ -211,7 +227,7 @@ var PANELS = {
   },
   chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
-    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
+    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'rank') return h + PANELS.rank(); if (t === 'shop') return h + PANELS.shop(); if (t === 'brz') return h + PANELS.forge().replace(/data-a="(up|newb)"[^>]*>/g, 'disabled>');
     if (t === 'perfil') {
@@ -225,8 +241,16 @@ var PANELS = {
     if (t === 'mis') {
       var st = C.STORY[S.story.i], pr = C.stepProg(S);
       h += '<div class="spaced gold">Historia · Acto ' + Math.min(3, st.act) + '</div><h2 class="mega" style="font-size:36px">' + st.t + '</h2><p>' + C.stepHint(S) + (pr[1] > 1 ? ' · ' + C.fmt(pr[0]) + '/' + C.fmt(pr[1]) : '') + '</p>';
-      h += '<div class="list">' + C.STORY.slice(0, S.story.i).map(function (x) { return '<div class="m">✔ ' + x.t + '</div>'; }).join('') + '</div>';
+      h += '<div class="spaced gold" style="margin:12px 0 6px">Secundarias</div><div class="list">';
+      C.SIDE.forEach(function (q) { var x = S.side[q.id]; if (!x && S.story.i < C.STI[q.req]) return; h += item(x && x.s === 2 ? '✅' : x ? '📜' : '❔', q.t + ' · ' + C.NPC[q.who].n, x && x.s === 2 ? 'Completada' : x ? q.h + ' · ' + Math.min(x.n, q.o.n) + '/' + q.o.n + (C.sideReady(S, q.id) ? ' · ¡vuelve con ' + C.NPC[q.who].n + '!' : '') : 'Habla con ' + C.NPC[q.who].n + ' (' + C.ZONES[NPCZ[q.who]].n + ')'); });
+      h += '</div><div class="spaced gold" style="margin:12px 0 6px">Historia completada</div><div class="list">' + C.STORY.slice(0, S.story.i).map(function (x) { return '<div class="m">✔ ' + x.t + '</div>'; }).join('') + '</div>';
       return h + '<div style="margin-top:12px">' + PANELS.board().replace(/<div class="band">.*?<\/div>/, '') + '</div>';
+    }
+    if (t === 'amigos') {
+      h += '<h2 class="mega">Amigos</h2><p class="m">Cerca de otros jugadores, abre 💬 y di «¿Amigos?». Hasta 2 amigos pueden ir en tu grupo: te siguen y pelean contigo en las Tierras Rotas. Cada 25 de amistad te regalan 3 ◆.</p><div class="list">';
+      if (!S.friends.length) h += '<p class="kick">Aún no tienes amigos. ¡Ve a la Plaza y saluda!</p>';
+      S.friends.forEach(function (f) { var b = S.bots[f.bi], inP = S.party.indexOf(f.bi) >= 0; h += item(C.EL[b.el].ic, esc(b.n) + (inP ? ' · en tu grupo' : ''), '⚡ ' + C.fmt(b.p) + ' · amistad ' + Math.floor(f.af) + '/100 ' + '❤'.repeat(Math.floor(f.af / 25)), bt('party', f.bi, inP ? 'Sacar' : 'Invitar', undefined, '', inP ? 'pap' : 'tea', !inP && S.party.length >= 2)); });
+      return h + '</div>';
     }
     if (t === 'cfg') {
       var on = function (k) { return S.cfg[k] ? 'Sí' : 'No'; };
@@ -257,6 +281,7 @@ var ACTS = {
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   choose: function (v) { closePanel(); C.choose(S, v); refreshCombat(); save(); sfx('win'); dialog(ENDS[S.ending], function () { banner('FIN', S.title); hudFull(); }); },
   say: function (v) { closePanel(); quickChat(C.CHAT[+v]); },
+  party: function (v) { var bi = +v, on = S.party.indexOf(bi) < 0; if (C.setParty(S, bi, on)) { toast(on ? S.bots[bi].n + ' se une a tu grupo 🤝' : S.bots[bi].n + ' salió del grupo', 'ok'); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'ally'; }); spawnParty(); } save(); } renderPanel(); },
   cfg: function (v) { S.cfg[v] = S.cfg[v] ? 0 : 1; if (v === 'q') { MAPS = {}; resize(); document.body.classList.toggle('low', !S.cfg.q); if (mode === 'world') { var z = MAP.id; MAP = null; loadZone(z); } } save(); renderPanel(); },
   exp: function () { exportSave(); },
   imp: function () { $('fileIn').click(); },
@@ -305,13 +330,14 @@ function mgAct(type) {
   if (k === 'saco' && type === 'down') {
     MG.taps.push(now); MG.taps = MG.taps.filter(function (t) { return now - t < 1.2; });
     var cad = MG.taps.length / 1.2, q = cad > 8 ? .6 : cad >= 2.5 && cad <= 6.5 ? 1.25 : 1;
-    var g = C.train(S, 'saco', q); if (g < 0) { mgFloat('SIN ENERGÍA · medita o come pan', '#e0262f'); return; }
+    var g = C.train(S, 'saco', q); if (g < 0) { mgFloat('SIN ENERGÍA · medita o come pan', '#e0262f'); tip('energia', 'Sin energía. Medita en la cascada (te devuelve energía) o come pan en la Forja.'); return; }
     MG.sv += 5 * (Math.random() < .5 ? 1 : -1); MG.gain += g; MG.n++; MG.last = q > 1 ? 'RITMO PERFECTO ×1.25' : q < 1 ? 'SIN TÉCNICA ×0.6' : 'BIEN'; MG.lastT = .6;
     mgFloat('+' + g.toFixed(2) + ' FUE', q > 1 ? '#f0b429' : '#fff'); sfx(q > 1 ? 'crit' : 'hit'); vib(8);
     if (MG.n % 25 === 0) { mgFloat('¡COMBO ×' + MG.n + '!', '#ff2fb3'); sfx('up'); }
   } else if (k === 'kata' && type === 'down') {
     var d = Math.abs(MG.ring - 55), q2 = d <= 7 ? 1.25 * Math.min(1.6, 1 + MG.streak * .06) : d <= 18 ? .6 : 0;
     var g2 = C.train(S, 'kata', q2); if (g2 < 0) { mgFloat('SIN ENERGÍA', '#e0262f'); return; }
+    if (q2 > 1) C.ev(S, 'perf', { st: 'tec' });
     if (q2 > 0) { MG.streak = q2 > 1 ? MG.streak + 1 : 0; MG.gain += g2; MG.n++; mgFloat((q2 > 1 ? '¡PERFECTO! ' : 'BIEN ') + '+' + g2.toFixed(2) + ' TEC', q2 > 1 ? '#f0b429' : '#fff'); sfx(q2 > 1 ? 'crit' : 'hit'); }
     else { MG.streak = 0; mgFloat('FALLO', '#e0262f'); sfx('hurt'); }
     MG.ring = 160;
@@ -319,13 +345,13 @@ function mgAct(type) {
     if (type === 'down') {
       if (MG.ph === 'out') {
         var dout = now - MG.outS, qa = function (x) { return Math.abs(x - 4) < .6 ? 1.25 : Math.abs(x - 4) < 1.4 ? .8 : .3; }, q3 = qa(MG.din) * qa(dout) / 1.25;
-        var g3 = C.train(S, 'medita', q3); MG.gain += g3; MG.n++;
+        var g3 = C.train(S, 'medita', q3); MG.gain += g3; MG.n++; if (q3 > 1.1) C.ev(S, 'perf', { st: 'esp' });
         mgFloat((q3 > 1.1 ? 'RESPIRACIÓN PERFECTA ' : 'RESPIRACIÓN ') + '+' + g3.toFixed(2) + ' ESP · +12 ⚡', q3 > 1.1 ? '#2dffb3' : '#fff'); sfx('up');
       }
       MG.ph = 'in'; MG.inS = now;
     } else if (type === 'up' && MG.ph === 'in') { MG.din = now - MG.inS; MG.ph = 'out'; MG.outS = now; }
   } else if (k === 'yunque' && type === 'down') {
-    var o = C.tapOro(S); MG.gain += o; MG.n++; MG.sv = 1; mgFloat('+' + C.fmt(o) + ' ●', '#f0b429'); sfx('coin'); vib(6);
+    var o = C.tapOro(S); MG.gain += o; MG.n++; C.ev(S, 'anvil', {}); MG.sv = 1; mgFloat('+' + C.fmt(o) + ' ●', '#f0b429'); sfx('coin'); vib(6);
   }
   mgStat();
 }
@@ -424,6 +450,7 @@ hold('bSk', function () { inp.sk = 1; }); hold('bDash', function () { inp.dash =
 $('bAct').addEventListener('click', function () { au(); interact(); });
 $('bMenu').addEventListener('click', function () { au(); sfx('ui'); openPanel('menu'); });
 $('bChat').addEventListener('click', function () { au(); sfx('ui'); if (mode === 'world') openPanel('chat'); });
+$('mini').addEventListener('click', function () { var c = this, big = !c.classList.contains('big'); c.classList.toggle('big', big); c.width = big ? 330 : 132; c.height = big ? 260 : 104; drawMini(); });
 $('quest').addEventListener('click', function () { au(); sfx('ui'); PANEL = null; openPanel('menu', 'mis'); });
 
 /* ---------- portada y creación ---------- */
@@ -476,7 +503,8 @@ function showCreate() {
   };
 }
 function startGame(st, isNew) {
-  S = st; au(); resize(); document.body.classList.toggle('low', !S.cfg.q); $('cover').hidden = true; coverAnim = 0; MAPS = {}; P = null; MAP = null;
+  S = st; if (isNew && ((navigator.deviceMemory || 8) <= 3 || (navigator.hardwareConcurrency || 8) <= 4)) S.cfg.q = 0;
+  au(); resize(); document.body.classList.toggle('low', !S.cfg.q); $('cover').hidden = true; coverAnim = 0; MAPS = {}; P = null; MAP = null;
   var off = isNew ? null : C.offline(S, Date.now()); S.last = Date.now();
   var gift = C.dailyCheck(S, Date.now());
   $('hud').hidden = false; $('ctl').hidden = false;
@@ -485,23 +513,30 @@ function startGame(st, isNew) {
   if (S.pend) { var r = C.applyTour(S, S.pend.r); refreshCombat(); save(); toast('Abandonaste el torneo: puesto #' + r.rank + ' (−' + r.pct + '% de poder)', 'bad'); }
   if (off && off.oro > 1) toast('Mientras no estabas tu negocio ganó ' + C.fmt(off.oro) + ' de oro' + (off.capped ? ' (caja llena)' : ''), 'gold');
   if (gift) toast('¡Regalo diario! +5 ◆ · Nuevas misiones en el tablón', 'gold');
+  if (isNew) setTimeout(function () { tip('mover', 'Muévete con el joystick (lado izquierdo de la pantalla) o con WASD.'); tip('flecha', 'Sigue la flecha amarilla y el «!» : te llevan a tu misión.'); }, 9000);
   if (isNew) dialog([['nar', 'En Ánima cada persona nace con un brazalete. No responde a lo que deseas: responde a lo que haces.'], ['nar', 'Cada temporada, el Anfitrión organiza el Torneo Mundial. Cien entran. Uno gana. Los demás pierden poder según su puesto.'], ['nar', 'Hoy empieza tu historia, ' + S.name + '. ' + C.ORIG[S.origin].d]], function () { storyCheck(); });
   else setTimeout(storyCheck, 600);
 }
 function boot2() { var raw = null; try { raw = localStorage.getItem(C.SAVE_KEY); } catch (e) { } var st = raw ? C.deserialize(raw) : null; showCover(st); }
 
 /* ---------- bucle principal ---------- */
-var hudT = 0, scT = 0, saveT = 0;
+var TSCALE = 1, hudT = 0, scT = 0, saveT = 0, fpsE = 60, slowT = 0;
+function governor(dt) { // baja la calidad sola si el equipo no alcanza ~40 fps sostenidos
+  if (!S || !S.cfg.q || mode === 'off' || paused || dt <= 0) { slowT = 0; return; }
+  fpsE += (1 / dt - fpsE) * .05; slowT = fpsE < 38 ? slowT + dt : 0;
+  if (slowT > 6) { slowT = 0; fpsE = 60; ACTS.cfg('q'); toast('Calidad ajustada para tu dispositivo (puedes cambiarla en Ajustes)', 'gold'); }
+}
 function frame(ts) {
   requestAnimationFrame(frame);
   var dt = Math.min(.05, Math.max(0, (ts - lastTs) / 1000) || 0); lastTs = ts; time += dt;
   try {
     if (S && mode !== 'off') { C.tick(S, dt); saveT += dt; if (saveT > 10) { saveT = 0; save(); } }
-    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); } }
+    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); } }
     if (MG.on) { mgUpdate(dt); mgDraw(); }
     if (mode !== 'off') render(); else if (coverAnim) drawCover();
     hudT += dt; if (hudT > .1 && S && mode !== 'off') { hudT = 0; hud(); if (PANEL && !$('ov').hidden) afford(); }
     if (mode !== 'off') musicTick();
+    governor(dt);
   } catch (e) { errors.push(e.message + ' @ ' + String(e.stack || '').split('\n')[1]); if (errors.length > 60) errors.shift(); }
 }
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; var b = $('cvInst'); if (b) b.hidden = false; });
@@ -509,7 +544,8 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigat
 window.__bdp = {
   C: C, errors: errors, get S() { return S; }, get mode() { return mode; }, get P() { return P; }, get MAP() { return MAP; }, get TR() { return TR; }, get paused() { return paused; },
   ents: function () { return ents; }, go: loadZone, tourStart: tourStart, mg: mgStart, mgAct: mgAct, mgEnd: mgEnd, panel: openPanel, close: closePanel, act: function (a, v) { ACTS[a](v); },
-  dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
+  loadDuelTest: function (pw) { TR = { buf: { atk: 1, hp: 1, au: 1 }, br: [] }; loadDuel({ type: 'duelo', eP: pw, name: 'Prueba', el: 'rayo', look: botLook(120) }); TR.cd = 0; TR.opp.frozen = 0; TR.duelTest = 1; },
+  set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
   draw: { avatar: drawAvatar, star: star, ctext: ctext, NPCL: NPCL },
   nightSkip: function () { if (mode === 'night') TR.t = C.TOUR.nightT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
 };

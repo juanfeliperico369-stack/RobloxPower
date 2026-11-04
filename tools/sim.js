@@ -26,6 +26,19 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
   const o0 = s.oro; s.last = 1e12; const off = C.offline(s, 1e12 + 30 * 3600e3); ok(off && off.capped, 'offline con tope'); ok(s.oro >= o0, 'offline no resta');
   s.daily.day = ''; C.dailyCheck(s, Date.now()); eq(s.daily.q.length, 3, '3 misiones diarias');
 }
+{ // misiones secundarias y amigos
+  const s = C.newState({ name: 'Q', origin: 'discipulo', seed: 4 }); s.story.i = C.STORY.length - 1;
+  for (const q of C.SIDE) {
+    const f = C.sideFor(s, q.who); ok(f && f.q.id === q.id && !f.st, 'secundaria disponible ' + q.id); C.sideAccept(s, q.id);
+    if (q.o.k === 'giveCh') { s.chispas = q.o.n; ok(C.giveChispas(s, q.id), 'entregar chispas'); eq(s.chispas, 0, 'chispas descontadas'); }
+    else for (let i = 0; i < q.o.n; i++) C.ev(s, q.o.k, { st: q.o.st, type: q.o.type, id: q.o.id, rank: 1 });
+    ok(C.sideReady(s, q.id), 'secundaria lista ' + q.id); const g0 = s.gemas; ok(C.sideFinish(s, q.id), 'terminar ' + q.id); ok(s.gemas >= g0, 'recompensa');
+    ok(!C.sideFinish(s, q.id), 'no se cobra dos veces ' + q.id);
+  }
+  ok(C.addFriend(s, 1) && C.addFriend(s, 2) && C.addFriend(s, 3) && !C.addFriend(s, 1), 'amigos sin duplicar');
+  ok(C.setParty(s, 1, true) && C.setParty(s, 2, true) && !C.setParty(s, 3, true) && !C.setParty(s, 50, true), 'grupo máx 2 y solo amigos');
+  const g1 = s.gemas; eq(C.friendXP(s, 1, 60), 6, 'regalo de amistad cada 25'); eq(s.gemas - g1, 6, 'gemas de amistad'); eq(C.validate(s).length, 0, 'estado con amigos válido');
+}
 { // historia completa por evento, para cada origen
   for (const o of Object.keys(C.ORIG)) {
     const s = C.newState({ name: 'H', origin: o, seed: 3 }); let guard = 0;
@@ -66,7 +79,7 @@ function tourney(s, R, sk) {
   }
   return 1;
 }
-const stats = { p120: [], p600: [], act2: [], act3: [], fin: [], story: [], tours: 0, deaths: 0, minRank: 100, ending: 0, maxP: 0 };
+const stats = { side: 0, friends: 0, p120: [], p600: [], act2: [], act3: [], fin: [], story: [], tours: 0, deaths: 0, minRank: 100, ending: 0, maxP: 0 };
 const t0 = Date.now();
 for (let g = 0; g < N; g++) {
   const R = C.mulberry(1000 + g), origin = Object.keys(C.ORIG)[g % 3], el = C.ELK5[g % 5];
@@ -91,6 +104,8 @@ for (let g = 0; g < N; g++) {
       if (ob.k === 'talk' || ob.k === 'boss') C.ev(s, ob.k === 'boss' ? 'boss' : 'talk', { who: C.who(s, ob.who) });
       if (ob.k === 'give' && s.oro >= ob.oro) { s.oro -= ob.oro; C.ev(s, 'give', { who: C.who(s, ob.who) }); }
       if (ob.k === 'choice') C.choose(s, R() < .7 ? 'compartir' : 'corona');
+      for (const w of Object.keys(C.NPC)) { const f = C.sideFor(s, w); if (!f) continue; if (!f.st) C.sideAccept(s, f.q.id); else { if (f.q.o.k === 'giveCh') C.giveChispas(s, f.q.id); C.sideFinish(s, f.q.id); } }
+      if (R() < .1) { const bi = Math.floor(R() * 99); if (C.addFriend(s, bi) && s.party.length < 2) C.setParty(s, bi, true); }
       if (C.poder(s) >= C.TOUR.req && (ob.k === 'tourney' || R() < .08)) {
         const rk = tourney(s, R, sk), res = C.applyTour(s, rk); stats.tours++; stats.minRank = Math.min(stats.minRank, rk);
         ok(res.pct === (res.first ? Math.min(25, C.lossPct(rk)) : C.lossPct(rk)), 'pérdida inconsistente en torneo');
@@ -104,15 +119,15 @@ for (let g = 0; g < N; g++) {
     if (act === 'train') {
       const k = ['saco', 'kata', 'medita'][Math.floor(R() * 3)];
       if (k === 'saco') for (let i = 0; i < 16; i++) { const q = R() < sk ? 1.25 : R() < .7 ? 1 : .6; if (C.train(s, 'saco', q) < 0) { C.train(s, 'medita', .8); if (s.tyc.pan) C.eat(s); break; } }
-      else if (k === 'kata') for (let i = 0; i < 3; i++) { const q = R() < sk ? 1.25 : R() < .6 ? .6 : 0; if (C.train(s, 'kata', q) < 0) break; }
-      else if (R() < .5) C.train(s, 'medita', R() < sk ? 1.25 : .8);
+      else if (k === 'kata') for (let i = 0; i < 3; i++) { const q = R() < sk ? 1.25 : R() < .6 ? .6 : 0; if (C.train(s, 'kata', q) < 0) break; if (q > 1) C.ev(s, 'perf', { st: 'tec' }); }
+      else if (R() < .5) { const q = R() < sk ? 1.25 : .8; C.train(s, 'medita', q); if (q > 1) C.ev(s, 'perf', { st: 'esp' }); }
     } else if (act === 'farm') {
       const P = C.poder(s), ring = P >= 450 && R() < .5 ? 2 : P >= 110 ? (R() < .7 ? 1 : 0) : 0, f = fight(s, ring, R, sk);
       hp -= f.taken; if (hp <= 0) { s.cnt.deaths++; stats.deaths++; s.oro -= Math.floor(s.oro * .05); hp = f.max; sec += 10; }
       else { C.killReward(s, f.type, f.eP, R); if (ring === 2 && R() < .03 * sk) C.killReward(s, 'golem', C.ringPower(s, 2) * 1.1, R); }
       hp = Math.min(f.max, hp + f.max * .012 * 3 * f.ttk);
       sec += Math.max(0, f.ttk - dt);
-    } else { for (let i = 0; i < 12; i++) C.tapOro(s); }
+    } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); }
     C.tick(s, dt); sec += dt;
     if (s.story.i < lastStory) fail('la historia retrocedió en partida ' + g); lastStory = s.story.i;
     if (sec % 600 < dt) { // cada 10 min: validar y guardar/cargar
@@ -122,6 +137,7 @@ for (let g = 0; g < N; g++) {
     mark(stats.p120, C.poder(s) >= 120, 'a'); mark(stats.p600, C.poder(s) >= 600, 'b');
     mark(stats.act2, C.STORY[s.story.i].act >= 2, 'c'); mark(stats.act3, C.STORY[s.story.i].act >= 3, 'd'); mark(stats.fin, C.STORY[s.story.i].id === 'ep', 'e');
   }
+  stats.side += Object.values(s.side).filter(x => x.s === 2).length; stats.friends += s.friends.length;
   stats.story.push(s.story.i); stats.maxP = Math.max(stats.maxP, C.poder(s)); if (s.ending) stats.ending++;
   const v = C.validate(s); if (v.length) fail('partida ' + g + ' final inválida: ' + v.join('; '));
 }
@@ -131,6 +147,7 @@ console.log('Mediana hasta Poder 120 (torneo):', med(stats.p120));
 console.log('Mediana hasta Poder 600 (Guerrero):', med(stats.p600));
 console.log('Mediana hasta Acto II:', med(stats.act2), '· Acto III:', med(stats.act3), '· Epílogo:', med(stats.fin));
 console.log('Torneos jugados:', stats.tours, '· mejor puesto:', stats.minRank, '· KOs en Tierras:', stats.deaths, '· finales elegidos:', stats.ending, '· poder máx:', C.fmt(stats.maxP));
+console.log('Secundarias completadas (media):', (stats.side / N).toFixed(1), 'de', C.SIDE.length, '· amigos (media):', (stats.friends / N).toFixed(1));
 console.log('Misión media alcanzada:', (stats.story.reduce((a, b) => a + b, 0) / N).toFixed(1), 'de', C.STORY.length);
 // equilibrio: el primer torneo debe llegar entre 3 y 25 minutos de juego
 const m120 = stats.p120.slice().sort((a, b) => a - b)[stats.p120.length >> 1];

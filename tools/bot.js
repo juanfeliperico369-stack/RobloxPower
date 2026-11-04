@@ -64,7 +64,17 @@ async function run(b, i, port) {
       }
     });
   }
-  await step('menú', async () => { for (const t of ['perfil', 'mis', 'brz', 'rank', 'shop', 'cfg', 'guia']) { await E(t => __bdp.panel('menu', t), t); await sleep(80); } await E(() => __bdp.close()); });
+  await step('amigos y grupo', async () => {
+    await E(() => __bdp.go('plaza')); await sleep(300); await flush();
+    await E(() => { const b = __bdp.ents().find(e => e.k === 'bot'); if (b) { __bdp.P.x = b.x + 30; __bdp.P.y = b.y; } __bdp.chat('¿Amigos?'); }); await sleep(2200);
+    await E(() => { if (!__bdp.S.friends.length) __bdp.C.addFriend(__bdp.S, 7); __bdp.panel('menu', 'amigos'); }); await sleep(150);
+    await p.click('#ov [data-a="party"]'); await sleep(150); await E(() => __bdp.close());
+    await E(() => __bdp.go('tierras')); await sleep(400); await flush();
+    const n = await E(() => __bdp.ents().filter(e => e.k === 'ally').length); if (n < 1) errs.push('el aliado no apareció en Tierras');
+    for (let t = 0; t < 30; t++) { await E(() => { const P = __bdp.P, f = __bdp.ents().find(e => e.k === 'foe' && !e.dead); if (f) { P.x = f.x - 40; P.y = f.y; } }); await sleep(100); }
+    await p.click('#mini'); await sleep(100); await p.click('#mini');
+  });
+  await step('menú', async () => { for (const t of ['perfil', 'mis', 'amigos', 'brz', 'rank', 'shop', 'cfg', 'guia']) { await E(t => __bdp.panel('menu', t), t); await sleep(80); } await E(() => __bdp.close()); });
   await step('torneo', async () => {
     await E(() => { __bdp.S.stats.fue += 150; __bdp.go('coliseo'); }); await sleep(200); await flush();
     await E(() => __bdp.tourStart()); await sleep(200); await p.click('#ov [data-a="cineOk"]'); await sleep(300);
@@ -121,7 +131,7 @@ async function run(b, i, port) {
   const fpsOf = () => pp.evaluate(() => new Promise(r => { let n = 0; const t0 = performance.now(); (function f() { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(f); else r(Math.round(n / 2)); })(); }));
   const perf = {};
   for (const q of [1, 0]) {
-    await pp.evaluate(q => { while (__bdp.dlg) __bdp.dlgNext(); __bdp.S.cfg.q = q; __bdp.go('tierras'); }, q); await sleep(500); perf['tierras q' + q] = await fpsOf();
+    await pp.evaluate(q => { while (__bdp.dlg) __bdp.dlgNext(); if (__bdp.S.cfg.q !== q) __bdp.act('cfg', 'q'); __bdp.close(); __bdp.go('tierras'); }, q); await sleep(500); perf['tierras q' + q] = await fpsOf();
   }
   await pp.evaluate(() => { __bdp.S.stats.fue += 200; __bdp.tourStart(); }); await sleep(200); await pp.click('#ov [data-a="cineOk"]'); await sleep(500); perf['noche q0'] = await fpsOf();
   console.log('ℹ rendimiento con CPU 4× más lenta (fps): ' + JSON.stringify(perf));

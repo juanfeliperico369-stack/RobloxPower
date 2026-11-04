@@ -50,6 +50,10 @@ input{font:inherit}
 #quest .qt{font-family:var(--fd);font-size:16px;line-height:1;text-transform:uppercase}
 #quest .qh{font-size:12px;line-height:1.25;margin-top:2px}
 #quest .qp{height:5px;background:#cdbf9f;margin-top:4px}#quest .qp i{display:block;height:100%;background:var(--red)}
+#mini{position:absolute;right:calc(8px + var(--sar));top:calc(86px + var(--sat));width:96px;height:76px;border:3px solid var(--pap);box-shadow:var(--sh);background:var(--ink);pointer-events:auto;image-rendering:pixelated}
+#mini.big{width:min(70vw,330px);height:min(55vw,260px)}
+#coach{position:fixed;left:50%;top:calc(172px + var(--sat));transform:translateX(-50%);z-index:12;width:min(88vw,420px);background:var(--pap) var(--dots);color:var(--ink);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--mus);padding:7px 10px 8px;font-size:13.5px;line-height:1.35;pointer-events:auto;animation:tin .3s ease-out}
+#coach b{font-family:var(--fd);font-size:15px;color:var(--red2);display:block;letter-spacing:.04em}
 #banner{position:fixed;left:50%;top:32%;transform:translate(-50%,-50%);z-index:30;pointer-events:none;text-align:center}
 #banner .mega{font-size:clamp(40px,12vw,92px);color:var(--mus);-webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);animation:bnr 1.8s ease-out forwards}
 #banner .kick{display:block;color:var(--wht);text-shadow:0 0 6px #000,2px 2px 0 #000;animation:bnr 1.8s ease-out forwards}

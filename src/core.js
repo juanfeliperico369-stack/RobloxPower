@@ -2,7 +2,7 @@
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.1.0';
+var VERSION = '0.2.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -54,9 +54,9 @@ var FOES = {
   lobo:    { n: 'Lobo de Ceniza',    hp: .6,  dm: .55, sp: 125, x: 1.8, o: 4, ch: .12, r: 15, rng: 36, wind: .4,  cd: 1.1 },
   bandido: { n: 'Bandido',           hp: 1,   dm: .75, sp: 95,  x: 3,  o: 9,  ch: .18, r: 14, rng: 40, wind: .45, cd: 1.2 },
   golem:   { n: 'Gólem de Obsidiana', hp: 7,  dm: 1.5, sp: 55,  x: 22, o: 80, ch: 1, chn: 6, r: 30, rng: 74, wind: .9, cd: 2.4, boss: 1 },
-  rival:   { n: 'Rival',             hp: 1,   dm: .85, sp: 140, x: 5,  o: 15, ch: .3, r: 14, rng: 44, wind: .35, cd: .9, pvp: 1 },
-  duelo:   { n: 'Duelista',          hp: 1,   dm: .9,  sp: 150, x: 0,  o: 0,  ch: 0, r: 14, rng: 44, wind: .32, cd: .8, pvp: 1 },
-  vant:    { n: 'Vant',              hp: 2.6, dm: 1.1, sp: 150, x: 0,  o: 0,  ch: 0, r: 16, rng: 48, wind: .4,  cd: .9, pvp: 1, boss: 1 },
+  rival:   { n: 'Rival',             hp: 1.4, dm: .85, sp: 140, x: 5,  o: 15, ch: .3, r: 14, rng: 44, wind: .35, cd: .9, pvp: 1 },
+  duelo:   { n: 'Duelista',          hp: 3,   dm: .9,  sp: 150, x: 0,  o: 0,  ch: 0, r: 14, rng: 46, wind: .3,  cd: .55, pvp: 1 },
+  vant:    { n: 'Vant',              hp: 6,   dm: 1.1, sp: 150, x: 0,  o: 0,  ch: 0, r: 16, rng: 50, wind: .36, cd: .6, pvp: 1, boss: 1 },
   sombra:  { n: 'Sombra Cazadora',   hp: .5,  dm: 0,   sp: 85,  x: 0,  o: 0,  ch: 0, r: 14, rng: 26, wind: 0,   cd: 1 }
 };
 /* anillos de Tierras Rotas: poder del enemigo = max(min, P·f) */
@@ -79,7 +79,7 @@ var SHOP = [
   { id: 'capa',  n: 'Capa del Eclipse',   g: 60,  d: 'Cosmético: capa ondeante.' },
   { id: 'caja',  n: 'Caja fuerte +1 h',   g: 30,  d: 'Tu negocio guarda 1 hora más de ganancias mientras no juegas.' }
 ];
-var TOUR = { req: 120, nightT: 75, cut: 32, firstCap: 25, legado: 0.25 };
+var TOUR = { req: 120, nightT: 75, cut: 32, firstCap: 25, legado: 0.25, duelHp: 3 };
 var LOOK = {
   skin: ['#f5d0a9', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0e0ff'],
   shirt: ['#e0262f', '#f0b429', '#0f5c66', '#39c8ff', '#a42cff', '#2dffb3', '#f2e8d5', '#1b1b22'],
@@ -186,7 +186,7 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 },
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
@@ -219,6 +219,9 @@ function migrate(o) {
   if (!d.brz.some(function (b) { return b.id === d.eq; })) d.eq = d.brz[0].id;
   d.nid = Math.max(d.nid, d.brz.reduce(function (m, b) { return Math.max(m, b.id); }, 0) + 1);
   if (!Array.isArray(d.bots) || d.bots.length !== 99) d.bots = makeBots(d.seed);
+  d.friends = d.friends.filter(function (f) { return f && isNum(f.bi) && f.bi >= 0 && f.bi < 99; }).slice(0, 12);
+  d.party = d.party.filter(function (bi) { return d.friends.some(function (f) { return f.bi === bi; }); }).slice(0, 2);
+  for (var sid in d.side) if (!SIDEI[sid] || !d.side[sid] || !isNum(d.side[sid].n)) delete d.side[sid];
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -237,6 +240,8 @@ function validate(s) {
   ['fue', 'tec', 'esp'].forEach(function (k) { if (s.stats[k] < 0) e.push('stat negativa ' + k); });
   if (!s.brz.some(function (b) { return b.id === s.eq; })) e.push('brazalete equipado inexistente');
   if (s.story.i < 0 || s.story.i >= STORY.length) e.push('historia fuera de rango');
+  s.party.forEach(function (bi) { if (!s.friends.some(function (f) { return f.bi === bi; })) e.push('grupo con no-amigo ' + bi); });
+  for (var id in s.side) if (!SIDEI[id]) e.push('misión secundaria desconocida ' + id);
   return e;
 }
 function serialize(s) { return JSON.stringify(s); }
@@ -407,6 +412,8 @@ function match(o, type, d) {
   if (type === 'forge') return d.t >= o.t;
   if (type === 'talk' || type === 'give' || type === 'boss') return false; // se resuelve en ev() (depende del mentor)
   if (type === 'visit') return o.z === d.z;
+  if (type === 'perf') return o.st === d.st;
+  if (type === 'find') return o.id === d.id;
   return true;
 }
 function ev(s, type, d) {
@@ -419,6 +426,7 @@ function ev(s, type, d) {
   }
   var q = s.daily.q;
   for (var i = 0; i < q.length; i++) if (!q[i].done && match(q[i], type, d)) q[i].p += type === 'oro' ? d.n : (d.n || 1);
+  for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
 }
 function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
 function stepProg(s) {
@@ -446,7 +454,55 @@ function choose(s, c) {
   else { var b = eqB(s); s.brz.push({ id: s.nid++, el: b.el, t: 4 }); s.title = 'Nuevo Anfitrión'; }
   s.story.n = 1; advance(s); return true;
 }
+/* ---------- misiones secundarias (pequeñas historias de los NPC) ---------- */
+var SIDE = [
+  { id: 'gato', who: 'pip', t: 'El gato de Pip', req: 'a1', o: { k: 'find', id: 'gato', n: 1 }, r: { gemas: 10 }, h: 'Busca a Bigotes en la Plaza (escucha los maullidos)',
+    d: [['pip', '¿Has visto a Bigotes? Es mi gato. Se escapó cuando sonaron las trompetas del Coliseo…'], ['pip', 'Le dan miedo los ruidos fuertes. Igual que a mí, la verdad.']],
+    e: [['pip', '¡BIGOTES! Gracias, gracias…'], ['pip', '¿Sabes? A veces pienso que sin poder no sirvo para nada.'], ['pip', 'Pero tú volviste con él. Eso no lo hace un brazalete. Lo hace una buena persona.']] },
+  { id: 'disciplina', who: 'ren', t: 'Disciplina', req: 'a2', o: { k: 'perf', st: 'tec', n: 10 }, r: { oro: 300, gemas: 5 }, h: 'Logra 10 katas PERFECTAS (Dojo)',
+    d: [['ren', 'La fuerza se gana en un día. La técnica, en mil. Haz diez katas perfectas.'], ['ren', 'Si fallas, respira y vuelve a empezar. Nadie te apura.']],
+    e: [['ren', 'Bien. ¿Notas que la paciencia también es un poder?']] },
+  { id: 'pedido', who: 'tobias', t: 'Pedido urgente', req: 'a3', o: { k: 'anvil', n: 40 }, r: { oro: 500, gemas: 5 }, h: 'Golpea el yunque 40 veces (Forja)',
+    d: [['tobias', '¡Un pedido de herraduras para la Plaza y mi ayudante se fue al torneo!'], ['tobias', 'Cuarenta martillazos. Trabajo honesto, paga honesta.']],
+    e: [['tobias', '¡Perfecto! El oro que se gana trabajando pesa distinto en el bolsillo.']] },
+  { id: 'patrulla', who: 'kira', t: 'Patrulla del anillo 2', req: 'a4', o: { k: 'kill', type: 'lobo', n: 8 }, r: { chispas: 8, gemas: 5 }, h: 'Derrota 8 Lobos de Ceniza (Tierras Rotas)',
+    d: [['kira', 'Los lobos se están acercando a la Plaza. Si llegan, los niños no podrán jugar afuera.'], ['kira', 'Ocho lobos. Ve con amigos si puedes: en grupo es más fácil.']],
+    e: [['kira', 'Buen trabajo. Proteger a otros: para eso sirve la fuerza.']] },
+  { id: 'leyendas', who: 'heraldo', t: 'Leyendas del Coliseo', req: 'b1', o: { k: 'tourney', r: 50, n: 1 }, r: { gemas: 10 }, h: 'Queda en el Top 50 de un torneo',
+    d: [['heraldo', 'Psst… ¿Sabías que ningún campeón antiguo volvió a pelear? Ni uno.'], ['heraldo', 'Dicen que suben al palco del Anfitrión… y bajan distintos. Queda entre los 50 mejores y te cuento más.']],
+    e: [['heraldo', 'Te lo cuento: bajan sin brillo en los ojos. Como si les faltara algo.'], ['heraldo', 'Yo solo anuncio los combates. Pero no me gusta lo que veo.']] },
+  { id: 'herramientas', who: 'dax', t: 'Herramientas para Dax', req: 'c3', o: { k: 'giveCh', n: 15 }, r: { gemas: 15 }, h: 'Lleva 15 chispas a Dax (Tierras Rotas)',
+    d: [['dax', 'El taller ya tiene techo. Me faltan chispas para la fragua de los aprendices.'], ['dax', 'Quince chispas. Sé que cuestan… por eso te lo pido con respeto.']],
+    e: [['dax', 'Mira: tres chicos aprendiendo a forjar. Hace un mes yo solo pensaba en mí.']] },
+  { id: 'espejo', who: 'nima', t: 'El espejo del agua', req: 'c1', o: { k: 'perf', st: 'esp', n: 5 }, r: { gemas: 15 }, title: 'Alma Serena', h: 'Logra 5 respiraciones PERFECTAS (Dojo)',
+    d: [['nima', 'Mira tu reflejo en la cascada del Dojo. ¿Qué ves? ¿Un número? ¿O a alguien?'], ['nima', 'Respira cinco veces, perfecto. Luego vuelve.']],
+    e: [['nima', 'El agua no refleja tu poder. Refleja tu calma.'], ['nima', 'Te doy un nombre: Alma Serena. Úsalo cuando lo necesites.']] }
+];
+var SIDEI = {}; SIDE.forEach(function (q) { SIDEI[q.id] = q; });
+function sideFor(s, w) {
+  for (var i = 0; i < SIDE.length; i++) { var q = SIDE[i], st = s.side[q.id]; if (q.who !== w) continue; if (st && st.s === 1) return { q: q, st: st }; if (!st && s.story.i >= STI[q.req]) return { q: q, st: null }; }
+  return null;
+}
+function sideAccept(s, id) { if (!SIDEI[id] || s.side[id]) return false; s.side[id] = { s: 1, n: 0 }; return true; }
+function sideReady(s, id) { var st = s.side[id], q = SIDEI[id]; return !!(st && st.s === 1 && st.n >= q.o.n); }
+function sideFinish(s, id) { if (!sideReady(s, id)) return false; var q = SIDEI[id]; s.side[id].s = 2; giveReward(s, q.r); if (q.title) s.title = q.title; return true; }
+function giveChispas(s, id) { var st = s.side[id], q = SIDEI[id]; if (!st || st.s !== 1 || q.o.k !== 'giveCh' || s.chispas < q.o.n) return false; s.chispas -= q.o.n; st.n = q.o.n; return true; }
+
+/* ---------- amigos y grupo ---------- */
+function addFriend(s, bi) { if (!s.bots[bi] || s.friends.length >= 12 || s.friends.some(function (f) { return f.bi === bi; })) return false; s.friends.push({ bi: bi, af: 0 }); return true; }
+function friendXP(s, bi, n) {
+  var f = null; s.friends.forEach(function (x) { if (x.bi === bi) f = x; }); if (!f) return 0;
+  var b4 = Math.floor(f.af / 25); f.af = Math.min(100, f.af + n); var g = (Math.floor(f.af / 25) - b4) * 3; if (g > 0) s.gemas += g; return g;
+}
+function setParty(s, bi, on) {
+  var i = s.party.indexOf(bi);
+  if (!on) { if (i >= 0) s.party.splice(i, 1); return true; }
+  if (i >= 0 || s.party.length >= 2 || !s.friends.some(function (f) { return f.bi === bi; })) return false;
+  s.party.push(bi); return true;
+}
+
 var DQ = [
+  { k: 'perf', st: 'tec', n: 5, t: 'Logra 5 katas perfectas' }, { k: 'anvil', n: 30, t: 'Golpea el yunque 30 veces' },
   { k: 'train', st: 'fue', n: 80, t: 'Golpea el saco 80 veces' }, { k: 'train', st: 'tec', n: 15, t: 'Logra 15 katas' },
   { k: 'train', st: 'esp', n: 5, t: 'Completa 5 respiraciones' }, { k: 'kill', n: 15, t: 'Derrota 15 enemigos' },
   { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
@@ -491,7 +547,9 @@ var API = {
   botsTick: botsTick, board: board,
   lossPct: lossPct, makeField: makeField, nightOrder: nightOrder, aliveAt: aliveAt, duelP: duelP, rankLoss: rankLoss, setPend: setPend, applyTour: applyTour,
   mentor: mentor, stepObj: stepObj, stepHint: stepHint, stepDialog: stepDialog, ev: ev, stepProg: stepProg, stepDone: stepDone, advance: advance, choose: choose, who: who,
-  dailyCheck: dailyCheck, dailyClaim: dailyClaim, tick: tick, offline: offline
+  dailyCheck: dailyCheck, dailyClaim: dailyClaim, tick: tick, offline: offline,
+  SIDE: SIDE, SIDEI: SIDEI, sideFor: sideFor, sideAccept: sideAccept, sideReady: sideReady, sideFinish: sideFinish, giveChispas: giveChispas,
+  addFriend: addFriend, friendXP: friendXP, setParty: setParty
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
