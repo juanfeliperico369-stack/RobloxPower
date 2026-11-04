@@ -619,7 +619,7 @@ function updFoe(f, dt) {
       if (d < F.rng + P.r) { f.st = 'wind'; f.t = F.wind * (f.type === 'vant' && f.hp < f.maxHp / 2 ? .7 : 1); f.ax = (P.x - f.x) / (d || 1); f.ay = (P.y - f.y) / (d || 1); setDir(f, f.ax, f.ay); }
       break;
     case 'wind':
-      f.t -= dt; if (f.t <= 0) { foeStrike(f); f.st = 'rec'; f.t = F.cd * rnd(.8, 1.2) * (f.spm > 1 ? .75 : 1); }
+      f.t -= dt; if (f.t <= 0) { foeStrike(f); if (f.pvp && !f.combo && Math.random() < .35) { f.combo = 1; f.st = 'wind'; f.t = F.wind * .6; break; } f.combo = 0; f.st = 'rec'; f.t = F.cd * rnd(.8, 1.2) * (f.spm > 1 ? .75 : 1); }
       break;
     case 'rec':
       f.t -= dt; if (f.pvp && d < 60) step(f.x * 2 - P.x, f.y * 2 - P.y, f.sp * .5); if (f.t <= 0) f.st = 'chase';

@@ -55,7 +55,7 @@ var FOES = {
   bandido: { n: 'Bandido',           hp: 1,   dm: .75, sp: 95,  x: 3,  o: 9,  ch: .18, r: 14, rng: 40, wind: .45, cd: 1.2 },
   golem:   { n: 'Gólem de Obsidiana', hp: 7,  dm: 1.5, sp: 55,  x: 22, o: 80, ch: 1, chn: 6, r: 30, rng: 74, wind: .9, cd: 2.4, boss: 1 },
   rival:   { n: 'Rival',             hp: 1.4, dm: .85, sp: 140, x: 5,  o: 15, ch: .3, r: 14, rng: 44, wind: .35, cd: .9, pvp: 1 },
-  duelo:   { n: 'Duelista',          hp: 3,   dm: .9,  sp: 150, x: 0,  o: 0,  ch: 0, r: 14, rng: 46, wind: .3,  cd: .55, pvp: 1 },
+  duelo:   { n: 'Duelista',          hp: 3,   dm: 1.3,  sp: 150, x: 0,  o: 0,  ch: 0, r: 14, rng: 46, wind: .3,  cd: .55, pvp: 1 },
   vant:    { n: 'Vant',              hp: 6,   dm: 1.1, sp: 150, x: 0,  o: 0,  ch: 0, r: 16, rng: 50, wind: .36, cd: .6, pvp: 1, boss: 1 },
   sombra:  { n: 'Sombra Cazadora',   hp: .5,  dm: 0,   sp: 85,  x: 0,  o: 0,  ch: 0, r: 14, rng: 26, wind: 0,   cd: 1 }
 };

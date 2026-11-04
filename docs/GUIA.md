@@ -34,6 +34,7 @@ El autor no quiere lucrar con el descuido de los niños. Reglas de diseño que s
 **Personajes:** Maestra Ren (Dojo), Don Tobías (Forja), Kira (Tierras Rotas), Pip (guía de la Plaza, niño alegre), El Heraldo (Coliseo), Dax (ex Top 10 que lo perdió todo), Oráculo Nima (lore, Acto III), Vant.
 **Orígenes (eligen zona de inicio y mentor):** Discípulo → Dojo/Ren · Mercader → Forja/Tobías · Superviviente → Tierras Rotas/Kira.
 **Pasos de historia:** 23 pasos en `src/core.js → STORY` (Prólogo + Acto I “La Chispa”, Acto II “La Sombra del Torneo”, Acto III “El Brazalete del Origen”, Epílogo). Tipos de objetivo: `talk, train, kill, build, oro, power, forge, tourney, give, boss, choice, none`. Diálogos: `i` (al empezar el paso), `d` (al hablar con el NPC objetivo), `e` (al completar). `@m` = mentor según origen.
+**Misiones secundarias (7, `SIDE` en core.js):** pequeñas historias con lección: El gato de Pip (Plaza, buscar a Bigotes), Disciplina (Ren, 10 katas perfectas), Pedido urgente (Tobías, 40 martillazos), Patrulla (Kira, 8 lobos), Leyendas del Coliseo (Heraldo, top 50), Herramientas para Dax (15 chispas), El espejo del agua (Nima, 5 respiraciones perfectas → título “Alma Serena”). Marcadores sobre el NPC: `!` historia, `?` secundaria disponible, `✓` lista para entregar.
 **Finales:** *Compartir* (romper el brazalete, gran Legado, título “Corazón de Ánima”) o *Corona* (brazalete Origen ×4.5, título “Nuevo Anfitrión”).
 
 ## 5. Zonas (mapas en `src/game.js → build*`)
@@ -67,6 +68,8 @@ El autor no quiere lucrar con el descuido de los niños. Reglas de diseño que s
   - **Legado:** 25% de lo perdido vuelve como multiplicador permanente. Abandonar a mitad = se aplica el peor puesto actual.
   - Premios: oro `150 + 3000·((101−puesto)/100)²·(1+√P/20)`, gemas 50/25/10/3/1.
 - **Gemas (simulan Robux):** se ganan con misiones, tablón diario (+3 c/u, +5 por volver cada día) y torneos. Tienda: Plata 150, Oro 400, cosméticos 40–60, caja fuerte 30.
+- **Amigos y grupo:** cerca de jugadores-bot, chat rápido «¿Amigos?» → 60% aceptan (máx 12 amigos). Hasta 2 en el grupo: te siguen por todas las zonas y en Tierras Rotas pelean contigo (7% de la vida del enemigo por golpe, 2% a jefes); sus derrotas te dan la recompensa. Amistad +0.5 por enemigo (+5 jefe); cada 25 puntos regalan 3 gemas.
+- **Duelos del torneo:** ambos luchadores tienen vida ×3 (`TOUR.duelHp`); los rivales bloquean 22% de los golpes (daño ×0.3), no se interrumpen mientras cargan su golpe y a veces encadenan un segundo golpe. Prueba (`duel.js` en bitácora): a igual poder un jugador hábil gana con 30–50% de vida en 15–20 s; contra 1.5× gana 6/8 con poca vida.
 - **Jugadores-bot:** 99 nombres estilo Roblox persistentes en la partida; crecen con el tiempo; forman el ranking. En el mundo caminan, entrenan, pelean y responden al chat rápido.
 
 ## 7. Arquitectura del código
@@ -87,7 +90,10 @@ tools/verify.js Verifica el sitio publicado (carga, service worker, sin conexió
 ```
 - game.js y ui.js se concatenan dentro de un mismo IIFE (comparten variables). `window.__bdp` expone ganchos de prueba para el bot.
 - Guardado: `localStorage['bdp.save.v1']` cada 10 s, al ocultar la app y al salir. `migrate()` repara/actualiza partidas viejas o importadas.
-- Rendimiento: suelo pre-renderizado por zona, dibujo solo de lo visible, DPR máx 2 (1 en calidad baja), oscuridad a media resolución.
+- Rendimiento: suelo pre-renderizado por zona, dibujo solo de lo visible, DPR máx 2 (1 en calidad baja), oscuridad a media resolución (0.35 en baja). Calidad baja automática en equipos con ≤3 GB de RAM o ≤4 núcleos, y un *gobernador* que la baja si el juego va a <38 fps durante 6 s.
+- Interfaz nueva v0.2: minimapa (toca para agrandar), consejos de Pip (`tip(id, texto)`, se muestran una sola vez y se guardan en `S.tips`), orbes que vuelan hacia ti al derrotar enemigos.
+- Service worker: la página va “red primero” (si hay internet siempre carga la versión nueva) y el resto “caché primero”.
+- Ganchos de prueba: `__bdp.ts = n` acelera el juego n veces; `__bdp.loadDuelTest(poder)` abre un duelo aislado.
 
 ## 8. Cómo trabajar
 ```
@@ -106,5 +112,6 @@ node tools/assets.js       # (si cambia el arte) regenerar íconos → luego bui
 - Zonas → Places o regiones del mismo Place con StreamingEnabled. La Noche → iluminación `Lighting` + linterna `SpotLight` + IA de sombras que se congela con raycast de visión.
 
 ## 10. Pendiente / ideas
-- Clanes/amigos persistentes, intercambio, eventos de temporada sin FOMO, más fragmentos del Brazalete del Origen (expansión de historia), jefes por anillo, más minijuegos (cocina en la panadería, carreras en la plaza), accesibilidad (modo daltónico, texto grande), traducción.
+- Port a Roblox: el intento de verificar el port a Luau descargando el ejecutable `luau` fue bloqueado por la política del entorno (código externo); hace falta que el autor lo autorice o hacerlo en su PC con Roblox Studio + Rojo.
+- Clanes, intercambio, eventos de temporada sin FOMO, más fragmentos del Brazalete del Origen (expansión de historia), jefes por anillo, más minijuegos (cocina en la panadería, carreras en la plaza), accesibilidad (modo daltónico, texto grande), traducción.
 - Revisar con jugadores reales el ritmo (el simulador es más eficiente que una persona: multiplicar sus tiempos ×2–3).
