@@ -430,7 +430,7 @@ function migrate(o) {
       if (!(k in f)) continue;
       var tv = t[k], fv = f[k];
       if (Array.isArray(tv)) { if (Array.isArray(fv)) t[k] = fv; }
-      else if (tv && typeof tv === 'object') { if (fv && typeof fv === 'object' && !Array.isArray(fv)) merge(tv, fv); }
+      else if (tv && typeof tv === 'object') { if (fv && typeof fv === 'object' && !Array.isArray(fv)) { if (Object.keys(tv).length === 0) t[k] = fv; else merge(tv, fv); } } /* mapas vacíos por defecto (side, tips, unlock): se copian enteros */
       else if (typeof tv === 'number') { if (isNum(fv)) t[k] = fv; }
       else if (typeof tv === typeof fv) t[k] = fv;
       else if (tv === null && fv && typeof fv === 'object') t[k] = fv;

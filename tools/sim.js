@@ -86,7 +86,7 @@ for (let g = 0; g < N; g++) {
   const s = C.newState({ name: 'Bot' + g, origin, el, seed: 77 + g, now: 1e12 });
   const sk = 0.2 + R() * 0.7, prefer = ['train', 'farm', 'tyc'][Math.floor(R() * 3)];
   let hp = C.combat(s).maxHp, lastStory = 0, act = '', actT = 0;
-  const mark = (arr, cond, key) => { if (cond && !s['_' + key]) { s['_' + key] = 1; arr.push(s.cnt.play / 60); } };
+  const flags = {}, mark = (arr, cond, key) => { if (cond && !flags[key]) { flags[key] = 1; arr.push(s.cnt.play / 60); } };
   for (let sec = 0; sec < MIN * 60;) {
     // decidir actividad cada 60 s
     if (sec >= actT) {
@@ -132,7 +132,7 @@ for (let g = 0; g < N; g++) {
     if (s.story.i < lastStory) fail('la historia retrocedió en partida ' + g); lastStory = s.story.i;
     if (sec % 600 < dt) { // cada 10 min: validar y guardar/cargar
       const v = C.validate(s); if (v.length) fail('partida ' + g + ' inválida: ' + v.join('; '));
-      const s2 = C.deserialize(C.serialize(s)); if (!s2 || Math.abs(C.poder(s2) - C.poder(s)) > 1 || s2.story.i !== s.story.i || Math.abs(s2.oro - s.oro) > 1e-6) fail('guardar/cargar no es idéntico en partida ' + g);
+      const s2 = C.deserialize(C.serialize(s)); if (!s2 || C.serialize(s2) !== C.serialize(s)) fail('guardar/cargar no es idéntico en partida ' + g + (s2 ? ': ' + Object.keys(s).filter(k => JSON.stringify(s[k]) !== JSON.stringify(s2[k])).join(',') : ''));
     }
     mark(stats.p120, C.poder(s) >= 120, 'a'); mark(stats.p600, C.poder(s) >= 600, 'b');
     mark(stats.act2, C.STORY[s.story.i].act >= 2, 'c'); mark(stats.act3, C.STORY[s.story.i].act >= 3, 'd'); mark(stats.fin, C.STORY[s.story.i].id === 'ep', 'e');
