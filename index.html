@@ -227,7 +227,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px}
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.4.0';
+var VERSION = '0.5.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -426,7 +426,7 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} },
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
@@ -464,6 +464,8 @@ function migrate(o) {
   for (var sid in d.side) if (!SIDEI[sid] || !d.side[sid] || !isNum(d.side[sid].n)) delete d.side[sid];
   for (var fid in d.frag) if (!FRAGI[fid]) delete d.frag[fid];
   if (d.clan.id && !CLANI[d.clan.id]) d.clan.id = '';
+  if (d.evt && !EVENTI[d.evt]) d.evt = '';
+  for (var aid in d.ach) if (!ACHI[aid]) delete d.ach[aid];
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -522,7 +524,7 @@ function ringPower(s, ring) { var r = RINGS[clamp(ring, 0, 2)]; return Math.max(
 function addOro(s, n) { if (!(n > 0)) return; s.oro += n; s.cnt.oroTot += n; ev(s, 'oro', { n: n }); }
 function gearMul(lv) { return 1 + 0.15 * lv; }
 function gearCost(lv) { return Math.ceil(80 * Math.pow(1.75, lv)); }
-function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q * clanMul(s, A.st); }
+function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q * clanMul(s, A.st) * evMul(s, 'train'); }
 function train(s, act, q) {
   var A = ACT[act]; if (!A) return 0;
   if (A.en > 0 && s.en < A.en) return -1;
@@ -541,10 +543,10 @@ function eat(s) { var c = foodCost(s); if (s.oro < c || s.tyc.pan < 1) return fa
 
 function killReward(s, type, eP, R) {
   var F = FOES[type]; if (!F || !F.x) return null; R = R || Math.random;
-  var g = F.x * (1 + Math.sqrt(eP) / 4) * 0.5 * mLeg(s);
+  var g = F.x * (1 + Math.sqrt(eP) / 4) * 0.5 * mLeg(s) * evMul(s, 'kill');
   s.stats.fue += g * .45; s.stats.tec += g * .3; s.stats.esp += g * .25;
   var o = Math.round(F.o * (1 + Math.sqrt(eP) / 3)); addOro(s, o);
-  var ch = R() < F.ch ? (F.chn || 1) : 0; s.chispas += ch;
+  var ch = R() < F.ch ? (F.chn || 1) * evMul(s, 'ch') : 0; s.chispas += ch;
   var gem = F.pvp && R() < 0.05 ? 1 : 0; s.gemas += gem;
   s.cnt.kills++; ev(s, 'kill', { type: type });
   return { g: g, o: o, ch: ch, gem: gem };
@@ -554,7 +556,7 @@ function killReward(s, type, eP, R) {
 function bCost(id, n) { return Math.ceil(BLDI[id].c * Math.pow(1.15, n)); }
 function bMile(n) { return n >= 100 ? 8 : n >= 50 ? 4 : n >= 25 ? 2 : 1; }
 function magia(s) { return 1 + Math.sqrt(s.stats.esp) / 20; }
-function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s) * (s.clan.id === 'marea' ? 1.05 : 1); }
+function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s) * (s.clan.id === 'marea' ? 1.05 : 1) * evMul(s, 'oro'); }
 function prod(s) { var t = 0; for (var i = 0; i < BLD.length; i++) t += bProd(s, BLD[i].id); return t; }
 function bUnlocked(s, id) { var i = BLDI[id].i; return i === 0 || s.tyc[BLD[i - 1].id] > 0; }
 function buyB(s, id) { if (!BLDI[id] || !bUnlocked(s, id)) return false; var n = s.tyc[id], c = bCost(id, n); if (s.oro < c) return false; s.oro -= c; s.tyc[id] = n + 1; ev(s, 'build', { n: 1 }); return true; }
@@ -669,7 +671,7 @@ function ev(s, type, d) {
   var q = s.daily.q;
   for (var i = 0; i < q.length; i++) if (!q[i].done && match(q[i], type, d)) q[i].p += type === 'oro' ? d.n : (d.n || 1);
   for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
-  if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp; }
+  if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp * evMul(s, 'clan'); }
 }
 function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
 function stepProg(s) {
@@ -767,6 +769,55 @@ function clanJoin(s, id, now) {
   if (s.clan.id && now - s.clan.since < 864e5) return 'espera';
   s.clan.id = id; s.clan.since = now; s.clan.pts = 0; s.clan.week = weekKey(now); return true;
 }
+/* ---------- eventos semanales rotativos (sin presión: se repiten cada 4 semanas y solo dan multiplicadores) ---------- */
+var EVENTS = [
+  { id: 'dojo', n: 'Semana del Dojo', ic: '🥋', d: 'Entrenar rinde +25%.', train: 1.25 },
+  { id: 'feria', n: 'Feria de la Forja', ic: '⚒️', d: 'Tu negocio produce +25% de oro.', oro: 1.25 },
+  { id: 'ecos', n: 'Luna de los Ecos', ic: '🌕', d: 'Derrotar enemigos da +25% de poder y chispas dobles.', kill: 1.25, ch: 2 },
+  { id: 'amistad', n: 'Semana de la Amistad', ic: '🤝', d: 'La amistad crece el doble y los puntos de clan valen doble.', friend: 2, clan: 2 }
+];
+var EVENTI = {}; EVENTS.forEach(function (e) { EVENTI[e.id] = e; });
+function eventOf(now) { return EVENTS[weekKey(now) % EVENTS.length]; }
+function eventSync(s, now) { var e = eventOf(now); s.evt = e.id; return e.id; }
+function evMul(s, k) { var e = EVENTI[s.evt]; return e && e[k] ? e[k] : 1; }
+
+/* ---------- logros (cada uno da gemas una sola vez) ---------- */
+var ACH = [
+  { id: 'golpes', t: 'Puño de hierro', d: 'Entrena 500 veces', v: 'taps', n: 500, g: 5 },
+  { id: 'caza', t: 'Cazador de Ecos', d: 'Derrota 100 enemigos', v: 'kills', n: 100, g: 5 },
+  { id: 'mil', t: 'Mil batallas', d: 'Derrota 1.000 enemigos', v: 'kills', n: 1000, g: 15 },
+  { id: 'noche', t: 'Primera Noche', d: 'Juega tu primer torneo', v: 'tours', n: 1, g: 5 },
+  { id: 'veterano', t: 'Veterano del Eclipse', d: 'Juega 10 torneos', v: 'tours', n: 10, g: 10 },
+  { id: 'campeon', t: 'Campeón', d: 'Gana un torneo', v: 'wins', n: 1, g: 20 },
+  { id: 'millon', t: 'Primer millón', d: 'Gana 1 M de oro en total', v: 'oroTot', n: 1e6, g: 15 },
+  { id: 'amigos', t: 'Buena compañía', d: 'Ten 5 amigos', v: 'friends', n: 5, g: 5 },
+  { id: 'arqueo', t: 'Arqueología', d: 'Encuentra 3 fragmentos', v: 'frag', n: 3, g: 5 },
+  { id: 'guardian', t: 'Guardián', d: 'Completa el Códice', v: 'frag', n: 7, g: 15 },
+  { id: 'bondad', t: 'Buena persona', d: 'Completa 4 misiones secundarias', v: 'side', n: 4, g: 10 },
+  { id: 'colec', t: 'Coleccionista', d: 'Ten 4 brazaletes', v: 'brz', n: 4, g: 10 },
+  { id: 'guerrero', t: 'Guerrero', d: 'Alcanza 1.500 de Poder', v: 'poder', n: 1500, g: 10 },
+  { id: 'leyenda', t: 'Leyenda viva', d: 'Alcanza 1 M de Poder', v: 'poder', n: 1e6, g: 30 },
+  { id: 'clan', t: 'Espíritu de equipo', d: 'Aporta 200 puntos a tu clan en una semana', v: 'clan', n: 200, g: 10 },
+  { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 }
+];
+var ACHI = {}; ACH.forEach(function (a) { ACHI[a.id] = a; });
+function achVal(s, a) {
+  var v = a.v;
+  if (v === 'friends') return s.friends.length;
+  if (v === 'frag') return fragCount(s);
+  if (v === 'side') { var n = 0; for (var k in s.side) if (s.side[k].s === 2) n++; return n; }
+  if (v === 'brz') return s.brz.length;
+  if (v === 'poder') return poder(s);
+  if (v === 'clan') return s.clan.pts;
+  if (v === 'ending') return s.ending ? 1 : 0;
+  return s.cnt[v] || 0;
+}
+function achCheck(s) {
+  var got = [];
+  for (var i = 0; i < ACH.length; i++) { var a = ACH[i]; if (!s.ach[a.id] && achVal(s, a) >= a.n) { s.ach[a.id] = 1; s.gemas += a.g; got.push(a.id); } }
+  return got;
+}
+
 function clanWeek(s, now) {
   var key = weekKey(now); if (s.clan.week === key) return null;
   var res = null, c = CLANI[s.clan.id];
@@ -790,7 +841,7 @@ function fragTake(s, id) {
 function addFriend(s, bi) { if (!s.bots[bi] || s.friends.length >= 12 || s.friends.some(function (f) { return f.bi === bi; })) return false; s.friends.push({ bi: bi, af: 0 }); return true; }
 function friendXP(s, bi, n) {
   var f = null; s.friends.forEach(function (x) { if (x.bi === bi) f = x; }); if (!f) return 0;
-  var b4 = Math.floor(f.af / 25); f.af = Math.min(100, f.af + n); var g = (Math.floor(f.af / 25) - b4) * 3; if (g > 0) s.gemas += g; return g;
+  var b4 = Math.floor(f.af / 25); f.af = Math.min(100, f.af + n * evMul(s, 'friend')); var g = (Math.floor(f.af / 25) - b4) * 3; if (g > 0) s.gemas += g; return g;
 }
 function setParty(s, bi, on) {
   var i = s.party.indexOf(bi);
@@ -850,7 +901,8 @@ var API = {
   addFriend: addFriend, friendXP: friendXP, setParty: setParty,
   NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
   CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
-  CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek
+  CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek,
+  EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -1786,7 +1838,7 @@ function arrow(o) {
 }
 
 /* ---------- torneo: la Noche ---------- */
-var dark = document.createElement('canvas'), dctx = dark.getContext('2d');
+
 function tourStart() {
   if (C.poder(S) < C.TOUR.req) { toast('Necesitas ' + C.TOUR.req + ' de Poder para inscribirte.', 'bad'); return; }
   TR = { field: C.makeField(S, Math.random), P: Math.max(C.poder(S), C.TOUR.req), t: 0, out: 0, round: 0, buf: { atk: 1, hp: 1, au: 1 }, fuel: 100, whisp: 0, beatT: 0, pendT: 0 };
@@ -1843,23 +1895,23 @@ function updNight(dt) {
   tbar('NOCHE · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · LUZ <b>' + Math.round(TR.fuel) + '%</b>');
   if (left <= 0 && !P.dead) nightWin();
 }
+/* Oscuridad de la Noche en UNA sola pasada: degradado de dos círculos con forma de linterna (el círculo exterior
+   se adelanta hacia donde miras). Sin lienzo intermedio ni reescalado → ~20 fps más en celulares modestos. */
 function drawDark() {
-  var q = S.cfg.q ? .5 : .35, dw = Math.ceil(W * q), dh = Math.ceil(H * q);
-  if (dark.width !== dw || dark.height !== dh) { dark.width = dw; dark.height = dh; }
-  var g = dctx; g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(3,1,8,.97)'; g.fillRect(0, 0, dw, dh);
-  g.globalCompositeOperation = 'destination-out';
-  var w2s = function (x, y) { return [((x - cam.x) * Z + W / 2) * q, ((y - cam.y) * Z + H / 2) * q]; };
-  var p = w2s(P.x, P.y - 20), r = lightR() * Z * q, gr = g.createRadialGradient(p[0], p[1], r * .25, p[0], p[1], r);
-  gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(p[0], p[1], r, 0, TAU); g.fill();
-  if (TR.fuel > 0) {
-    var a = Math.atan2(P.fy, P.fx), L = 270 * Z * q, g2 = g.createRadialGradient(p[0], p[1], 0, p[0], p[1], L);
-    g2.addColorStop(0, 'rgba(0,0,0,.95)'); g2.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = g2; g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], L, a - .5, a + .5); g.closePath(); g.fill();
-  }
-  ents.forEach(function (e) { if (e.k === 'cont') { var c = w2s(e.x, e.y - 20); g.globalAlpha = .45; g.beginPath(); g.arc(c[0], c[1], 15 * Z * q, 0, TAU); g.fill(); g.globalAlpha = 1; } });
-  MAP.objs.forEach(function (o) { if (o.ll) { var c = w2s(o.x, o.y - 12); g.globalAlpha = .85; g.beginPath(); g.arc(c[0], c[1], 26 * Z * q, 0, TAU); g.fill(); g.globalAlpha = 1; } });
-  g.globalCompositeOperation = 'source-over';
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(dark, 0, 0, cv.width, cv.height);
-  var k = Z * DPR; ctx.setTransform(k, 0, 0, k, (W / 2 - cam.x * Z) * DPR, (H / 2 - cam.y * Z) * DPR);
+  var px = P.x, py = P.y - 20, r = lightR(), L = TR.fuel > 0 ? 270 : 0;
+  var cx = px + P.fx * L * .42, cy = py + P.fy * L * .42, R2 = Math.max(r, L * .62);
+  var gr = ctx.createRadialGradient(px, py, r * .22, cx, cy, R2);
+  gr.addColorStop(0, 'rgba(3,1,8,0)'); gr.addColorStop(.6, 'rgba(3,1,8,.6)'); gr.addColorStop(1, 'rgb(3,1,8)');
+  /* solo se mezcla (caro) dentro del recuadro de la linterna; fuera, relleno opaco (barato) */
+  var x0 = cam.x - W / 2 / Z - 40, y0 = cam.y - H / 2 / Z - 40, x1 = x0 + W / Z + 80, y1 = y0 + H / Z + 80;
+  var bx0 = Math.max(x0, cx - R2), by0 = Math.max(y0, cy - R2), bx1 = Math.min(x1, cx + R2), by1 = Math.min(y1, cy + R2);
+  ctx.fillStyle = '#030108';
+  if (bx1 <= bx0 || by1 <= by0) ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+  else { ctx.fillRect(x0, y0, x1 - x0, by0 - y0); ctx.fillRect(x0, by1, x1 - x0, y1 - by1); ctx.fillRect(x0, by0, bx0 - x0, by1 - by0); ctx.fillRect(bx1, by0, x1 - bx1, by1 - by0); ctx.fillStyle = gr; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0); }
+  ctx.globalCompositeOperation = 'lighter';
+  ents.forEach(function (e) { if (e.k === 'cont') { ctx.fillStyle = 'rgba(255,176,46,.16)'; ctx.beginPath(); ctx.arc(e.x, e.y - 20, 18, 0, TAU); ctx.fill(); } });
+  MAP.objs.forEach(function (o) { if (o.ll) { ctx.fillStyle = 'rgba(255,176,46,.3)'; ctx.beginPath(); ctx.arc(o.x, o.y - 14, 26, 0, TAU); ctx.fill(); } });
+  ctx.globalCompositeOperation = 'source-over';
   ents.forEach(function (e) { if (e.type === 'sombra' && !e.lit && dist(e, P) < 420) { ctx.fillStyle = '#fff'; ctx.globalAlpha = .6 + Math.sin(time * 9 + e.ph) * .3; ctx.fillRect(e.x - 5, e.y - 46, 3, 3); ctx.fillRect(e.x + 2, e.y - 46, 3, 3); ctx.globalAlpha = 1; } });
 }
 function nightLose() { var rk = 99 - TR.out + 1; finishTour(rk); }
@@ -2116,7 +2168,7 @@ var PANELS = {
     return h + '</div><p class="m">Promesa: sin cajas aleatorias pagadas, sin temporizadores de presión. Todo lo que se compra se puede ganar jugando.</p>';
   },
   board: function () {
-    var h = head('TABLÓN DE LA PLAZA', 'Misiones diarias', 'Se renuevan cada día. Cada misión: +3 ◆ y oro.') + '<div class="list">';
+    var ev = C.EVENTI[S.evt], h = head('TABLÓN DE LA PLAZA', 'Misiones diarias', 'Se renuevan cada día. Cada misión: +3 ◆ y oro.') + (ev ? '<div class="film">EVENTO DE LA SEMANA: ' + ev.ic + ' ' + ev.n.toUpperCase() + ' · ' + ev.d + '<br>Se repite cada 4 semanas: no te pierdes nada.</div>' : '') + '<div class="list">';
     S.daily.q.forEach(function (q, i) { var pr = Math.min(q.p, q.n); h += item(q.done ? '✅' : '📜', q.t, C.fmt(pr) + ' / ' + C.fmt(q.n), q.done ? '<span class="tag ok">Hecha</span>' : bt('claim', i, 'Cobrar', q.n, 'none', '', q.p < q.n)); });
     return h + '</div><p class="m">Volver cada día te regala +5 ◆. Sin castigos si no vienes.</p>';
   },
@@ -2184,7 +2236,7 @@ var PANELS = {
   },
   chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
-    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
+    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['logros', 'Logros'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'rank') return h + PANELS.rank(); if (t === 'shop') return h + PANELS.shop(); if (t === 'brz') return h + PANELS.forge().replace(/data-a="(up|newb)"[^>]*>/g, 'disabled>');
     if (t === 'perfil') {
@@ -2207,6 +2259,12 @@ var PANELS = {
       h += '<h2 class="mega">Amigos</h2><p class="m">Cerca de otros jugadores, abre 💬 y di «¿Amigos?». Hasta 2 amigos pueden ir en tu grupo: te siguen y pelean contigo en las Tierras Rotas. Cada 25 de amistad te regalan 3 ◆.</p><div class="list">';
       if (!S.friends.length) h += '<p class="kick">Aún no tienes amigos. ¡Ve a la Plaza y saluda!</p>';
       S.friends.forEach(function (f) { var b = S.bots[f.bi], inP = S.party.indexOf(f.bi) >= 0; h += item(C.EL[b.el].ic, esc(b.n) + (inP ? ' · en tu grupo' : ''), '⚡ ' + C.fmt(b.p) + ' · amistad ' + Math.floor(f.af) + '/100 ' + '❤'.repeat(Math.floor(f.af / 25)), bt('party', f.bi, inP ? 'Sacar' : 'Invitar', undefined, '', inP ? 'pap' : 'tea', !inP && S.party.length >= 2)); });
+      return h + '</div>';
+    }
+    if (t === 'logros') {
+      var nOk = C.ACH.filter(function (a) { return S.ach[a.id]; }).length;
+      h += '<h2 class="mega">Logros</h2><p class="m">' + nOk + ' / ' + C.ACH.length + ' · cada logro da gemas una sola vez.</p><div class="list">';
+      C.ACH.forEach(function (a) { var v = Math.min(C.achVal(S, a), a.n), ok = S.ach[a.id]; h += item(ok ? '🏅' : '⬜', a.t + ' · +' + a.g + ' ◆', a.d + (ok ? ' · ¡conseguido!' : ' · ' + C.fmt(v) + ' / ' + C.fmt(a.n)) + '<div class="bar" style="height:7px;margin-top:4px"><i style="width:' + (v / a.n * 100) + '%;background:' + (ok ? '#2dffb3' : '#f0b429') + '"></i></div>'); });
       return h + '</div>';
     }
     if (t === 'clan') return h + PANELS.clan().replace(/<div class="band">.*?<\/div>/, '');
@@ -2376,7 +2434,7 @@ $('mgX').addEventListener('click', mgEnd);
 
 /* ---------- entrada ---------- */
 function resize() {
-  W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, S && !S.cfg.q ? 1 : 2);
+  W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, S && !S.cfg.q ? 1 : 2) * (S && !S.cfg.q ? RSCALE : 1);
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   Z = W > H * 1.25 ? C.clamp(H / (9 * T), .7, 1.6) : C.clamp(Math.min(W, H) / (9.5 * T), .7, 1.5);
   if (MG.on) mgResize();
@@ -2468,7 +2526,9 @@ function showCreate() {
     var sc = c.scrollTop; showCreate(); c.scrollTop = sc;
   };
 }
-function clanCheck() { var r = C.clanWeek(S, Date.now()); if (r) { banner('¡SEMANA DE CLAN!', 'Puesto ' + r.place + ' · +' + r.gems + ' ◆'); toast('Tu clan quedó ' + r.place + '.º. Aportaste ' + r.pts + ' pts → +' + r.gems + ' ◆', 'gold'); save(); } }
+function eventCheck() { var prev = S.evt, id = C.eventSync(S, Date.now()), e = C.EVENTI[id]; if (prev !== id && e) toast('Evento de la semana: ' + e.ic + ' ' + e.n + ' · ' + e.d, 'gold'); }
+function achTick() { var got = C.achCheck(S); got.forEach(function (id, k) { var a = C.ACHI[id]; setTimeout(function () { banner('¡LOGRO!', a.t + ' · +' + a.g + ' ◆'); sfx('win'); toast('🏅 Logro: ' + a.t + ' (+' + a.g + ' ◆)', 'gold'); }, k * 1500); }); if (got.length) save(); }
+function clanCheck() { eventCheck(); var r = C.clanWeek(S, Date.now()); if (r) { banner('¡SEMANA DE CLAN!', 'Puesto ' + r.place + ' · +' + r.gems + ' ◆'); toast('Tu clan quedó ' + r.place + '.º. Aportaste ' + r.pts + ' pts → +' + r.gems + ' ◆', 'gold'); save(); } }
 function i0(x) { for (var i = 0; i < S.bots.length; i++) if (S.bots[i].n === x.n) return i % 3; return 0; }
 function applyA11y() { document.body.classList.toggle('big', !!S.cfg.big); document.body.classList.toggle('calm', !!S.cfg.calm); }
 function showPage(f, all) { openPanel('page', { f: f, all: all }); }
@@ -2491,18 +2551,22 @@ function startGame(st, isNew) {
 function boot2() { var raw = null; try { raw = localStorage.getItem(C.SAVE_KEY); } catch (e) { } var st = raw ? C.deserialize(raw) : null; showCover(st); }
 
 /* ---------- bucle principal ---------- */
-var TSCALE = 1, hudT = 0, scT = 0, saveT = 0, fpsE = 60, slowT = 0;
-function governor(dt) { // baja la calidad sola si el equipo no alcanza ~40 fps sostenidos
-  if (!S || !S.cfg.q || mode === 'off' || paused || dt <= 0) { slowT = 0; return; }
+var RSCALE = 1, TSCALE = 1, hudT = 0, scT = 0, saveT = 0, fpsE = 60, slowT = 0;
+function governor(dt) { // 1) baja la calidad; 2) si aún va lento, resolución dinámica al 75%
+  if (!S || mode === 'off' || paused || dt <= 0 || (!S.cfg.q && RSCALE < 1)) { slowT = 0; return; }
   fpsE += (1 / dt - fpsE) * .05; slowT = fpsE < 38 ? slowT + dt : 0;
-  if (slowT > 6) { slowT = 0; fpsE = 60; ACTS.cfg('q'); toast('Calidad ajustada para tu dispositivo (puedes cambiarla en Ajustes)', 'gold'); }
+  if (slowT > 6) {
+    slowT = 0; fpsE = 60;
+    if (S.cfg.q) { ACTS.cfg('q'); toast('Calidad ajustada para tu dispositivo (puedes cambiarla en Ajustes)', 'gold'); }
+    else { RSCALE = .75; resize(); }
+  }
 }
 function frame(ts) {
   requestAnimationFrame(frame);
   var dt = Math.min(.05, Math.max(0, (ts - lastTs) / 1000) || 0); lastTs = ts; time += dt;
   try {
     if (S && mode !== 'off') { C.tick(S, dt); saveT += dt; if (saveT > 10) { saveT = 0; save(); } }
-    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); if ((time | 0) % 60 === 0) clanCheck(); } }
+    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); if ((time | 0) % 60 === 0) clanCheck(); if ((time * 2 | 0) % 2 === 0) achTick(); } }
     if (MG.on) { mgUpdate(dt); mgDraw(); }
     if (mode !== 'off') render(); else if (coverAnim) drawCover();
     hudT += dt; if (hudT > .1 && S && mode !== 'off') { hudT = 0; hud(); if (PANEL && !$('ov').hidden) afford(); }
@@ -2516,7 +2580,7 @@ window.__bdp = {
   C: C, errors: errors, get S() { return S; }, get mode() { return mode; }, get P() { return P; }, get MAP() { return MAP; }, get TR() { return TR; }, get paused() { return paused; },
   ents: function () { return ents; }, go: loadZone, tourStart: tourStart, mg: mgStart, mgAct: mgAct, mgEnd: mgEnd, panel: openPanel, close: closePanel, act: function (a, v) { ACTS[a](v); },
   loadDuelTest: function (pw) { TR = { buf: { atk: 1, hp: 1, au: 1 }, br: [] }; loadDuel({ type: 'duelo', eP: pw, name: 'Prueba', el: 'rayo', look: botLook(120) }); TR.cd = 0; TR.opp.frozen = 0; TR.duelTest = 1; },
-  set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
+  set rscale(v) { RSCALE = v; resize(); }, set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
   draw: { avatar: drawAvatar, star: star, ctext: ctext, NPCL: NPCL },
   nightSkip: function () { if (mode === 'night') TR.t = C.TOUR.nightT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
 };
