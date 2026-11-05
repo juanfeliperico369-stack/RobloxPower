@@ -74,7 +74,7 @@ async function run(b, i, port) {
     for (let t = 0; t < 30; t++) { await E(() => { const P = __bdp.P, f = __bdp.ents().find(e => e.k === 'foe' && !e.dead); if (f) { P.x = f.x - 40; P.y = f.y; } }); await sleep(100); }
     await p.click('#mini'); await sleep(100); await p.click('#mini');
   });
-  await step('menú', async () => { for (const t of ['perfil', 'mis', 'amigos', 'codice', 'brz', 'rank', 'shop', 'cfg', 'guia']) { await E(t => __bdp.panel('menu', t), t); await sleep(80); } await E(() => __bdp.close()); });
+  await step('menú', async () => { for (const t of ['perfil', 'mis', 'amigos', 'clan', 'codice', 'brz', 'rank', 'shop', 'cfg', 'guia']) { await E(t => __bdp.panel('menu', t), t); await sleep(80); } await E(() => __bdp.close()); });
   await step('torneo', async () => {
     await E(() => { __bdp.S.stats.fue += 150; __bdp.go('coliseo'); }); await sleep(200); await flush();
     await E(() => __bdp.tourStart()); await sleep(200); await p.click('#ov [data-a="cineOk"]'); await sleep(300);

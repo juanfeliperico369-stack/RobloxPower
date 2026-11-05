@@ -83,7 +83,8 @@ var FLAV = {
   pip: [['pip', '¡Hola, {n}! ¿Sabías que el tablón tiene misiones nuevas cada día?'], ['pip', 'El ranking muestra a todos los jugadores de Ánima. ¡Algún día estarás arriba!'], ['pip', 'Si pierdes en el torneo, una parte de tu poder vuelve como Legado. Nada se pierde del todo.']],
   heraldo: [['heraldo', '¡El Torneo Mundial te espera! Cien entran, uno gana.']],
   dax: [['dax', 'Estoy entrenando desde cero. Es raro… pero se siente honesto.'], ['dax', 'Si quedas mal en el torneo, no te rindas. Yo casi lo hago.']],
-  nima: [['nima', 'El valor de una persona no cabe en un número, {n}.'], ['nima', 'Ayudar a otros también te hace fuerte. Solo que no sale en el ranking.']]
+  nima: [['nima', 'El valor de una persona no cabe en un número, {n}.'], ['nima', 'Ayudar a otros también te hace fuerte. Solo que no sale en el ranking.']],
+  sol: [['sol', '¡Hola, {n}! Soy la Capitana Sol. En Ánima nadie llega lejos solo.'], ['sol', 'Cada semana los clanes suman esfuerzo. Todos reciben premio: el primer puesto, un poco más.'], ['sol', 'Un clan no es para presumir. Es para no rendirse cuando estás cansado.']]
 };
 function talkTo(key) {
   var o = C.stepObj(S);
@@ -100,7 +101,7 @@ function talkTo(key) {
   if (sq && !sq.st) { var q1 = sq.q; dialog(q1.d, function () { C.sideAccept(S, q1.id); sfx('up'); toast('Nueva misión secundaria: ' + q1.t, 'ok'); save(); }); return; }
   if (sq && sq.st) { dialog([[key, '(' + sq.q.t + ') ' + sq.q.h + ' · ' + Math.min(sq.st.n, sq.q.o.n) + '/' + sq.q.o.n]]); return; }
   var f = FLAV[key] || [[key, '…']], l = f[(S.cnt.taps + S.cnt.kills + (time | 0)) % f.length];
-  dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); });
+  dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); else if (key === 'sol') openPanel('clan'); });
 }
 function rewardText(r) { var a = []; if (r.oro) a.push('+' + C.fmt(r.oro) + ' oro'); if (r.gemas) a.push('+' + r.gemas + ' gemas'); if (r.chispas) a.push('+' + r.chispas + ' chispas'); return a.length ? 'Recompensa: ' + a.join(' · ') : 'Misión completada'; }
 function storyCheck(force) {
@@ -192,7 +193,7 @@ var PANELS = {
   rank: function () {
     var b = C.board(S), me = 0; b.forEach(function (x, i) { if (x.me) me = i; });
     var h = head('RANKING MUNDIAL', 'Top de Ánima', 'Tu puesto: #' + (me + 1) + ' de 100') + '<table class="tb">';
-    b.forEach(function (x, i) { if (i < 30 || Math.abs(i - me) < 3) h += '<tr class="' + (x.me ? 'me' : '') + '"><td>#' + (i + 1) + '</td><td>' + C.EL[x.el].ic + ' ' + esc(x.n) + '</td><td style="text-align:right">' + C.fmt(x.p) + ' ⚡</td></tr>'; });
+    b.forEach(function (x, i) { if (i < 30 || Math.abs(i - me) < 3) h += '<tr class="' + (x.me ? 'me' : '') + '"><td>#' + (i + 1) + '</td><td>' + C.EL[x.el].ic + ' ' + (x.me ? (C.CLANI[S.clan.id] ? C.CLANI[S.clan.id].ic + ' ' : '') : C.CLANS[i0(x)].ic + ' ') + esc(x.n) + '</td><td style="text-align:right">' + C.fmt(x.p) + ' ⚡</td></tr>'; });
     return h + '</table>';
   },
   tour: function () {
@@ -229,6 +230,23 @@ var PANELS = {
       '<button class="it" data-a="choose" data-v="compartir" style="background:#0f5c66;color:#fff"><div class="ic">💛</div><div class="tx"><div class="nm">Romperlo y devolver el poder</div><div class="ds" style="color:#e3d3b0">Ánima entera se fortalece. Tú ganas un gran Legado.</div></div></button>' +
       '<button class="it" data-a="choose" data-v="corona" style="background:#12061f;color:#fff"><div class="ic">👑</div><div class="tx"><div class="nm">Quedártelo</div><div class="ds" style="color:#c77dff">Brazalete de Origen ×4.5 para ti. Te conviertes en el nuevo Anfitrión.</div></div></button></div>';
   },
+  clan: function () {
+    var now = Date.now(), c = C.CLANI[S.clan.id], h = '<div class="band"><span class="spaced">CLANES DE ÁNIMA</span><span class="spaced">SEMANA ' + C.weekKey(now) + '</span></div>';
+    if (!c) {
+      h += '<h2 class="mega">Elige tu clan</h2><p class="kick">Meta semanal cooperativa: todos los clanes reciben premio. Puedes cambiar de clan cada 24 h, sin costo.</p><div class="list">';
+      C.CLANS.forEach(function (k) { h += item(k.ic, '<span style="color:' + k.c + '">' + k.n + '</span>', k.d, bt('clanJoin', k.id, 'Unirme', undefined, '', 'red')); });
+      return h + '</div>';
+    }
+    var st = C.clanStand(S, now), mx = Math.max.apply(null, st) || 1, p = S.clan.pts, nxt = p < 50 ? 50 : p < 200 ? 200 : p < 500 ? 500 : 0;
+    h += '<h2 class="mega" style="color:' + c.c + '">' + c.ic + ' ' + c.n + '</h2><p class="m">' + c.d + '</p><div class="list">';
+    C.CLANS.forEach(function (k, i) { h += '<div><div class="m" style="color:' + k.c + '">' + k.ic + ' ' + k.n + ' · ' + C.fmt(st[i]) + ' pts' + (k.id === c.id ? ' (tu clan)' : '') + '</div><div class="bar" style="height:12px"><i style="width:' + (st[i] / mx * 100) + '%;background:' + k.c + '"></i></div></div>'; });
+    h += '</div><div class="film">TU APORTE ESTA SEMANA: ' + Math.floor(p) + ' PTS' + (nxt ? ' · PRÓXIMO PREMIO PERSONAL A ' + nxt : ' · ¡PREMIO PERSONAL MÁXIMO!') + '<br>Puntos: enemigo 1 · edificio 1 · kata/respiración perfecta 0.5 · golpe al saco 0.2 · fragmento 10 · torneo hasta 20</div>';
+    h += '<p class="m">Al terminar la semana (lunes UTC): 1.º +30 ◆ · 2.º +20 ◆ · 3.º +15 ◆, más +5/+10/+15 ◆ por tu aporte (50/200/500).' + (S.clan.last && S.clan.last.w ? ' Semana pasada: puesto ' + S.clan.last.place + ', +' + S.clan.last.gems + ' ◆.' : '') + '</p>';
+    var mem = S.bots.map(function (b, i) { return { b: b, i: i }; }).filter(function (o) { return o.i % 3 === c.i; }).sort(function (a, b) { return b.b.p - a.b.p; }).slice(0, 8);
+    h += '<div class="spaced gold" style="margin:10px 0 4px">Miembros destacados</div><table class="tb">' + mem.map(function (o) { return '<tr><td>' + C.EL[o.b.el].ic + ' ' + esc(o.b.n) + '</td><td style="text-align:right">' + C.fmt(o.b.p) + ' ⚡</td></tr>'; }).join('') + '</table>';
+    h += '<div class="row" style="margin-top:10px">' + C.CLANS.filter(function (k) { return k.id !== c.id; }).map(function (k) { return bt('clanJoin', k.id, 'Cambiar a ' + k.ic, undefined, '', 'pap'); }).join('') + '</div>';
+    return h;
+  },
   page: function (a) {
     var f = a.f, n = C.fragCount(S);
     return '<div class="band"><span class="spaced">CÓDICE DEL ORIGEN</span><span class="spaced">FRAGMENTO ' + n + ' / ' + C.FRAG.length + '</span></div><h2 class="mega">' + f.t + '</h2>' + f.p.map(function (x) { return '<p style="font-size:16px">' + x + '</p>'; }).join('') +
@@ -236,7 +254,7 @@ var PANELS = {
   },
   chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
-    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
+    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'rank') return h + PANELS.rank(); if (t === 'shop') return h + PANELS.shop(); if (t === 'brz') return h + PANELS.forge().replace(/data-a="(up|newb)"[^>]*>/g, 'disabled>');
     if (t === 'perfil') {
@@ -261,6 +279,7 @@ var PANELS = {
       S.friends.forEach(function (f) { var b = S.bots[f.bi], inP = S.party.indexOf(f.bi) >= 0; h += item(C.EL[b.el].ic, esc(b.n) + (inP ? ' · en tu grupo' : ''), '⚡ ' + C.fmt(b.p) + ' · amistad ' + Math.floor(f.af) + '/100 ' + '❤'.repeat(Math.floor(f.af / 25)), bt('party', f.bi, inP ? 'Sacar' : 'Invitar', undefined, '', inP ? 'pap' : 'tea', !inP && S.party.length >= 2)); });
       return h + '</div>';
     }
+    if (t === 'clan') return h + PANELS.clan().replace(/<div class="band">.*?<\/div>/, '');
     if (t === 'codice') {
       h += '<h2 class="mega">Códice</h2><p class="m">Fragmentos del Brazalete del Origen: ' + C.fragCount(S) + ' / ' + C.FRAG.length + '. Busca haces de luz azul en las zonas.</p><div class="list">';
       C.FRAG.forEach(function (f, i) { var ok = S.frag[f.id]; h += ok ? '<div class="film"><b style="color:#f0b429">' + (i + 1) + '. ' + f.t + '</b><br>' + f.p.join(' ') + '</div>' : item('❔', (i + 1) + '. ???', 'Aún no encontrado · en algún lugar de ' + C.ZONES[f.z].n); });
@@ -293,6 +312,7 @@ var ACTS = {
   strat: function (v) { if (v === 'atk') TR.buf.atk *= 1.12; else if (v === 'hp') TR.buf.hp *= 1.15; else TR.buf.au *= 1.3; var cb = PANEL.a.cb; closePanel(); cb(); },
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
+  clanJoin: function (v) { var r = C.clanJoin(S, v, Date.now()); if (r === true) { toast('¡Bienvenida, bienvenido al ' + C.CLANI[v].n + '! ' + C.CLANI[v].ic, 'gold'); sfx('win'); refreshCombat(); save(); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'bot'; }); spawnBots(MAP.id); } } else if (r === 'espera') toast('Solo puedes cambiar de clan una vez cada 24 h', 'bad'); renderPanel(); },
   stratEq: function (v) { C.equip(S, +v); refreshCombat(); sfx('up'); renderPanel(); },
   pageOk: function () { var all = PANEL.a.all; closePanel(); if (all) { banner('¡GUARDIÁN DEL ORIGEN!', 'Completaste el Códice'); sfx('win'); } hudFull(); },
   choose: function (v) { closePanel(); C.choose(S, v); refreshCombat(); save(); sfx('win'); dialog(ENDS[S.ending], function () { banner('FIN', S.title); hudFull(); }); },
@@ -518,6 +538,8 @@ function showCreate() {
     var sc = c.scrollTop; showCreate(); c.scrollTop = sc;
   };
 }
+function clanCheck() { var r = C.clanWeek(S, Date.now()); if (r) { banner('¡SEMANA DE CLAN!', 'Puesto ' + r.place + ' · +' + r.gems + ' ◆'); toast('Tu clan quedó ' + r.place + '.º. Aportaste ' + r.pts + ' pts → +' + r.gems + ' ◆', 'gold'); save(); } }
+function i0(x) { for (var i = 0; i < S.bots.length; i++) if (S.bots[i].n === x.n) return i % 3; return 0; }
 function applyA11y() { document.body.classList.toggle('big', !!S.cfg.big); document.body.classList.toggle('calm', !!S.cfg.calm); }
 function showPage(f, all) { openPanel('page', { f: f, all: all }); }
 function startGame(st, isNew) {
@@ -531,6 +553,7 @@ function startGame(st, isNew) {
   if (S.pend) { var r = C.applyTour(S, S.pend.r); refreshCombat(); save(); toast('Abandonaste el torneo: puesto #' + r.rank + ' (−' + r.pct + '% de poder)', 'bad'); }
   if (off && off.oro > 1) toast('Mientras no estabas tu negocio ganó ' + C.fmt(off.oro) + ' de oro' + (off.capped ? ' (caja llena)' : ''), 'gold');
   if (gift) toast('¡Regalo diario! +5 ◆ · Nuevas misiones en el tablón', 'gold');
+  clanCheck();
   if (isNew) setTimeout(function () { tip('mover', 'Muévete con el joystick (lado izquierdo de la pantalla) o con WASD.'); tip('flecha', 'Sigue la flecha amarilla y el «!» : te llevan a tu misión.'); }, 9000);
   if (isNew) dialog([['nar', 'En Ánima cada persona nace con un brazalete. No responde a lo que deseas: responde a lo que haces.'], ['nar', 'Cada temporada, el Anfitrión organiza el Torneo Mundial. Cien entran. Uno gana. Los demás pierden poder según su puesto.'], ['nar', 'Hoy empieza tu historia, ' + S.name + '. ' + C.ORIG[S.origin].d]], function () { storyCheck(); });
   else setTimeout(storyCheck, 600);
@@ -549,7 +572,7 @@ function frame(ts) {
   var dt = Math.min(.05, Math.max(0, (ts - lastTs) / 1000) || 0); lastTs = ts; time += dt;
   try {
     if (S && mode !== 'off') { C.tick(S, dt); saveT += dt; if (saveT > 10) { saveT = 0; save(); } }
-    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); } }
+    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); if ((time | 0) % 60 === 0) clanCheck(); } }
     if (MG.on) { mgUpdate(dt); mgDraw(); }
     if (mode !== 'off') render(); else if (coverAnim) drawCover();
     hudT += dt; if (hudT > .1 && S && mode !== 'off') { hudT = 0; hud(); if (PANEL && !$('ov').hidden) afford(); }

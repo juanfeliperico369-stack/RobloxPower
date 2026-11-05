@@ -2,6 +2,15 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-05 · v0.4.0 · Clanes y jefes por anillo
+1. Nuevo: **clanes** (Llama Roja, Viento Verde, Marea Azul) con la Capitana Sol en la Plaza: bonus suave (+5%), meta semanal cooperativa con barras de progreso, miembros, emblemas sobre los jugadores-bot y ánimos en el chat. Todos los clanes reciben premio al cerrar la semana; cambio de clan cada 24 h sin costo.
+2. Nuevo: **jefes por anillo** — Rey Eco (área + invoca Ecos) y Alfa de Ceniza (embestida en línea recta con aviso de franja). Nueva secundaria de Kira sobre leer al rival y moverse a tiempo.
+3. Port a Luau de todo (clanes, jefes, puntos de clan en `ev`, bonus en entrenamiento y negocio) + escenario guionizado de clanes en Golden: **3093/3093 casos idénticos a JS**, análisis Luau sin errores.
+4. Generador de Golden: detecté que algunas operaciones raras casi no se probaban (fragmentos, cierre semanal); se ajustaron probabilidades y se añadió el escenario guionizado.
+5. Probado: check OK; sim 120×8 h OK con pruebas nuevas de clanes y jefes (8/8 secundarias); bot 3 partidas OK.
+6. Rendimiento: en esta máquina la Noche en celular modesto simulado da ~35 fps; comparé con v0.3.0 y da igual → no es regresión (la máquina de pruebas cambió). Pendiente optimizar la Noche.
+7. Falta: optimizar la Noche, eventos de temporada sin presión, más historia (Acto IV), exportar a Roblox Studio.
+
 ## 2026-11-04 · v0.3.0 · Estrategia elemental, Códice y accesibilidad
 1. Roblox: el autor autorizó descargar Luau oficial (0.745). `sh tools/roblox-test.sh` corre las pruebas y `luau-analyze`. Primer resultado 2371/2388 → encontró un error real (`cnt.tours` se perdía al migrar en Luau, choque de nombres con la lista `tours`) → corregido → 2388/2388.
 2. Nuevo: **afinidades elementales** (ciclo de 5 + Sombra/Luz) en todo el combate; textos “¡EFICAZ!/RESISTE”; en el torneo se ve la ventaja y se cambia de brazalete antes de cada duelo; la Forja y la creación muestran fuerte/débil.

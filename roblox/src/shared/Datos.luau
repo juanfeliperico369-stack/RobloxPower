@@ -2,7 +2,7 @@
 -- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.
 -- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.
 return {
-	VERSION = "0.3.0",
+	VERSION = "0.4.0",
 	SAVE_KEY = "bdp.save.v1",
 	M = "@m",
 	EL = {
@@ -176,6 +176,10 @@ return {
 			n = "Oráculo Nima",
 			c = "#fff1a8"
 		},
+		sol = {
+			n = "Capitana Sol",
+			c = "#f0b429"
+		},
 		nar = {
 			n = "Narración",
 			c = "#f0b429"
@@ -256,6 +260,38 @@ return {
 			rng = 74,
 			wind = 0.9,
 			cd = 2.4,
+			boss = 1,
+			aoe = 1
+		},
+		reyeco = {
+			n = "Rey Eco",
+			hp = 5,
+			dm = 1.1,
+			sp = 60,
+			x = 12,
+			o = 40,
+			ch = 1,
+			chn = 3,
+			r = 24,
+			rng = 62,
+			wind = 0.75,
+			cd = 2,
+			boss = 1,
+			aoe = 1
+		},
+		alfa = {
+			n = "Alfa de Ceniza",
+			hp = 5.5,
+			dm = 1.3,
+			sp = 150,
+			x = 16,
+			o = 60,
+			ch = 1,
+			chn = 4,
+			r = 22,
+			rng = 230,
+			wind = 0.6,
+			cd = 1.8,
 			boss = 1
 		},
 		rival = {
@@ -876,6 +912,23 @@ return {
 			h = "Logra 5 respiraciones PERFECTAS (Dojo)",
 			d = {{"nima", "Mira tu reflejo en la cascada del Dojo. ¿Qué ves? ¿Un número? ¿O a alguien?"}, {"nima", "Respira cinco veces, perfecto. Luego vuelve."}},
 			e = {{"nima", "El agua no refleja tu poder. Refleja tu calma."}, {"nima", "Te doy un nombre: Alma Serena. Úsalo cuando lo necesites."}}
+		}, {
+			id = "alfa",
+			who = "kira",
+			t = "El Alfa de Ceniza",
+			req = "b1",
+			o = {
+				k = "kill",
+				type = "alfa",
+				n = 1
+			},
+			r = {
+				chispas = 10,
+				gemas = 10
+			},
+			h = "Derrota al Alfa de Ceniza (anillo 2)",
+			d = {{"kira", "Hay un lobo enorme guiando a la manada. Le dicen el Alfa de Ceniza."}, {"kira", "Cuando baje la cabeza, va a embestir en línea recta. No te quedes delante: esquiva hacia un lado."}},
+			e = {{"kira", "Lo lograste. Sin él, la manada se dispersa y deja de atacar a la gente."}, {"kira", "A veces el valor no es pelear más fuerte. Es leer al otro y moverse a tiempo."}}
 		}},
 	DQ = {{
 			k = "perf",
@@ -943,7 +996,9 @@ return {
 		bandido = "tierra",
 		golem = "tierra",
 		sombra = "sombra",
-		vant = "sombra"
+		vant = "sombra",
+		reyeco = "sombra",
+		alfa = "fuego"
 	},
 	FRAG = {{
 			id = "f1",
@@ -994,5 +1049,39 @@ return {
 			y = 21,
 			t = "Lo que no se cuenta",
 			p = {"En el palco, Vant guarda frascos de luz con nombres escritos a mano.", "Cada frasco es un pedazo de alguien que confió en él.", "A veces, de noche, les habla. Les pide perdón. Y vuelve a empezar."}
-		}}
+		}},
+	CLANS = {{
+			id = "llama",
+			n = "Clan Llama Roja",
+			ic = "🔥",
+			c = "#e0262f",
+			st = "fue",
+			d = "Fuerza y coraje. +5% al entrenar Fuerza.",
+			i = 0
+		}, {
+			id = "viento",
+			n = "Clan Viento Verde",
+			ic = "🍃",
+			c = "#2dffb3",
+			st = "tec",
+			d = "Técnica y exploración. +5% al entrenar Técnica.",
+			i = 1
+		}, {
+			id = "marea",
+			n = "Clan Marea Azul",
+			ic = "🌊",
+			c = "#39c8ff",
+			st = "esp",
+			d = "Espíritu y comercio. +5% al entrenar Espíritu y +5% de oro del negocio.",
+			i = 2
+		}},
+	CLANPTS = {
+		kill = 1,
+		train = 0.2,
+		perf = 0.5,
+		anvil = 0.05,
+		build = 1,
+		frag = 10,
+		find = 5
+	}
 }

@@ -30,6 +30,18 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
   for (const a of C.CYCLE) { eq(C.afin(a, C.strongVs(a)), 1.25, a + ' fuerte'); eq(C.afin(C.strongVs(a), a), 0.8, a + ' débil inverso'); eq(C.afin(a, C.weakVs(a)), 0.8, a + ' débil'); eq(C.afin(a, a), 1, a + ' neutro'); }
   eq(C.afin('sombra', 'luz'), 1.25, 'sombra>luz'); eq(C.afin('luz', 'sombra'), 1.25, 'luz>sombra'); eq(C.afin('sombra', 'fuego'), 1, 'sombra neutra');
 }
+{ // clanes: unirse, espera de 24 h, bonus, cierre semanal (todos premiados)
+  const T0 = Date.UTC(2026, 10, 5, 12), s = C.newState({ name: 'K', seed: 12, now: T0 });
+  eq(C.clanJoin(s, 'nada', T0), false, 'clan inválido'); eq(C.clanJoin(s, 'llama', T0), true, 'unirse'); eq(C.clanJoin(s, 'marea', T0 + 36e5), 'espera', 'espera 24 h');
+  eq(C.clanMul(s, 'fue'), 1.05, 'bonus llama fuerza'); eq(C.clanMul(s, 'esp'), 1, 'sin bonus ajeno');
+  for (let i = 0; i < 210; i++) C.ev(s, 'kill', { type: 'eco' });
+  ok(Math.abs(s.clan.pts - 210) < 1e-9, 'puntos de clan por enemigos'); eq(C.clanWeek(s, T0), null, 'misma semana sin cierre');
+  const g0 = s.gemas, r = C.clanWeek(s, T0 + 7 * 864e5); ok(r && r.gems >= 25 && s.gemas - g0 === r.gems && r.pts === 210, 'cierre semanal premia: ' + JSON.stringify(r));
+  eq(s.clan.pts, 0, 'puntos reinician'); eq(C.clanWeek(s, T0 + 7 * 864e5), null, 'cierre idempotente');
+  eq(C.clanJoin(s, 'marea', T0 + 2 * 864e5), true, 'cambio tras 24 h'); const p0 = C.prod(s); s.tyc.pan = 3; ok(C.prod(s) > 0, 'producción con marea');
+  const m = C.migrate(JSON.parse(JSON.stringify(Object.assign({}, s, { clan: Object.assign({}, s.clan, { id: 'falso' }) })))); eq(m.clan.id, '', 'migrate limpia clan inválido');
+  ['reyeco', 'alfa'].forEach(t => { const s2 = C.newState({ name: 'B', seed: 3 }), r2 = C.killReward(s2, t, 500, C.mulberry(1)); ok(r2 && r2.ch >= 3, 'jefe ' + t + ' suelta chispas'); });
+}
 { // fragmentos del Códice
   const s = C.newState({ name: 'F', seed: 8 }); const l0 = s.legado;
   C.FRAG.forEach((f, i) => eq(C.fragTake(s, f.id), i === C.FRAG.length - 1 ? 'all' : true, 'fragmento ' + f.id));
@@ -73,6 +85,7 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
 }
 
 /* ---------- 2. partidas simuladas ---------- */
+const pk3 = R => ['llama', 'viento', 'marea'][Math.floor(R() * 3)];
 function fight(s, ring, R, sk) {
   const types = [['eco', 'lobo'], ['lobo', 'bandido'], ['bandido', 'rival']][ring], type = types[R() < .6 ? 0 : 1];
   const eP = C.ringPower(s, ring) * (0.9 + R() * .2), e = C.foeStats(type, eP), cs = C.combat(s), F = C.FOES[type];
@@ -117,6 +130,7 @@ for (let g = 0; g < N; g++) {
       if (ob.k === 'give' && s.oro >= ob.oro) { s.oro -= ob.oro; C.ev(s, 'give', { who: C.who(s, ob.who) }); }
       if (ob.k === 'choice') C.choose(s, R() < .7 ? 'compartir' : 'corona');
       for (const w of Object.keys(C.NPC)) { const f = C.sideFor(s, w); if (!f) continue; if (!f.st) C.sideAccept(s, f.q.id); else { if (f.q.o.k === 'giveCh') C.giveChispas(s, f.q.id); C.sideFinish(s, f.q.id); } }
+      if (!s.clan.id && R() < .3) C.clanJoin(s, pk3(R), 1e12 + sec * 1000); if (sec % 3600 < 60) C.clanWeek(s, 1e12 + sec * 1000 * 400);
       if (R() < .1) { const bi = Math.floor(R() * 99); if (C.addFriend(s, bi) && s.party.length < 2) C.setParty(s, bi, true); }
       if (C.poder(s) >= C.TOUR.req && (ob.k === 'tourney' || R() < .08)) {
         const rk = tourney(s, R, sk), res = C.applyTour(s, rk); stats.tours++; stats.minRank = Math.min(stats.minRank, rk);
@@ -136,7 +150,7 @@ for (let g = 0; g < N; g++) {
     } else if (act === 'farm') {
       const P = C.poder(s), ring = P >= 450 && R() < .5 ? 2 : P >= 110 ? (R() < .7 ? 1 : 0) : 0, f = fight(s, ring, R, sk);
       hp -= f.taken; if (hp <= 0) { s.cnt.deaths++; stats.deaths++; s.oro -= Math.floor(s.oro * .05); hp = f.max; sec += 10; }
-      else { C.killReward(s, f.type, f.eP, R); if (ring === 2 && R() < .03 * sk) C.killReward(s, 'golem', C.ringPower(s, 2) * 1.1, R); }
+      else { C.killReward(s, f.type, f.eP, R); if (ring === 2 && R() < .03 * sk) C.killReward(s, 'golem', C.ringPower(s, 2) * 1.1, R); if (R() < .02 * sk) C.killReward(s, ring ? 'alfa' : 'reyeco', C.ringPower(s, ring) * 1.15, R); }
       hp = Math.min(f.max, hp + f.max * .012 * 3 * f.ttk);
       sec += Math.max(0, f.ttk - dt);
     } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); }

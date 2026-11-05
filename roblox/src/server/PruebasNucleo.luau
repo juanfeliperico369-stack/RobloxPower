@@ -48,7 +48,7 @@ return function(Reglas, G)
 	end
 	-- 3) escenarios de juego
 	for _, sc in ipairs(G.sc) do
-		local s = Reglas.newState({ name = "Prueba " .. sc.origin, origin = sc.origin, seed = sc.seed, el = sc.el, now = sc.now, skin = 2, shirt = 3, hair = 1 })
+		local s = Reglas.newState({ name = sc.name or ("Prueba " .. sc.origin), origin = sc.origin, seed = sc.seed, el = sc.el, now = sc.now, skin = 2, shirt = 3, hair = 1 })
 		check(sc.origin .. " inicio", snap(s), sc.init)
 		for k, op in ipairs(sc.ops) do
 			local f, a, r = op.f, op.a or {}, nil

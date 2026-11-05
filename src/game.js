@@ -72,7 +72,7 @@ var TH = {
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
-var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza' };
+var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza' };
 var NPCL = {
   ren: { skin: '#f5d0a9', shirt: '#e0262f', pants: '#1b1b22', hair: '#1b1b22', bun: 1 },
   tobias: { skin: '#c68642', shirt: '#7a4a2a', pants: '#33333d', hair: '#d6dee9', beard: 1 },
@@ -82,6 +82,7 @@ var NPCL = {
   vant: { skin: '#e8dcff', shirt: '#1b1b22', pants: '#1b1b22', hair: '#f2e8d5', cape: '#a42cff', crown: 1, sc: 1.15 },
   dax: { skin: '#8d5524', shirt: '#ff2fb3', pants: '#1b1b22', hair: '#1b1b22', scarf: '#1b1b22' },
   nima: { skin: '#c68642', shirt: '#fff1a8', pants: '#e8d98a', hair: '#f2e8d5', robe: 1, hood: '#0f5c66' },
+  sol: { skin: '#e0ac69', shirt: '#f0b429', pants: '#0f5c66', hair: '#e0262f', cape: '#e0262f', scarf: '#0f5c66' },
   nar: { skin: '#f2e8d5', shirt: '#0b0b0f', pants: '#0b0b0f', hair: '#0b0b0f' }
 };
 function playerLook() {
@@ -151,7 +152,7 @@ function buildPlaza() {
   border(m, [[17, 0], [17, 28], [0, 14], [34, 14]]); fragsIn(m);
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
-  npc(m, 'pip', 13, 10);
+  npc(m, 'pip', 13, 10); npc(m, 'sol', 24, 11);
   block(m, 20, 9, 2, 1, 30, ['#f2e8d5', '#b8a583'], { sign: 'TABLÓN' }); inter(m, 'board', 21 * T, 10.6 * T, 'TABLÓN · MISIONES DIARIAS', function () { openPanel('board'); });
   block(m, 12, 18, 2, 1, 44, ['#e0262f', '#8a1219'], { sign: 'RANKING' }); inter(m, 'rank', 13 * T, 19.6 * T, 'RANKING MUNDIAL', function () { openPanel('rank'); });
   block(m, 20, 18, 3, 1, 34, ['#a42cff', '#4d1785'], { sign: 'TIENDA' }); inter(m, 'shop', 21.5 * T, 19.6 * T, 'TIENDA DE GEMAS', function () { openPanel('shop'); });
@@ -208,7 +209,7 @@ function buildTierras() {
   npc(m, 'kira', 4, 14); npc(m, 'dax', 4, 22, function () { return S.story.i >= C.STI.b1; });
   portal(m, 1, 18, 'plaza', 'W');
   deco(m, 'sign', 14, 18, { txt: 'ANILLO 2 · PODER 100+' }); deco(m, 'sign', 29, 18, { txt: 'ANILLO 3 · PODER 400+' });
-  var lair = function (x, y) { return Math.hypot(x - 39, y - 18) < 5.5 || (x < 8 && Math.abs(y - 18) < 4); };
+  var lair = function (x, y) { return Math.hypot(x - 39, y - 18) < 5.5 || Math.hypot(x - 9, y - 6) < 3.5 || Math.hypot(x - 22, y - 28) < 3.5 || (x < 8 && Math.abs(y - 18) < 4); };
   scatter(m, R, 46, rock, 2, 2, 44, 35, lair);
   scatter(m, R, 14, function (mm, x, y) { tree(mm, x, y, .9); mm.objs[mm.objs.length - 1].dead = 1; }, 2, 2, 44, 35, lair);
   MAPS.tierras = m; return m;
@@ -341,9 +342,12 @@ function drawFoe(g, e) {
   g.save(); g.translate(x, y); g.lineWidth = 2; g.strokeStyle = INK;
   g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(0, 0, e.r + 2, 5, 0, 0, TAU); g.fill();
   var fl = e.flash > 0, b = Math.sin(time * 6 + e.ph) * 2;
+  if (t === 'reyeco') { g.scale(2, 2); t = 'eco'; }
+  if (t === 'alfa') { g.scale(1.6, 1.6); t = 'lobo'; e.mane = 1; }
   if (t === 'eco') {
     g.fillStyle = fl ? '#fff' : '#2b1640'; g.beginPath(); g.ellipse(0, -12 + b * .5, 13, 12 - b * .3, 0, 0, TAU); g.fill(); g.stroke();
     g.fillStyle = '#ff2fb3'; g.fillRect(-6, -16, 4, 4); g.fillRect(3, -16, 4, 4);
+    if (e.type === 'reyeco') { g.fillStyle = '#f0b429'; g.beginPath(); g.moveTo(-8, -22); g.lineTo(-8, -30); g.lineTo(-3, -25); g.lineTo(0, -32); g.lineTo(3, -25); g.lineTo(8, -30); g.lineTo(8, -22); g.closePath(); g.fill(); g.stroke(); }
   } else if (t === 'lobo') {
     var s = e.dir === 2 ? -1 : 1; g.scale(s, 1);
     g.fillStyle = fl ? '#fff' : '#6b6b78'; g.beginPath(); g.ellipse(0, -13, 16, 9, 0, 0, TAU); g.fill(); g.stroke();
@@ -351,6 +355,7 @@ function drawFoe(g, e) {
     g.beginPath(); g.arc(15, -18, 7, 0, TAU); g.fill(); g.stroke();
     g.beginPath(); g.moveTo(12, -24); g.lineTo(14, -31); g.lineTo(18, -24); g.fill(); g.stroke();
     g.fillStyle = '#e0262f'; g.fillRect(16, -20, 3, 3);
+    if (e.mane) { g.fillStyle = '#e0262f'; g.beginPath(); g.moveTo(4, -22); g.lineTo(9, -30); g.lineTo(12, -22); g.lineTo(6, -16); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#ffd23a'; g.fillRect(16, -20, 3, 3); }
   } else if (t === 'golem') {
     var c1 = fl ? '#fff' : '#2a2433';
     rr(g, -20, -30, 40, 28, c1); rr(g, -26, -28 + b, 10, 22, c1); rr(g, 16, -28 - b, 10, 22, c1); rr(g, -12, -48, 24, 18, c1);
@@ -540,6 +545,7 @@ function killFoe(f) {
       if (f.type === 'rival') feed('<b>' + S.name + '</b> venció a ' + f.name + ' en PvP');
     }
     if (f.type === 'golem') MAP.golemT = 60;
+    if (f.type === 'reyeco' || f.type === 'alfa') { MAP.bossT[f.type] = 90; banner('¡' + C.FOES[f.type].n.toUpperCase() + ' CAE!', '+chispas garantizadas'); }
   }
 }
 function heal(n) { P.hp = Math.min(P.cs.maxHp, P.hp + n); }
@@ -642,7 +648,13 @@ function updFoe(f, dt) {
       if (d < F.rng + P.r) { f.st = 'wind'; f.t = F.wind * (f.type === 'vant' && f.hp < f.maxHp / 2 ? .7 : 1); f.ax = (P.x - f.x) / (d || 1); f.ay = (P.y - f.y) / (d || 1); setDir(f, f.ax, f.ay); }
       break;
     case 'wind':
-      f.t -= dt; if (f.t <= 0) { foeStrike(f); if (f.pvp && !f.combo && Math.random() < .35) { f.combo = 1; f.st = 'wind'; f.t = F.wind * .6; break; } f.combo = 0; f.st = 'rec'; f.t = F.cd * rnd(.8, 1.2) * (f.spm > 1 ? .75 : 1); }
+      f.t -= dt; if (f.t <= 0 && f.type === 'alfa') { f.st = 'charge'; f.t = .42; f.hitDone = 0; sfx('dash'); break; }
+      if (f.t <= 0) { foeStrike(f); if (f.pvp && !f.combo && Math.random() < .35) { f.combo = 1; f.st = 'wind'; f.t = F.wind * .6; break; } f.combo = 0; f.st = 'rec'; f.t = F.cd * rnd(.8, 1.2) * (f.spm > 1 ? .75 : 1); }
+      break;
+    case 'charge': /* embestida en línea recta del Alfa */
+      f.t -= dt; moveEnt(f, f.ax * 560 * dt, f.ay * 560 * dt); if (Math.random() < .6) addFx({ k: 'part', x: f.x, y: f.y - 10, vx: 0, vy: -20, c: '#ff7a2e', life: .3, sz: 5 });
+      if (!f.hitDone && dist(f, P) < P.r + f.r + 8) { f.hitDone = 1; hurtP(f.dmg * 1.3, f); }
+      if (f.t <= 0) { f.st = 'rec'; f.t = F.cd; }
       break;
     case 'rec':
       f.t -= dt; if (f.pvp && d < 60) step(f.x * 2 - P.x, f.y * 2 - P.y, f.sp * .5); if (f.t <= 0) f.st = 'chase';
@@ -654,11 +666,12 @@ function updFoe(f, dt) {
   }
   if (f.type === 'vant' && f.hp < f.maxHp / 2 && !f.ph2) { f.ph2 = 1; f.spm = 1.25; txt(f.x, f.y - 90, '¡NO PUEDES GANARME!', '#a42cff', 22, 1.6); shake(10); summon(f, 3); }
   if (f.type === 'vant') { f.sumT = (f.sumT || 10) - dt; if (f.sumT <= 0) { f.sumT = 12; summon(f, 2); } }
+  if (f.type === 'reyeco' && f.st !== 'idle') { f.sumT = (f.sumT || 6) - dt; if (f.sumT <= 0 && ents.filter(function (q) { return q.type === 'eco' && !q.dead; }).length < 14) { f.sumT = 9; summon(f, 2); txt(f.x, f.y - 90, '¡HIJOS DEL ECO!', '#a42cff', 18, 1); } }
 }
 function summon(f, n) { for (var i = 0; i < n; i++) { var a = rnd(0, TAU); var e = mkFoe('eco', f.x + Math.cos(a) * 60, f.y + Math.sin(a) * 60, f.eP * .35); e.st = 'chase'; e.aggro = 900; ents.push(e); parts(e.x, e.y, '#a42cff', 8); } }
 function foeStrike(f) {
   var F = C.FOES[f.type], d = dist(f, P); f.atkA = .18;
-  if (F.boss && f.type === 'golem') { ring(f.x, f.y, F.rng * 2.2, '#ff2fb3', .4); shake(8); if (d < F.rng + P.r) hurtP(f.dmg * (Math.random() < f.crit ? 1.6 : 1), f); return; }
+  if (F.aoe) { ring(f.x, f.y, F.rng * 2.2, '#ff2fb3', .4); shake(8); if (d < F.rng + P.r) hurtP(f.dmg * (Math.random() < f.crit ? 1.6 : 1), f); return; }
   addFx({ k: 'slash', x: f.x + f.ax * 10, y: f.y - 20 + f.ay * 10, a: Math.atan2(f.ay, f.ax), r: 30, c: '#e0262f', life: .15 });
   if (d < F.rng + P.r + 10) { var dot = ((P.x - f.x) * f.ax + (P.y - f.y) * f.ay) / (d || 1); if (d < 20 || dot > .35) hurtP(f.dmg * (Math.random() < f.crit ? 1.6 : 1), f); }
 }
@@ -697,7 +710,7 @@ function freeSpot(minD) {
 }
 function updBot(b, dt) {
   b.t -= dt; b.mv = 0; b.atkA -= dt; b.chatT -= dt;
-  if (b.chatT <= 0) { b.chatT = rnd(10, 26); var l = C.BOTCHAT[MAP.id]; if (l) say(b, l[Math.random() * l.length | 0]); }
+  if (b.chatT <= 0) { b.chatT = rnd(10, 26); var l = C.BOTCHAT[MAP.id], cl = C.CLANS[b.bi % 3]; if (S.clan.id === cl.id && Math.random() < .3) say(b, '¡Vamos ' + cl.n.replace('Clan ', '') + '! ' + cl.ic); else if (l) say(b, l[Math.random() * l.length | 0]); }
   if (MAP.id === 'tierras' && b.t > 0) { var f = null, bd = 230; foes().forEach(function (q) { var d = dist(b, q); if (d < bd) { bd = d; f = q; } }); if (f) { if (bd > 40) stepTo(b, f.x, f.y, 120, dt); else if (b.atkA <= 0) { b.atkA = .6; face(b, f.x, f.y); f.hp -= f.maxHp * .08; f.flash = .1; burst(f.x, f.y - 22, '#fff'); if (f.hp <= 0) { f.hp = 0; f.dead = 1; parts(f.x, f.y - 20, '#a42cff', 10); txt(f.x, f.y - 60, '¡K.O.!', '#fff', 18); if (f.type === 'golem') MAP.golemT = 60; } } return; } }
   if (b.t <= 0) { var p = freeSpot(0); if (p && Math.random() < .7) { b.tx = p.x; b.ty = p.y; } else b.tx = undefined; b.t = rnd(3, 8); }
   if (b.tx !== undefined) { if (Math.hypot(b.tx - b.x, b.ty - b.y) > 10) stepTo(b, b.tx, b.ty, 105, dt); else b.tx = undefined; }
@@ -741,8 +754,10 @@ function orbs(x, y, c, n) { for (var i = 0; i < n; i++) { var an = rnd(0, TAU); 
 var RINGX = [[3, 14], [16, 29], [31, 43]];
 function spawnFoes(dt) {
   spawnT -= dt; if (spawnT > 0) return; spawnT = 1;
-  var cnt = [0, 0, 0], gol = null;
-  ents.forEach(function (e) { if (e.k === 'foe' && !e.dead) { if (e.type === 'golem') gol = e; else cnt[e.ring]++; } });
+  var cnt = [0, 0, 0], gol = null, bos = {};
+  ents.forEach(function (e) { if (e.k === 'foe' && !e.dead) { if (e.type === 'golem') gol = e; else if (e.boss) bos[e.type] = 1; else cnt[e.ring]++; } });
+  MAP.bossT = MAP.bossT || { reyeco: 0, alfa: 0 };
+  [['reyeco', 0, 9.5, 6.6], ['alfa', 1, 22.5, 28.6]].forEach(function (b) { if (bos[b[0]]) return; MAP.bossT[b[0]] -= 1; if (MAP.bossT[b[0]] <= 0 && Math.hypot(b[2] * T - P.x, b[3] * T - P.y) > 300) { ents.push(mkFoe(b[0], b[2] * T, b[3] * T, C.ringPower(S, b[1]) * 1.15, { ring: b[1], name: C.FOES[b[0]].n })); MAP.bossT[b[0]] = 90; } });
   for (var r = 0; r < 3; r++) {
     if (cnt[r] >= [7, 7, 6][r]) continue;
     for (var k = 0; k < 20; k++) {
@@ -779,7 +794,7 @@ function loadZone(id, from) {
   ents.push(P); spawnParty(); spawnBots(id); spawnT = 0;
   if (id === 'tierras') { MAP.golemT = MAP.golemT || 0; for (var i = 0; i < 6; i++) spawnFoes(1); }
   C.ev(S, 'visit', { z: id });
-  var ZT = { plaza: 'En la Plaza puedes hacer amigos: toca 💬 y di «¿Amigos?» cerca de otros jugadores.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Mira el minimapa (arriba a la derecha).', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
+  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Mira el minimapa (arriba a la derecha).', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
   if (ZT[id]) tip('z_' + id, ZT[id], 1);
   zoneTitle(); hudFull();
 }
@@ -876,7 +891,7 @@ function render() {
     var sc = (e.look && e.look.sc) || 1, top = e.y - 54 * sc;
     if (mode === 'night' && e !== P && dist(e, P) > lightR()) continue;
     if (e.k === 'npc') { nameTag(e.x, top - 6, C.NPC[e.key].n, C.NPC[e.key].c); var ob = objTarget(); if (ob && !ob.por && Math.abs(ob.x - e.x) < 2 && Math.abs(ob.y + 40 - e.y) < 2) ctext(ctx, '!', e.x, top - 30 + Math.sin(time * 6) * 4, 30, '#f0b429'); else { var sq = C.sideFor(S, e.key); if (sq) { var rd = sq.st && (C.sideReady(S, sq.q.id) || (sq.q.o.k === 'giveCh' && S.chispas >= sq.q.o.n)); if (!sq.st || rd) ctext(ctx, rd ? '✓' : '?', e.x, top - 30 + Math.sin(time * 5) * 3, 26, rd ? '#2dffb3' : '#f2e8d5'); } } }
-    else if (e.k === 'bot' || e.k === 'cont') nameTag(e.x, top - 6, e.name, '#f2e8d5');
+    else if (e.k === 'bot' || e.k === 'cont') { var cl = C.CLANS[e.bi % 3]; nameTag(e.x, top - 6, (e.k === 'bot' ? cl.ic + ' ' : '') + e.name, e.k === 'bot' && S.clan.id === cl.id ? cl.c : '#f2e8d5'); }
     else if (e.k === 'ally') nameTag(e.x, top - 6, '🤝 ' + e.name, '#2dffb3');
     else if (e.k === 'foe' && !e.dead && e.type !== 'sombra') { var bw = e.boss ? 70 : 40; ctx.fillStyle = INK; ctx.fillRect(e.x - bw / 2 - 2, top - 12, bw + 4, 8); ctx.fillStyle = '#e0262f'; ctx.fillRect(e.x - bw / 2, top - 10, bw * Math.max(0, e.hp / e.maxHp), 4); if (e.name || e.boss) nameTag(e.x, top - 20, e.name || C.FOES[e.type].n, e.pvp ? '#ff2fb3' : '#f0b429'); }
     if (e.bub) bubble(e.x, top - (e.k === 'foe' ? 34 : 22), e.bub.t);
@@ -886,7 +901,8 @@ function render() {
 }
 function drawTele(g, e) {
   var F = C.FOES[e.type], p = 1 - e.t / F.wind; g.globalAlpha = .25 + p * .35; g.fillStyle = '#e0262f';
-  if (e.type === 'golem') { g.beginPath(); g.ellipse(e.x, e.y, F.rng * p, F.rng * p * .55, 0, 0, TAU); g.fill(); g.globalAlpha = .8; g.strokeStyle = '#e0262f'; g.lineWidth = 2; g.beginPath(); g.ellipse(e.x, e.y, F.rng, F.rng * .55, 0, 0, TAU); g.stroke(); }
+  if (e.type === 'alfa') { g.save(); g.translate(e.x, e.y); g.rotate(Math.atan2(e.ay, e.ax)); g.beginPath(); g.rect(0, -22, 250 * (.4 + p * .6), 44); g.fill(); g.restore(); g.beginPath(); g.save(); g.translate(e.x, e.y); g.rotate(Math.atan2(e.ay, e.ax)); g.rect(0, -22, 250, 44); g.restore(); }
+  else if (C.FOES[e.type].aoe) { g.beginPath(); g.ellipse(e.x, e.y, F.rng * p, F.rng * p * .55, 0, 0, TAU); g.fill(); g.globalAlpha = .8; g.strokeStyle = '#e0262f'; g.lineWidth = 2; g.beginPath(); g.ellipse(e.x, e.y, F.rng, F.rng * .55, 0, 0, TAU); g.stroke(); }
   else { var a = Math.atan2(e.ay, e.ax); g.beginPath(); g.moveTo(e.x, e.y); g.arc(e.x, e.y, (F.rng + 14) * (.5 + p * .5), a - 1, a + 1); g.closePath(); g.fill(); }
   /* rayas blancas: el aviso se entiende sin depender del color (daltonismo) */
   g.save(); g.clip(); g.globalAlpha = .45; g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath();

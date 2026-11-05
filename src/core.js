@@ -2,7 +2,7 @@
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.3.0';
+var VERSION = '0.4.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -31,7 +31,7 @@ var EL = {
 var ELK5 = ['fuego', 'agua', 'rayo', 'tierra', 'viento'];
 /* afinidades: cada uno es FUERTE (×1.25) contra el siguiente del ciclo y DÉBIL (×0.8) contra el anterior; Sombra y Luz se dañan ×1.25 entre sí */
 var CYCLE = ['fuego', 'viento', 'tierra', 'rayo', 'agua'];
-var FOE_EL = { eco: 'sombra', lobo: 'fuego', bandido: 'tierra', golem: 'tierra', sombra: 'sombra', vant: 'sombra' };
+var FOE_EL = { eco: 'sombra', lobo: 'fuego', bandido: 'tierra', golem: 'tierra', sombra: 'sombra', vant: 'sombra', reyeco: 'sombra', alfa: 'fuego' };
 function afin(a, d) {
   if (!a || !d || a === d) return 1;
   if ((a === 'sombra' && d === 'luz') || (a === 'luz' && d === 'sombra')) return 1.25;
@@ -52,7 +52,7 @@ var ORIG = {
 var NPC = {
   ren: { n: 'Maestra Ren', c: '#e0262f' }, tobias: { n: 'Don Tobías', c: '#f0b429' }, kira: { n: 'Kira', c: '#2dffb3' },
   pip: { n: 'Pip', c: '#39c8ff' }, heraldo: { n: 'El Heraldo', c: '#d6dee9' }, vant: { n: 'Vant, el Anfitrión', c: '#a42cff' },
-  dax: { n: 'Dax', c: '#ff2fb3' }, nima: { n: 'Oráculo Nima', c: '#fff1a8' }, nar: { n: 'Narración', c: '#f0b429' }
+  dax: { n: 'Dax', c: '#ff2fb3' }, nima: { n: 'Oráculo Nima', c: '#fff1a8' }, sol: { n: 'Capitana Sol', c: '#f0b429' }, nar: { n: 'Narración', c: '#f0b429' }
 };
 var ZONES = {
   plaza:   { n: 'Plaza Ágora',        k: 'Social · Paz' },
@@ -66,7 +66,9 @@ var FOES = {
   eco:     { n: 'Eco',               hp: .35, dm: .45, sp: 70,  x: 1,  o: 2,  ch: .08, r: 13, rng: 34, wind: .5,  cd: 1.3 },
   lobo:    { n: 'Lobo de Ceniza',    hp: .6,  dm: .55, sp: 125, x: 1.8, o: 4, ch: .12, r: 15, rng: 36, wind: .4,  cd: 1.1 },
   bandido: { n: 'Bandido',           hp: 1,   dm: .75, sp: 95,  x: 3,  o: 9,  ch: .18, r: 14, rng: 40, wind: .45, cd: 1.2 },
-  golem:   { n: 'Gólem de Obsidiana', hp: 7,  dm: 1.5, sp: 55,  x: 22, o: 80, ch: 1, chn: 6, r: 30, rng: 74, wind: .9, cd: 2.4, boss: 1 },
+  golem:   { n: 'Gólem de Obsidiana', hp: 7,  dm: 1.5, sp: 55,  x: 22, o: 80, ch: 1, chn: 6, r: 30, rng: 74, wind: .9, cd: 2.4, boss: 1, aoe: 1 },
+  reyeco:  { n: 'Rey Eco',           hp: 5,  dm: 1.1, sp: 60,  x: 12, o: 40, ch: 1, chn: 3, r: 24, rng: 62, wind: .75, cd: 2, boss: 1, aoe: 1 },
+  alfa:    { n: 'Alfa de Ceniza',    hp: 5.5, dm: 1.3, sp: 150, x: 16, o: 60, ch: 1, chn: 4, r: 22, rng: 230, wind: .6, cd: 1.8, boss: 1 },
   rival:   { n: 'Rival',             hp: 1.4, dm: .85, sp: 140, x: 5,  o: 15, ch: .3, r: 14, rng: 44, wind: .35, cd: .9, pvp: 1 },
   duelo:   { n: 'Duelista',          hp: 3,   dm: 1.3,  sp: 150, x: 0,  o: 0,  ch: 0, r: 14, rng: 46, wind: .3,  cd: .55, pvp: 1 },
   vant:    { n: 'Vant',              hp: 6,   dm: 1.1, sp: 150, x: 0,  o: 0,  ch: 0, r: 16, rng: 50, wind: .36, cd: .6, pvp: 1, boss: 1 },
@@ -199,7 +201,7 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} },
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
@@ -236,6 +238,7 @@ function migrate(o) {
   d.party = d.party.filter(function (bi) { return d.friends.some(function (f) { return f.bi === bi; }); }).slice(0, 2);
   for (var sid in d.side) if (!SIDEI[sid] || !d.side[sid] || !isNum(d.side[sid].n)) delete d.side[sid];
   for (var fid in d.frag) if (!FRAGI[fid]) delete d.frag[fid];
+  if (d.clan.id && !CLANI[d.clan.id]) d.clan.id = '';
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -294,7 +297,7 @@ function ringPower(s, ring) { var r = RINGS[clamp(ring, 0, 2)]; return Math.max(
 function addOro(s, n) { if (!(n > 0)) return; s.oro += n; s.cnt.oroTot += n; ev(s, 'oro', { n: n }); }
 function gearMul(lv) { return 1 + 0.15 * lv; }
 function gearCost(lv) { return Math.ceil(80 * Math.pow(1.75, lv)); }
-function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q; }
+function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q * clanMul(s, A.st); }
 function train(s, act, q) {
   var A = ACT[act]; if (!A) return 0;
   if (A.en > 0 && s.en < A.en) return -1;
@@ -326,7 +329,7 @@ function killReward(s, type, eP, R) {
 function bCost(id, n) { return Math.ceil(BLDI[id].c * Math.pow(1.15, n)); }
 function bMile(n) { return n >= 100 ? 8 : n >= 50 ? 4 : n >= 25 ? 2 : 1; }
 function magia(s) { return 1 + Math.sqrt(s.stats.esp) / 20; }
-function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s); }
+function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s) * (s.clan.id === 'marea' ? 1.05 : 1); }
 function prod(s) { var t = 0; for (var i = 0; i < BLD.length; i++) t += bProd(s, BLD[i].id); return t; }
 function bUnlocked(s, id) { var i = BLDI[id].i; return i === 0 || s.tyc[BLD[i - 1].id] > 0; }
 function buyB(s, id) { if (!BLDI[id] || !bUnlocked(s, id)) return false; var n = s.tyc[id], c = bCost(id, n); if (s.oro < c) return false; s.oro -= c; s.tyc[id] = n + 1; ev(s, 'build', { n: 1 }); return true; }
@@ -441,6 +444,7 @@ function ev(s, type, d) {
   var q = s.daily.q;
   for (var i = 0; i < q.length; i++) if (!q[i].done && match(q[i], type, d)) q[i].p += type === 'oro' ? d.n : (d.n || 1);
   for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
+  if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp; }
 }
 function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
 function stepProg(s) {
@@ -490,7 +494,10 @@ var SIDE = [
     e: [['dax', 'Mira: tres chicos aprendiendo a forjar. Hace un mes yo solo pensaba en mí.']] },
   { id: 'espejo', who: 'nima', t: 'El espejo del agua', req: 'c1', o: { k: 'perf', st: 'esp', n: 5 }, r: { gemas: 15 }, title: 'Alma Serena', h: 'Logra 5 respiraciones PERFECTAS (Dojo)',
     d: [['nima', 'Mira tu reflejo en la cascada del Dojo. ¿Qué ves? ¿Un número? ¿O a alguien?'], ['nima', 'Respira cinco veces, perfecto. Luego vuelve.']],
-    e: [['nima', 'El agua no refleja tu poder. Refleja tu calma.'], ['nima', 'Te doy un nombre: Alma Serena. Úsalo cuando lo necesites.']] }
+    e: [['nima', 'El agua no refleja tu poder. Refleja tu calma.'], ['nima', 'Te doy un nombre: Alma Serena. Úsalo cuando lo necesites.']] },
+  { id: 'alfa', who: 'kira', t: 'El Alfa de Ceniza', req: 'b1', o: { k: 'kill', type: 'alfa', n: 1 }, r: { chispas: 10, gemas: 10 }, h: 'Derrota al Alfa de Ceniza (anillo 2)',
+    d: [['kira', 'Hay un lobo enorme guiando a la manada. Le dicen el Alfa de Ceniza.'], ['kira', 'Cuando baje la cabeza, va a embestir en línea recta. No te quedes delante: esquiva hacia un lado.']],
+    e: [['kira', 'Lo lograste. Sin él, la manada se dispersa y deja de atacar a la gente.'], ['kira', 'A veces el valor no es pelear más fuerte. Es leer al otro y moverse a tiempo.']] }
 ];
 var SIDEI = {}; SIDE.forEach(function (q) { SIDEI[q.id] = q; });
 function sideFor(s, w) {
@@ -513,6 +520,39 @@ var FRAG = [
   { id: 'f7', z: 'coliseo', x: 27, y: 21, t: 'Lo que no se cuenta', p: ['En el palco, Vant guarda frascos de luz con nombres escritos a mano.', 'Cada frasco es un pedazo de alguien que confió en él.', 'A veces, de noche, les habla. Les pide perdón. Y vuelve a empezar.'] }
 ];
 var FRAGI = {}; FRAG.forEach(function (f) { FRAGI[f.id] = f; });
+
+/* ---------- clanes: meta semanal cooperativa (todos reciben premio; nada se pierde) ---------- */
+var CLANS = [
+  { id: 'llama', n: 'Clan Llama Roja', ic: '🔥', c: '#e0262f', st: 'fue', d: 'Fuerza y coraje. +5% al entrenar Fuerza.' },
+  { id: 'viento', n: 'Clan Viento Verde', ic: '🍃', c: '#2dffb3', st: 'tec', d: 'Técnica y exploración. +5% al entrenar Técnica.' },
+  { id: 'marea', n: 'Clan Marea Azul', ic: '🌊', c: '#39c8ff', st: 'esp', d: 'Espíritu y comercio. +5% al entrenar Espíritu y +5% de oro del negocio.' }
+];
+var CLANI = {}; CLANS.forEach(function (c, i) { CLANI[c.id] = c; c.i = i; });
+var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5 };
+function weekKey(now) { return Math.floor((now / 864e5 + 3) / 7); } /* semanas de lunes a domingo (UTC) */
+function clanMul(s, st) { var c = CLANI[s.clan.id]; return c && c.st === st ? 1.05 : 1; }
+function clanBase(s, key) { var R = mulberry((s.seed ^ (key * 7919)) >>> 0); return CLANS.map(function () { return 2500 + Math.floor(R() * 2500); }); }
+function clanStand(s, now) {
+  var key = weekKey(now), frac = clamp((now / 864e5 + 3) / 7 - key, 0, 1), t = clanBase(s, key).map(function (x) { return Math.round(x * frac); });
+  var c = CLANI[s.clan.id]; if (c && s.clan.week === key) t[c.i] += Math.round(s.clan.pts);
+  return t;
+}
+function clanJoin(s, id, now) {
+  if (!CLANI[id] || s.clan.id === id) return false;
+  if (s.clan.id && now - s.clan.since < 864e5) return 'espera';
+  s.clan.id = id; s.clan.since = now; s.clan.pts = 0; s.clan.week = weekKey(now); return true;
+}
+function clanWeek(s, now) {
+  var key = weekKey(now); if (s.clan.week === key) return null;
+  var res = null, c = CLANI[s.clan.id];
+  if (c && s.clan.week && s.clan.pts > 0) {
+    var b = clanBase(s, s.clan.week); b[c.i] += Math.round(s.clan.pts);
+    var place = b.filter(function (x) { return x > b[c.i]; }).length, p = s.clan.pts;
+    var gems = [30, 20, 15][place] + (p >= 500 ? 15 : p >= 200 ? 10 : p >= 50 ? 5 : 0);
+    s.gemas += gems; res = { w: s.clan.week, place: place + 1, gems: gems, pts: Math.round(p) }; s.clan.last = res;
+  }
+  s.clan.week = key; s.clan.pts = 0; return res;
+}
 function fragCount(s) { var n = 0; for (var k in s.frag) if (FRAGI[k]) n++; return n; }
 function fragTake(s, id) {
   if (!FRAGI[id] || s.frag[id]) return false;
@@ -584,7 +624,8 @@ var API = {
   SIDE: SIDE, SIDEI: SIDEI, sideFor: sideFor, sideAccept: sideAccept, sideReady: sideReady, sideFinish: sideFinish, giveChispas: giveChispas,
   addFriend: addFriend, friendXP: friendXP, setParty: setParty,
   NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
-  CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake
+  CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
+  CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
