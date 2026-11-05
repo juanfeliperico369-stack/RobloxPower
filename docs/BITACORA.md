@@ -2,6 +2,14 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-05 · v0.5.0 · Rendimiento de la Noche, eventos semanales y logros
+1. Rendimiento: la oscuridad de la Noche costaba ~20 fps en celulares modestos. Ahora es un solo degradado con forma de linterna, relleno opaco fuera de la luz y **resolución dinámica** (el gobernador baja a 75% si aún va lento): Noche 33 → 45 fps, Tierras 53 → 60 fps (CPU 4× más lenta).
+2. Nuevo: **eventos semanales rotativos** sin presión (Dojo, Feria, Luna de los Ecos, Amistad) que se repiten cada 4 semanas; se anuncian al entrar y se ven en el Tablón.
+3. Nuevo: **16 logros** con gemas y pestaña con barras de progreso.
+4. Port Luau de eventos y logros (+ multiplicadores en entrenamiento, oro, botín, amistad y clan): **3201/3201 casos idénticos a JS**, análisis sin errores; nuevas operaciones de prueba (`eventSync`, `achCheck`, `setCnt`).
+5. Probado: check OK; sim 120×8 h OK (logros media 10.6/16, 8/8 secundarias); bot 3 partidas OK; verificación del sitio publicado OK.
+6. Falta: Acto IV de la historia, más minijuegos, exportar a Roblox Studio (mapas 3D, combate, interfaz).
+
 ## 2026-11-05 · v0.4.0 · Clanes y jefes por anillo
 1. Nuevo: **clanes** (Llama Roja, Viento Verde, Marea Azul) con la Capitana Sol en la Plaza: bonus suave (+5%), meta semanal cooperativa con barras de progreso, miembros, emblemas sobre los jugadores-bot y ánimos en el chat. Todos los clanes reciben premio al cerrar la semana; cambio de clan cada 24 h sin costo.
 2. Nuevo: **jefes por anillo** — Rey Eco (área + invoca Ecos) y Alfa de Ceniza (embestida en línea recta con aviso de franja). Nueva secundaria de Kira sobre leer al rival y moverse a tiempo.

@@ -2,7 +2,7 @@
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.4.0';
+var VERSION = '0.5.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -201,7 +201,7 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} },
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
@@ -239,6 +239,8 @@ function migrate(o) {
   for (var sid in d.side) if (!SIDEI[sid] || !d.side[sid] || !isNum(d.side[sid].n)) delete d.side[sid];
   for (var fid in d.frag) if (!FRAGI[fid]) delete d.frag[fid];
   if (d.clan.id && !CLANI[d.clan.id]) d.clan.id = '';
+  if (d.evt && !EVENTI[d.evt]) d.evt = '';
+  for (var aid in d.ach) if (!ACHI[aid]) delete d.ach[aid];
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -297,7 +299,7 @@ function ringPower(s, ring) { var r = RINGS[clamp(ring, 0, 2)]; return Math.max(
 function addOro(s, n) { if (!(n > 0)) return; s.oro += n; s.cnt.oroTot += n; ev(s, 'oro', { n: n }); }
 function gearMul(lv) { return 1 + 0.15 * lv; }
 function gearCost(lv) { return Math.ceil(80 * Math.pow(1.75, lv)); }
-function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q * clanMul(s, A.st); }
+function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q * clanMul(s, A.st) * evMul(s, 'train'); }
 function train(s, act, q) {
   var A = ACT[act]; if (!A) return 0;
   if (A.en > 0 && s.en < A.en) return -1;
@@ -316,10 +318,10 @@ function eat(s) { var c = foodCost(s); if (s.oro < c || s.tyc.pan < 1) return fa
 
 function killReward(s, type, eP, R) {
   var F = FOES[type]; if (!F || !F.x) return null; R = R || Math.random;
-  var g = F.x * (1 + Math.sqrt(eP) / 4) * 0.5 * mLeg(s);
+  var g = F.x * (1 + Math.sqrt(eP) / 4) * 0.5 * mLeg(s) * evMul(s, 'kill');
   s.stats.fue += g * .45; s.stats.tec += g * .3; s.stats.esp += g * .25;
   var o = Math.round(F.o * (1 + Math.sqrt(eP) / 3)); addOro(s, o);
-  var ch = R() < F.ch ? (F.chn || 1) : 0; s.chispas += ch;
+  var ch = R() < F.ch ? (F.chn || 1) * evMul(s, 'ch') : 0; s.chispas += ch;
   var gem = F.pvp && R() < 0.05 ? 1 : 0; s.gemas += gem;
   s.cnt.kills++; ev(s, 'kill', { type: type });
   return { g: g, o: o, ch: ch, gem: gem };
@@ -329,7 +331,7 @@ function killReward(s, type, eP, R) {
 function bCost(id, n) { return Math.ceil(BLDI[id].c * Math.pow(1.15, n)); }
 function bMile(n) { return n >= 100 ? 8 : n >= 50 ? 4 : n >= 25 ? 2 : 1; }
 function magia(s) { return 1 + Math.sqrt(s.stats.esp) / 20; }
-function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s) * (s.clan.id === 'marea' ? 1.05 : 1); }
+function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s) * (s.clan.id === 'marea' ? 1.05 : 1) * evMul(s, 'oro'); }
 function prod(s) { var t = 0; for (var i = 0; i < BLD.length; i++) t += bProd(s, BLD[i].id); return t; }
 function bUnlocked(s, id) { var i = BLDI[id].i; return i === 0 || s.tyc[BLD[i - 1].id] > 0; }
 function buyB(s, id) { if (!BLDI[id] || !bUnlocked(s, id)) return false; var n = s.tyc[id], c = bCost(id, n); if (s.oro < c) return false; s.oro -= c; s.tyc[id] = n + 1; ev(s, 'build', { n: 1 }); return true; }
@@ -444,7 +446,7 @@ function ev(s, type, d) {
   var q = s.daily.q;
   for (var i = 0; i < q.length; i++) if (!q[i].done && match(q[i], type, d)) q[i].p += type === 'oro' ? d.n : (d.n || 1);
   for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
-  if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp; }
+  if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp * evMul(s, 'clan'); }
 }
 function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
 function stepProg(s) {
@@ -542,6 +544,55 @@ function clanJoin(s, id, now) {
   if (s.clan.id && now - s.clan.since < 864e5) return 'espera';
   s.clan.id = id; s.clan.since = now; s.clan.pts = 0; s.clan.week = weekKey(now); return true;
 }
+/* ---------- eventos semanales rotativos (sin presión: se repiten cada 4 semanas y solo dan multiplicadores) ---------- */
+var EVENTS = [
+  { id: 'dojo', n: 'Semana del Dojo', ic: '🥋', d: 'Entrenar rinde +25%.', train: 1.25 },
+  { id: 'feria', n: 'Feria de la Forja', ic: '⚒️', d: 'Tu negocio produce +25% de oro.', oro: 1.25 },
+  { id: 'ecos', n: 'Luna de los Ecos', ic: '🌕', d: 'Derrotar enemigos da +25% de poder y chispas dobles.', kill: 1.25, ch: 2 },
+  { id: 'amistad', n: 'Semana de la Amistad', ic: '🤝', d: 'La amistad crece el doble y los puntos de clan valen doble.', friend: 2, clan: 2 }
+];
+var EVENTI = {}; EVENTS.forEach(function (e) { EVENTI[e.id] = e; });
+function eventOf(now) { return EVENTS[weekKey(now) % EVENTS.length]; }
+function eventSync(s, now) { var e = eventOf(now); s.evt = e.id; return e.id; }
+function evMul(s, k) { var e = EVENTI[s.evt]; return e && e[k] ? e[k] : 1; }
+
+/* ---------- logros (cada uno da gemas una sola vez) ---------- */
+var ACH = [
+  { id: 'golpes', t: 'Puño de hierro', d: 'Entrena 500 veces', v: 'taps', n: 500, g: 5 },
+  { id: 'caza', t: 'Cazador de Ecos', d: 'Derrota 100 enemigos', v: 'kills', n: 100, g: 5 },
+  { id: 'mil', t: 'Mil batallas', d: 'Derrota 1.000 enemigos', v: 'kills', n: 1000, g: 15 },
+  { id: 'noche', t: 'Primera Noche', d: 'Juega tu primer torneo', v: 'tours', n: 1, g: 5 },
+  { id: 'veterano', t: 'Veterano del Eclipse', d: 'Juega 10 torneos', v: 'tours', n: 10, g: 10 },
+  { id: 'campeon', t: 'Campeón', d: 'Gana un torneo', v: 'wins', n: 1, g: 20 },
+  { id: 'millon', t: 'Primer millón', d: 'Gana 1 M de oro en total', v: 'oroTot', n: 1e6, g: 15 },
+  { id: 'amigos', t: 'Buena compañía', d: 'Ten 5 amigos', v: 'friends', n: 5, g: 5 },
+  { id: 'arqueo', t: 'Arqueología', d: 'Encuentra 3 fragmentos', v: 'frag', n: 3, g: 5 },
+  { id: 'guardian', t: 'Guardián', d: 'Completa el Códice', v: 'frag', n: 7, g: 15 },
+  { id: 'bondad', t: 'Buena persona', d: 'Completa 4 misiones secundarias', v: 'side', n: 4, g: 10 },
+  { id: 'colec', t: 'Coleccionista', d: 'Ten 4 brazaletes', v: 'brz', n: 4, g: 10 },
+  { id: 'guerrero', t: 'Guerrero', d: 'Alcanza 1.500 de Poder', v: 'poder', n: 1500, g: 10 },
+  { id: 'leyenda', t: 'Leyenda viva', d: 'Alcanza 1 M de Poder', v: 'poder', n: 1e6, g: 30 },
+  { id: 'clan', t: 'Espíritu de equipo', d: 'Aporta 200 puntos a tu clan en una semana', v: 'clan', n: 200, g: 10 },
+  { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 }
+];
+var ACHI = {}; ACH.forEach(function (a) { ACHI[a.id] = a; });
+function achVal(s, a) {
+  var v = a.v;
+  if (v === 'friends') return s.friends.length;
+  if (v === 'frag') return fragCount(s);
+  if (v === 'side') { var n = 0; for (var k in s.side) if (s.side[k].s === 2) n++; return n; }
+  if (v === 'brz') return s.brz.length;
+  if (v === 'poder') return poder(s);
+  if (v === 'clan') return s.clan.pts;
+  if (v === 'ending') return s.ending ? 1 : 0;
+  return s.cnt[v] || 0;
+}
+function achCheck(s) {
+  var got = [];
+  for (var i = 0; i < ACH.length; i++) { var a = ACH[i]; if (!s.ach[a.id] && achVal(s, a) >= a.n) { s.ach[a.id] = 1; s.gemas += a.g; got.push(a.id); } }
+  return got;
+}
+
 function clanWeek(s, now) {
   var key = weekKey(now); if (s.clan.week === key) return null;
   var res = null, c = CLANI[s.clan.id];
@@ -565,7 +616,7 @@ function fragTake(s, id) {
 function addFriend(s, bi) { if (!s.bots[bi] || s.friends.length >= 12 || s.friends.some(function (f) { return f.bi === bi; })) return false; s.friends.push({ bi: bi, af: 0 }); return true; }
 function friendXP(s, bi, n) {
   var f = null; s.friends.forEach(function (x) { if (x.bi === bi) f = x; }); if (!f) return 0;
-  var b4 = Math.floor(f.af / 25); f.af = Math.min(100, f.af + n); var g = (Math.floor(f.af / 25) - b4) * 3; if (g > 0) s.gemas += g; return g;
+  var b4 = Math.floor(f.af / 25); f.af = Math.min(100, f.af + n * evMul(s, 'friend')); var g = (Math.floor(f.af / 25) - b4) * 3; if (g > 0) s.gemas += g; return g;
 }
 function setParty(s, bi, on) {
   var i = s.party.indexOf(bi);
@@ -625,7 +676,8 @@ var API = {
   addFriend: addFriend, friendXP: friendXP, setParty: setParty,
   NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
   CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
-  CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek
+  CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek,
+  EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

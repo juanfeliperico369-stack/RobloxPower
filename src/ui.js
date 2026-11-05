@@ -186,7 +186,7 @@ var PANELS = {
     return h + '</div><p class="m">Promesa: sin cajas aleatorias pagadas, sin temporizadores de presión. Todo lo que se compra se puede ganar jugando.</p>';
   },
   board: function () {
-    var h = head('TABLÓN DE LA PLAZA', 'Misiones diarias', 'Se renuevan cada día. Cada misión: +3 ◆ y oro.') + '<div class="list">';
+    var ev = C.EVENTI[S.evt], h = head('TABLÓN DE LA PLAZA', 'Misiones diarias', 'Se renuevan cada día. Cada misión: +3 ◆ y oro.') + (ev ? '<div class="film">EVENTO DE LA SEMANA: ' + ev.ic + ' ' + ev.n.toUpperCase() + ' · ' + ev.d + '<br>Se repite cada 4 semanas: no te pierdes nada.</div>' : '') + '<div class="list">';
     S.daily.q.forEach(function (q, i) { var pr = Math.min(q.p, q.n); h += item(q.done ? '✅' : '📜', q.t, C.fmt(pr) + ' / ' + C.fmt(q.n), q.done ? '<span class="tag ok">Hecha</span>' : bt('claim', i, 'Cobrar', q.n, 'none', '', q.p < q.n)); });
     return h + '</div><p class="m">Volver cada día te regala +5 ◆. Sin castigos si no vienes.</p>';
   },
@@ -254,7 +254,7 @@ var PANELS = {
   },
   chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
-    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
+    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['logros', 'Logros'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'rank') return h + PANELS.rank(); if (t === 'shop') return h + PANELS.shop(); if (t === 'brz') return h + PANELS.forge().replace(/data-a="(up|newb)"[^>]*>/g, 'disabled>');
     if (t === 'perfil') {
@@ -277,6 +277,12 @@ var PANELS = {
       h += '<h2 class="mega">Amigos</h2><p class="m">Cerca de otros jugadores, abre 💬 y di «¿Amigos?». Hasta 2 amigos pueden ir en tu grupo: te siguen y pelean contigo en las Tierras Rotas. Cada 25 de amistad te regalan 3 ◆.</p><div class="list">';
       if (!S.friends.length) h += '<p class="kick">Aún no tienes amigos. ¡Ve a la Plaza y saluda!</p>';
       S.friends.forEach(function (f) { var b = S.bots[f.bi], inP = S.party.indexOf(f.bi) >= 0; h += item(C.EL[b.el].ic, esc(b.n) + (inP ? ' · en tu grupo' : ''), '⚡ ' + C.fmt(b.p) + ' · amistad ' + Math.floor(f.af) + '/100 ' + '❤'.repeat(Math.floor(f.af / 25)), bt('party', f.bi, inP ? 'Sacar' : 'Invitar', undefined, '', inP ? 'pap' : 'tea', !inP && S.party.length >= 2)); });
+      return h + '</div>';
+    }
+    if (t === 'logros') {
+      var nOk = C.ACH.filter(function (a) { return S.ach[a.id]; }).length;
+      h += '<h2 class="mega">Logros</h2><p class="m">' + nOk + ' / ' + C.ACH.length + ' · cada logro da gemas una sola vez.</p><div class="list">';
+      C.ACH.forEach(function (a) { var v = Math.min(C.achVal(S, a), a.n), ok = S.ach[a.id]; h += item(ok ? '🏅' : '⬜', a.t + ' · +' + a.g + ' ◆', a.d + (ok ? ' · ¡conseguido!' : ' · ' + C.fmt(v) + ' / ' + C.fmt(a.n)) + '<div class="bar" style="height:7px;margin-top:4px"><i style="width:' + (v / a.n * 100) + '%;background:' + (ok ? '#2dffb3' : '#f0b429') + '"></i></div>'); });
       return h + '</div>';
     }
     if (t === 'clan') return h + PANELS.clan().replace(/<div class="band">.*?<\/div>/, '');
@@ -446,7 +452,7 @@ $('mgX').addEventListener('click', mgEnd);
 
 /* ---------- entrada ---------- */
 function resize() {
-  W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, S && !S.cfg.q ? 1 : 2);
+  W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, S && !S.cfg.q ? 1 : 2) * (S && !S.cfg.q ? RSCALE : 1);
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   Z = W > H * 1.25 ? C.clamp(H / (9 * T), .7, 1.6) : C.clamp(Math.min(W, H) / (9.5 * T), .7, 1.5);
   if (MG.on) mgResize();
@@ -538,7 +544,9 @@ function showCreate() {
     var sc = c.scrollTop; showCreate(); c.scrollTop = sc;
   };
 }
-function clanCheck() { var r = C.clanWeek(S, Date.now()); if (r) { banner('¡SEMANA DE CLAN!', 'Puesto ' + r.place + ' · +' + r.gems + ' ◆'); toast('Tu clan quedó ' + r.place + '.º. Aportaste ' + r.pts + ' pts → +' + r.gems + ' ◆', 'gold'); save(); } }
+function eventCheck() { var prev = S.evt, id = C.eventSync(S, Date.now()), e = C.EVENTI[id]; if (prev !== id && e) toast('Evento de la semana: ' + e.ic + ' ' + e.n + ' · ' + e.d, 'gold'); }
+function achTick() { var got = C.achCheck(S); got.forEach(function (id, k) { var a = C.ACHI[id]; setTimeout(function () { banner('¡LOGRO!', a.t + ' · +' + a.g + ' ◆'); sfx('win'); toast('🏅 Logro: ' + a.t + ' (+' + a.g + ' ◆)', 'gold'); }, k * 1500); }); if (got.length) save(); }
+function clanCheck() { eventCheck(); var r = C.clanWeek(S, Date.now()); if (r) { banner('¡SEMANA DE CLAN!', 'Puesto ' + r.place + ' · +' + r.gems + ' ◆'); toast('Tu clan quedó ' + r.place + '.º. Aportaste ' + r.pts + ' pts → +' + r.gems + ' ◆', 'gold'); save(); } }
 function i0(x) { for (var i = 0; i < S.bots.length; i++) if (S.bots[i].n === x.n) return i % 3; return 0; }
 function applyA11y() { document.body.classList.toggle('big', !!S.cfg.big); document.body.classList.toggle('calm', !!S.cfg.calm); }
 function showPage(f, all) { openPanel('page', { f: f, all: all }); }
@@ -561,18 +569,22 @@ function startGame(st, isNew) {
 function boot2() { var raw = null; try { raw = localStorage.getItem(C.SAVE_KEY); } catch (e) { } var st = raw ? C.deserialize(raw) : null; showCover(st); }
 
 /* ---------- bucle principal ---------- */
-var TSCALE = 1, hudT = 0, scT = 0, saveT = 0, fpsE = 60, slowT = 0;
-function governor(dt) { // baja la calidad sola si el equipo no alcanza ~40 fps sostenidos
-  if (!S || !S.cfg.q || mode === 'off' || paused || dt <= 0) { slowT = 0; return; }
+var RSCALE = 1, TSCALE = 1, hudT = 0, scT = 0, saveT = 0, fpsE = 60, slowT = 0;
+function governor(dt) { // 1) baja la calidad; 2) si aún va lento, resolución dinámica al 75%
+  if (!S || mode === 'off' || paused || dt <= 0 || (!S.cfg.q && RSCALE < 1)) { slowT = 0; return; }
   fpsE += (1 / dt - fpsE) * .05; slowT = fpsE < 38 ? slowT + dt : 0;
-  if (slowT > 6) { slowT = 0; fpsE = 60; ACTS.cfg('q'); toast('Calidad ajustada para tu dispositivo (puedes cambiarla en Ajustes)', 'gold'); }
+  if (slowT > 6) {
+    slowT = 0; fpsE = 60;
+    if (S.cfg.q) { ACTS.cfg('q'); toast('Calidad ajustada para tu dispositivo (puedes cambiarla en Ajustes)', 'gold'); }
+    else { RSCALE = .75; resize(); }
+  }
 }
 function frame(ts) {
   requestAnimationFrame(frame);
   var dt = Math.min(.05, Math.max(0, (ts - lastTs) / 1000) || 0); lastTs = ts; time += dt;
   try {
     if (S && mode !== 'off') { C.tick(S, dt); saveT += dt; if (saveT > 10) { saveT = 0; save(); } }
-    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); if ((time | 0) % 60 === 0) clanCheck(); } }
+    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); if ((time | 0) % 60 === 0) clanCheck(); if ((time * 2 | 0) % 2 === 0) achTick(); } }
     if (MG.on) { mgUpdate(dt); mgDraw(); }
     if (mode !== 'off') render(); else if (coverAnim) drawCover();
     hudT += dt; if (hudT > .1 && S && mode !== 'off') { hudT = 0; hud(); if (PANEL && !$('ov').hidden) afford(); }
@@ -586,7 +598,7 @@ window.__bdp = {
   C: C, errors: errors, get S() { return S; }, get mode() { return mode; }, get P() { return P; }, get MAP() { return MAP; }, get TR() { return TR; }, get paused() { return paused; },
   ents: function () { return ents; }, go: loadZone, tourStart: tourStart, mg: mgStart, mgAct: mgAct, mgEnd: mgEnd, panel: openPanel, close: closePanel, act: function (a, v) { ACTS[a](v); },
   loadDuelTest: function (pw) { TR = { buf: { atk: 1, hp: 1, au: 1 }, br: [] }; loadDuel({ type: 'duelo', eP: pw, name: 'Prueba', el: 'rayo', look: botLook(120) }); TR.cd = 0; TR.opp.frozen = 0; TR.duelTest = 1; },
-  set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
+  set rscale(v) { RSCALE = v; resize(); }, set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
   draw: { avatar: drawAvatar, star: star, ctext: ctext, NPCL: NPCL },
   nightSkip: function () { if (mode === 'night') TR.t = C.TOUR.nightT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
 };

@@ -154,7 +154,7 @@ function Reglas.newState(o)
 		stats = { fue = O.st.fue, tec = O.st.tec, esp = O.st.esp }, legado = 0, en = 100, hp = -1,
 		oro = O.oro, gemas = 10, chispas = 0,
 		brz = { { id = 1, el = el, t = 0 } }, eq = 1, nid = 2,
-		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} },
+		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {},
 		zone = O.z, story = { i = 0, n = 0, seen = "" }, unlock = {}, ending = "",
 		daily = { day = "", q = {} },
 		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0 },
@@ -210,6 +210,8 @@ function Reglas.migrate(o)
 	for sid, v in pairs(d.side) do if not SIDEI[sid] or type(v) ~= "table" or not isNum(v.n) then d.side[sid] = nil end end
 	for fid in pairs(d.frag) do if not Reglas.FRAGI[fid] then d.frag[fid] = nil end end
 	if T(d.clan.id) and not Reglas.CLANI[d.clan.id] then d.clan.id = "" end
+	if T(d.evt) and not Reglas.EVENTI[d.evt] then d.evt = "" end
+	for aid in pairs(d.ach) do if not Reglas.ACHI[aid] then d.ach[aid] = nil end end
 	d.story.i = clamp(trunc(isNum(d.story.i) and d.story.i or 0), 0, #D.STORY - 1)
 	if not D.ZONES[d.zone] then d.zone = "plaza" end
 	local nm = Reglas.cleanName(d.name); d.name = nm ~= "" and nm or "Heroe"; d.v = 1; d.ver = D.VERSION
@@ -314,7 +316,7 @@ function Reglas.ev(s, t, d)
 	if T(s.clan.id) then
 		local cp = 0
 		if t == "tourney" then cp = math.max(1, (101 - d.rank) / 5) else cp = (D.CLANPTS[t] or 0) * nOr1(d.n) end
-		s.clan.pts = s.clan.pts + cp
+		s.clan.pts = s.clan.pts + cp * Reglas.evMul(s, "clan")
 	end
 end
 local ev = Reglas.ev
@@ -323,7 +325,7 @@ local ev = Reglas.ev
 function Reglas.addOro(s, n) if not (n and n > 0) then return end s.oro = s.oro + n; s.cnt.oroTot = s.cnt.oroTot + n; ev(s, "oro", { n = n }) end
 function Reglas.gearMul(lv) return 1 + 0.15 * lv end
 function Reglas.gearCost(lv) return math.ceil(80 * 1.75 ^ lv) end
-function Reglas.trainGain(s, act, q) local A = D.ACT[act]; return 0.05 * (1 + math.sqrt(Reglas.base(s)) / 8) * Reglas.gearMul(s.gear[A.st]) * Reglas.mLeg(s) * A.k * q * Reglas.clanMul(s, A.st) end
+function Reglas.trainGain(s, act, q) local A = D.ACT[act]; return 0.05 * (1 + math.sqrt(Reglas.base(s)) / 8) * Reglas.gearMul(s.gear[A.st]) * Reglas.mLeg(s) * A.k * q * Reglas.clanMul(s, A.st) * Reglas.evMul(s, "train") end
 function Reglas.train(s, act, q)
 	local A = D.ACT[act]; if not A then return 0 end
 	if A.en > 0 and s.en < A.en then return -1 end
@@ -345,7 +347,7 @@ end
 function Reglas.bCost(id, n) return math.ceil(BLDI[id].c * 1.15 ^ n) end
 function Reglas.bMile(n) if n >= 100 then return 8 elseif n >= 50 then return 4 elseif n >= 25 then return 2 end return 1 end
 function Reglas.magia(s) return 1 + math.sqrt(s.stats.esp) / 20 end
-function Reglas.bProd(s, id) local n = s.tyc[id] or 0; return BLDI[id].b * n * Reglas.bMile(n) * Reglas.magia(s) * (s.clan.id == "marea" and 1.05 or 1) end
+function Reglas.bProd(s, id) local n = s.tyc[id] or 0; return BLDI[id].b * n * Reglas.bMile(n) * Reglas.magia(s) * (s.clan.id == "marea" and 1.05 or 1) * Reglas.evMul(s, "oro") end
 function Reglas.prod(s) local t = 0 for _, d in ipairs(D.BLD) do t = t + Reglas.bProd(s, d.id) end return t end
 function Reglas.bUnlocked(s, id) local i = BLDI[id].i; return i == 0 or s.tyc[D.BLD[i].id] > 0 end
 function Reglas.buyB(s, id)
@@ -363,10 +365,10 @@ function Reglas.buyCaja(s) local c = Reglas.cajaCost(s.caja); if s.caja >= 8 or 
 function Reglas.killReward(s, t, eP, R)
 	local F = D.FOES[t]; if not F or not T(F.x) then return nil end
 	R = R or math.random
-	local g = F.x * (1 + math.sqrt(eP) / 4) * 0.5 * Reglas.mLeg(s)
+	local g = F.x * (1 + math.sqrt(eP) / 4) * 0.5 * Reglas.mLeg(s) * Reglas.evMul(s, "kill")
 	s.stats.fue = s.stats.fue + g * .45; s.stats.tec = s.stats.tec + g * .3; s.stats.esp = s.stats.esp + g * .25
 	local o = round(F.o * (1 + math.sqrt(eP) / 3)); Reglas.addOro(s, o)
-	local ch = 0; if R() < F.ch then ch = T(F.chn) and F.chn or 1 end; s.chispas = s.chispas + ch
+	local ch = 0; if R() < F.ch then ch = (T(F.chn) and F.chn or 1) * Reglas.evMul(s, "ch") end; s.chispas = s.chispas + ch
 	local gem = 0; if T(F.pvp) and R() < 0.05 then gem = 1 end; s.gemas = s.gemas + gem
 	s.cnt.kills = s.cnt.kills + 1; ev(s, "kill", { type = t })
 	return { g = g, o = o, ch = ch, gem = gem }
@@ -631,6 +633,33 @@ function Reglas.clanWeek(s, now)
 	return res
 end
 
+---------------------------------------------------------------- eventos semanales y logros
+local EVENTI, ACHI = {}, {}
+for _, e in ipairs(D.EVENTS) do EVENTI[e.id] = e end
+for _, a in ipairs(D.ACH) do ACHI[a.id] = a end
+Reglas.EVENTI, Reglas.ACHI = EVENTI, ACHI
+function Reglas.eventOf(now) return D.EVENTS[Reglas.weekKey(now) % #D.EVENTS + 1] end
+function Reglas.eventSync(s, now) local e = Reglas.eventOf(now); s.evt = e.id; return e.id end
+function Reglas.evMul(s, k) local e = EVENTI[s.evt]; if e and T(e[k]) then return e[k] end return 1 end
+function Reglas.achVal(s, a)
+	local v = a.v
+	if v == "friends" then return #s.friends end
+	if v == "frag" then return Reglas.fragCount(s) end
+	if v == "side" then local n = 0 for _, q in pairs(s.side) do if q.s == 2 then n += 1 end end return n end
+	if v == "brz" then return #s.brz end
+	if v == "poder" then return Reglas.poder(s) end
+	if v == "clan" then return s.clan.pts end
+	if v == "ending" then return T(s.ending) and 1 or 0 end
+	return s.cnt[v] or 0
+end
+function Reglas.achCheck(s)
+	local got = {}
+	for _, a in ipairs(D.ACH) do
+		if not T(s.ach[a.id]) and Reglas.achVal(s, a) >= a.n then s.ach[a.id] = 1; s.gemas += a.g; table.insert(got, a.id) end
+	end
+	return got
+end
+
 ---------------------------------------------------------------- amigos y grupo (bi = índice base 0 en s.bots)
 local function findFriend(s, bi) for _, f in ipairs(s.friends) do if f.bi == bi then return f end end return nil end
 function Reglas.addFriend(s, bi)
@@ -639,7 +668,7 @@ function Reglas.addFriend(s, bi)
 end
 function Reglas.friendXP(s, bi, n)
 	local f = findFriend(s, bi); if not f then return 0 end
-	local b4 = math.floor(f.af / 25); f.af = math.min(100, f.af + n)
+	local b4 = math.floor(f.af / 25); f.af = math.min(100, f.af + n * Reglas.evMul(s, "friend"))
 	local g = (math.floor(f.af / 25) - b4) * 3
 	if g > 0 then s.gemas = s.gemas + g end
 	return g

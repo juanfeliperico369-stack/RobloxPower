@@ -2,7 +2,7 @@
 -- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.
 -- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.
 return {
-	VERSION = "0.4.0",
+	VERSION = "0.5.0",
 	SAVE_KEY = "bdp.save.v1",
 	M = "@m",
 	EL = {
@@ -1083,5 +1083,145 @@ return {
 		build = 1,
 		frag = 10,
 		find = 5
-	}
+	},
+	EVENTS = {{
+			id = "dojo",
+			n = "Semana del Dojo",
+			ic = "🥋",
+			d = "Entrenar rinde +25%.",
+			train = 1.25
+		}, {
+			id = "feria",
+			n = "Feria de la Forja",
+			ic = "⚒️",
+			d = "Tu negocio produce +25% de oro.",
+			oro = 1.25
+		}, {
+			id = "ecos",
+			n = "Luna de los Ecos",
+			ic = "🌕",
+			d = "Derrotar enemigos da +25% de poder y chispas dobles.",
+			kill = 1.25,
+			ch = 2
+		}, {
+			id = "amistad",
+			n = "Semana de la Amistad",
+			ic = "🤝",
+			d = "La amistad crece el doble y los puntos de clan valen doble.",
+			friend = 2,
+			clan = 2
+		}},
+	ACH = {{
+			id = "golpes",
+			t = "Puño de hierro",
+			d = "Entrena 500 veces",
+			v = "taps",
+			n = 500,
+			g = 5
+		}, {
+			id = "caza",
+			t = "Cazador de Ecos",
+			d = "Derrota 100 enemigos",
+			v = "kills",
+			n = 100,
+			g = 5
+		}, {
+			id = "mil",
+			t = "Mil batallas",
+			d = "Derrota 1.000 enemigos",
+			v = "kills",
+			n = 1000,
+			g = 15
+		}, {
+			id = "noche",
+			t = "Primera Noche",
+			d = "Juega tu primer torneo",
+			v = "tours",
+			n = 1,
+			g = 5
+		}, {
+			id = "veterano",
+			t = "Veterano del Eclipse",
+			d = "Juega 10 torneos",
+			v = "tours",
+			n = 10,
+			g = 10
+		}, {
+			id = "campeon",
+			t = "Campeón",
+			d = "Gana un torneo",
+			v = "wins",
+			n = 1,
+			g = 20
+		}, {
+			id = "millon",
+			t = "Primer millón",
+			d = "Gana 1 M de oro en total",
+			v = "oroTot",
+			n = 1000000,
+			g = 15
+		}, {
+			id = "amigos",
+			t = "Buena compañía",
+			d = "Ten 5 amigos",
+			v = "friends",
+			n = 5,
+			g = 5
+		}, {
+			id = "arqueo",
+			t = "Arqueología",
+			d = "Encuentra 3 fragmentos",
+			v = "frag",
+			n = 3,
+			g = 5
+		}, {
+			id = "guardian",
+			t = "Guardián",
+			d = "Completa el Códice",
+			v = "frag",
+			n = 7,
+			g = 15
+		}, {
+			id = "bondad",
+			t = "Buena persona",
+			d = "Completa 4 misiones secundarias",
+			v = "side",
+			n = 4,
+			g = 10
+		}, {
+			id = "colec",
+			t = "Coleccionista",
+			d = "Ten 4 brazaletes",
+			v = "brz",
+			n = 4,
+			g = 10
+		}, {
+			id = "guerrero",
+			t = "Guerrero",
+			d = "Alcanza 1.500 de Poder",
+			v = "poder",
+			n = 1500,
+			g = 10
+		}, {
+			id = "leyenda",
+			t = "Leyenda viva",
+			d = "Alcanza 1 M de Poder",
+			v = "poder",
+			n = 1000000,
+			g = 30
+		}, {
+			id = "clan",
+			t = "Espíritu de equipo",
+			d = "Aporta 200 puntos a tu clan en una semana",
+			v = "clan",
+			n = 200,
+			g = 10
+		}, {
+			id = "final",
+			t = "Fin del viaje",
+			d = "Elige un final",
+			v = "ending",
+			n = 1,
+			g = 20
+		}}
 }

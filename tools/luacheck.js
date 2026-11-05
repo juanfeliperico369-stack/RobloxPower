@@ -34,6 +34,8 @@ for (const f of files) {
 }
 // funciones de Reglas usadas en otros scripts deben existir
 const reg = fs.readFileSync(path.join(ROOT, 'shared/Reglas.luau'), 'utf8'), defs = new Set([...reg.matchAll(/function Reglas\.(\w+)|Reglas\.(\w+)\s*=/g)].map(m => m[1] || m[2]));
+// asignaciones múltiples: Reglas.A, Reglas.B = a, b
+for (const l of reg.split('\n')) { const m = /^\s*(Reglas\.\w+(?:\s*,\s*Reglas\.\w+)+)\s*=[^=]/.exec(l); if (m) for (const n of m[1].matchAll(/Reglas\.(\w+)/g)) defs.add(n[1]); }
 for (const f of files) { const s = fs.readFileSync(f, 'utf8'); for (const m of s.matchAll(/Reglas\.(\w+)/g)) if (!defs.has(m[1]) && !['D', 'BLDI', 'STI', 'SIDEI', 'clamp', 'round', 'deepcopy', 'nowMs'].includes(m[1])) { bad++; console.error('✖ ' + path.basename(f) + ' usa Reglas.' + m[1] + ' que no existe'); } }
 // las funciones del núcleo JS deben tener su par en Luau
 const C = require('../src/core.js'), skip = new Set(['serialize', 'deserialize', 'clamp', 'pick']);
