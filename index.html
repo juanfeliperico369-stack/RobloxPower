@@ -227,7 +227,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px}
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.5.0';
+var VERSION = '0.6.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -404,7 +404,24 @@ var STORY = [
   { id: 'c5', act: 3, t: 'El campeón del Eclipse', o: { k: 'boss', who: 'vant' }, r: { gemas: 50 }, h: 'Gana el torneo y vence a Vant',
     e: [['vant', '¿Cómo…? Tenía el poder de miles…'], ['vant', 'Tómalo. Toma el Brazalete del Origen. Ahora tú decides quién vale.']] },
   { id: 'c6', act: 3, t: 'La decisión', o: { k: 'choice' }, r: { gemas: 30 }, h: 'Decide qué hacer con el Brazalete del Origen' },
-  { id: 'ep', act: 4, t: 'Epílogo: Ánima libre', o: { k: 'none' }, r: {}, h: 'Juego libre: sigue mejorando, el torneo continúa' }
+  { id: 'd1', act: 4, t: 'Luces sin dueño', o: { k: 'talk', who: 'nima' }, r: { gemas: 10 }, h: 'Habla con el Oráculo Nima (Plaza)',
+    i: [['nar', 'ACTO IV · LAS LUCES SIN DUEÑO'], ['nar', 'Semanas después, algo extraño ocurre en Ánima: de noche, pequeñas luces flotan sin rumbo.']],
+    d: { compartir: [['nima', 'Rompiste el Brazalete y el poder volvió a la gente… pero no todo encontró su camino.'], ['nima', 'Los frascos del palco guardaban luces de personas que ya no viven en Ánima. Esas luces no tienen a dónde volver.']],
+      corona: [['nima', 'Llevas el Brazalete del Origen. ¿Sientes su peso? Son miles de luces ajenas.'], ['nima', 'Algunas ya no tienen dueño a quien volver. Vagan. Y si nadie las cuida, se vuelven Ecos.']] } },
+  { id: 'd2', act: 4, t: 'El palco vacío', o: { k: 'talk', who: 'vant' }, r: { gemas: 10 }, h: 'Busca a Vant en el Coliseo',
+    d: [['vant', 'Viniste. Pensé que nadie volvería a hablarme.'], ['vant', 'Cada luz de esos frascos tenía un nombre. Me los sé todos. Los repito de noche.'], ['vant', 'No te pido que me perdones. Te pido ayuda para hacer algo bien, por una vez.']] },
+  { id: 'd3', act: 4, t: 'Reyes de lo perdido', o: { k: 'kill', type: 'reyeco', n: 2 }, r: { chispas: 15 }, h: 'Libera a 2 Reyes Eco (Tierras Rotas, anillo 1)',
+    i: [['kira', 'Los Reyes Eco son luces que se cansaron de buscar. Liberarlos no es destruirlos: es dejarlos descansar.']] },
+  { id: 'd4', act: 4, t: 'Luces en el agua', o: { k: 'fish', n: 5 }, r: { oro: 3000, gemas: 10 }, h: 'Pesca 5 peces en la fuente de la Plaza',
+    i: [['nima', 'Las luces más tímidas se esconden en el agua. Pescarlas con paciencia las calma.'], ['pip', '¡Yo te enseño a pescar! Lanza, espera la picada y no tires demasiado fuerte.']] },
+  { id: 'd5', act: 4, t: 'Lo que no se olvida', o: { k: 'talk', who: M }, r: { gemas: 10 }, h: 'Habla con tu mentor sobre el perdón',
+    d: [[M, '¿Perdonar a Vant? Perdonar no es olvidar lo que hizo.'], [M, 'Es decidir que el daño no va a decidir quién eres tú.'], [M, 'Y a veces, es darle a alguien la oportunidad de reparar lo que rompió.']] },
+  { id: 'd6', act: 4, t: 'Maestría', o: { k: 'power', n: 40000 }, r: { oro: 50000 }, h: 'Alcanza 40.000 de Poder (rango Maestro)' },
+  { id: 'd7', act: 4, t: 'El Festival del Origen', o: { k: 'tourney', r: 3 }, r: { gemas: 40 }, h: 'Queda en el Top 3 del torneo (Festival del Origen)',
+    i: [['heraldo', 'Este año el torneo lo organiza el pueblo. Se llama Festival del Origen. Y el palco… está abierto para todos.']] },
+  { id: 'd8', act: 4, t: 'Un nombre nuevo', o: { k: 'talk', who: 'vant' }, r: { gemas: 50 }, h: 'Habla con Vant después del Festival',
+    d: [['vant', 'Te vi pelear. No para quitarle nada a nadie. Para demostrar algo a ti.'], ['vant', 'Devolví la última luz esta mañana. Era de una niña que me sonrió una vez, cuando nadie lo hacía.'], ['vant', 'Ya no quiero que me llamen Anfitrión. Llámame Vant. Solo Vant.'], ['nar', 'FIN DEL ACTO IV · Ánima sigue. Tú también. Gracias por jugar con el corazón.']] },
+  { id: 'ep', act: 5, t: 'Epílogo: Ánima libre', o: { k: 'none' }, r: {}, h: 'Juego libre: sigue mejorando, el torneo continúa' }
 ];
 var STI = {}; STORY.forEach(function (s, i) { STI[s.id] = i; });
 
@@ -426,10 +443,10 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {}, fish: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
-    cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
+    cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0, cook: 0 },
     tours: [], title: '', pend: null,
     bots: makeBots(seed),
     cfg: { snd: 1, mus: 1, q: 1, vib: 1, big: 0, calm: 0 }
@@ -466,6 +483,7 @@ function migrate(o) {
   if (d.clan.id && !CLANI[d.clan.id]) d.clan.id = '';
   if (d.evt && !EVENTI[d.evt]) d.evt = '';
   for (var aid in d.ach) if (!ACHI[aid]) delete d.ach[aid];
+  for (var fid2 in d.fish) if (!FISHI[fid2] || !isNum(d.fish[fid2])) delete d.fish[fid2];
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -645,7 +663,7 @@ function who(s, w) { return w === M ? mentor(s) : w; }
 function stepHint(s) { var st = STORY[s.story.i], h = st.h; if (h && typeof h === 'object') h = h[s.origin]; if (!h && st.o.k === 'talk') h = 'Habla con ' + NPC[who(s, st.o.who)].n; return h || st.t; }
 function stepDialog(s, key) {
   var st = STORY[s.story.i], d = st[key || 'd']; if (!d) return null;
-  if (!Array.isArray(d)) d = d[s.origin];
+  if (!Array.isArray(d)) d = d[s.ending] || d[s.origin] || d[Object.keys(d)[0]];
   return d.map(function (l) { return [who(s, l[0]), l[1]]; });
 }
 function match(o, type, d) {
@@ -673,7 +691,7 @@ function ev(s, type, d) {
   for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
   if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp * evMul(s, 'clan'); }
 }
-function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
+function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' || o.k === 'fish' ? o.n : 1; }
 function stepProg(s) {
   var o = stepObj(s); if (!o) return [0, 1];
   if (o.k === 'power') return [Math.min(poder(s), o.n), o.n];
@@ -755,7 +773,7 @@ var CLANS = [
   { id: 'marea', n: 'Clan Marea Azul', ic: '🌊', c: '#39c8ff', st: 'esp', d: 'Espíritu y comercio. +5% al entrenar Espíritu y +5% de oro del negocio.' }
 ];
 var CLANI = {}; CLANS.forEach(function (c, i) { CLANI[c.id] = c; c.i = i; });
-var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5 };
+var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5, fish: .5, cook: .5 };
 function weekKey(now) { return Math.floor((now / 864e5 + 3) / 7); } /* semanas de lunes a domingo (UTC) */
 function clanMul(s, st) { var c = CLANI[s.clan.id]; return c && c.st === st ? 1.05 : 1; }
 function clanBase(s, key) { var R = mulberry((s.seed ^ (key * 7919)) >>> 0); return CLANS.map(function () { return 2500 + Math.floor(R() * 2500); }); }
@@ -798,7 +816,9 @@ var ACH = [
   { id: 'guerrero', t: 'Guerrero', d: 'Alcanza 1.500 de Poder', v: 'poder', n: 1500, g: 10 },
   { id: 'leyenda', t: 'Leyenda viva', d: 'Alcanza 1 M de Poder', v: 'poder', n: 1e6, g: 30 },
   { id: 'clan', t: 'Espíritu de equipo', d: 'Aporta 200 puntos a tu clan en una semana', v: 'clan', n: 200, g: 10 },
-  { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 }
+  { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 },
+  { id: 'pesca', t: 'Paciencia de agua', d: 'Pesca las 8 especies', v: 'fish', n: 8, g: 20 },
+  { id: 'chef', t: 'Manos de panadero', d: 'Completa 50 rondas de cocina', v: 'cook', n: 50, g: 10 }
 ];
 var ACHI = {}; ACH.forEach(function (a) { ACHI[a.id] = a; });
 function achVal(s, a) {
@@ -810,12 +830,36 @@ function achVal(s, a) {
   if (v === 'poder') return poder(s);
   if (v === 'clan') return s.clan.pts;
   if (v === 'ending') return s.ending ? 1 : 0;
+  if (v === 'fish') { var f = 0; for (var q in s.fish) if (FISHI[q] && s.fish[q] > 0) f++; return f; }
   return s.cnt[v] || 0;
 }
 function achCheck(s) {
   var got = [];
   for (var i = 0; i < ACH.length; i++) { var a = ACH[i]; if (!s.ach[a.id] && achVal(s, a) >= a.n) { s.ach[a.id] = 1; s.gemas += a.g; got.push(a.id); } }
   return got;
+}
+
+/* ---------- pesca (fuente de la Plaza) y cocina (Panadería) ---------- */
+var FISH = [
+  { id: 'linterna', n: 'Pez Linterna', ic: '🐟', w: 40, v: 8, sp: 1 }, { id: 'tinta', n: 'Carpa de Tinta', ic: '🐠', w: 25, v: 14, sp: 1.2 },
+  { id: 'arcoiris', n: 'Trucha Arcoíris', ic: '🌈', w: 14, v: 25, sp: 1.4 }, { id: 'brazalete', n: 'Pez Brazalete', ic: '💍', w: 9, v: 45, sp: 1.6 },
+  { id: 'anguila', n: 'Anguila Rayo', ic: '⚡', w: 6, v: 80, sp: 1.9 }, { id: 'koi', n: 'Koi del Eclipse', ic: '🎏', w: 3.5, v: 150, sp: 2.1 },
+  { id: 'fantasma', n: 'Pez Fantasma', ic: '👻', w: 2, v: 260, sp: 2.4 }, { id: 'leviatan', n: 'Leviatán Bebé', ic: '🐉', w: .5, v: 900, sp: 2.8 }
+];
+var FISHI = {}; FISH.forEach(function (f, i) { FISHI[f.id] = f; f.i = i; });
+/* la calidad del lanzamiento (0..1) inclina la suerte hacia peces raros */
+function fishRoll(R, q) {
+  var tot = 0, ws = FISH.map(function (f) { var w = f.w * (1 + q * f.i * 0.35); tot += w; return w; }), x = R() * tot;
+  for (var i = 0; i < FISH.length; i++) { x -= ws[i]; if (x < 0) return FISH[i].id; }
+  return FISH[0].id;
+}
+function fishValue(s, id) { return Math.round(FISHI[id].v * (1 + Math.sqrt(base(s)) / 20)); }
+function fishCatch(s, id) {
+  if (!FISHI[id]) return 0; s.fish[id] = (s.fish[id] || 0) + 1; var o = fishValue(s, id); addOro(s, o); ev(s, 'fish', { n: 1 }); return o;
+}
+function cookRound(s, r) {
+  if (!(r >= 1)) return 0; var o = Math.ceil((10 + prod(s) * 2) * (1 + r * 0.15));
+  s.en = Math.min(enMax(s), s.en + 8); addOro(s, o); s.cnt.cook = (s.cnt.cook || 0) + 1; ev(s, 'cook', { n: 1 }); return o;
 }
 
 function clanWeek(s, now) {
@@ -854,7 +898,7 @@ var DQ = [
   { k: 'perf', st: 'tec', n: 5, t: 'Logra 5 katas perfectas' }, { k: 'anvil', n: 30, t: 'Golpea el yunque 30 veces' },
   { k: 'train', st: 'fue', n: 80, t: 'Golpea el saco 80 veces' }, { k: 'train', st: 'tec', n: 15, t: 'Logra 15 katas' },
   { k: 'train', st: 'esp', n: 5, t: 'Completa 5 respiraciones' }, { k: 'kill', n: 15, t: 'Derrota 15 enemigos' },
-  { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
+  { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'fish', n: 4, t: 'Pesca 4 peces' }, { k: 'cook', n: 6, t: 'Completa 6 rondas de cocina' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
 ];
 function dailyCheck(s, now) {
   var d = today(now); if (s.daily.day === d) return false;
@@ -902,7 +946,8 @@ var API = {
   NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
   CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
   CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek,
-  EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck
+  EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck,
+  FISH: FISH, FISHI: FISHI, fishRoll: fishRoll, fishValue: fishValue, fishCatch: fishCatch, cookRound: cookRound
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -985,7 +1030,7 @@ var TH = {
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
-var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza' };
+var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza', vant: 'coliseo' };
 var NPCL = {
   ren: { skin: '#f5d0a9', shirt: '#e0262f', pants: '#1b1b22', hair: '#1b1b22', bun: 1 },
   tobias: { skin: '#c68642', shirt: '#7a4a2a', pants: '#33333d', hair: '#d6dee9', beard: 1 },
@@ -1066,6 +1111,7 @@ function buildPlaza() {
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
   npc(m, 'pip', 13, 10); npc(m, 'sol', 24, 11);
+  inter(m, 'pesca', 17.5 * T, 17.4 * T, 'PESCAR EN LA FUENTE', function () { mgStart('pesca'); }); deco(m, 'sign', 14, 17, { txt: '🎣 PESCA AQUÍ' });
   block(m, 20, 9, 2, 1, 30, ['#f2e8d5', '#b8a583'], { sign: 'TABLÓN' }); inter(m, 'board', 21 * T, 10.6 * T, 'TABLÓN · MISIONES DIARIAS', function () { openPanel('board'); });
   block(m, 12, 18, 2, 1, 44, ['#e0262f', '#8a1219'], { sign: 'RANKING' }); inter(m, 'rank', 13 * T, 19.6 * T, 'RANKING MUNDIAL', function () { openPanel('rank'); });
   block(m, 20, 18, 3, 1, 34, ['#a42cff', '#4d1785'], { sign: 'TIENDA' }); inter(m, 'shop', 21.5 * T, 19.6 * T, 'TIENDA DE GEMAS', function () { openPanel('shop'); });
@@ -1131,7 +1177,7 @@ function buildColiseo() {
   var m = newMap('coliseo', 31, 25), R = C.mulberry(55);
   tRect(m, 14, 5, 3, 19, 1); tRect(m, 7, 7, 17, 7, 1); border(m, [[15, 24]]); fragsIn(m);
   block(m, 4, 1, 23, 4, 74, ['#a42cff', '#4d1785'], { arches: 1, sign: 'COLISEO DEL ECLIPSE' });
-  npc(m, 'heraldo', 15, 7);
+  npc(m, 'heraldo', 15, 7); npc(m, 'vant', 20, 12, function () { return S.story.i >= C.STI.d2; });
   block(m, 7, 9, 2, 2, 92, ['#2c2542', '#16121f'], { statue: 2 }); inter(m, 'estatua', 8 * T, 11.8 * T, 'ESTATUA DE VANT', function () { dialog([['nar', 'Una estatua de Vant, el Anfitrión. La placa dice: “El poder es lo único que vale”. Alguien rayó debajo: “mentira”.']]); });
   block(m, 22, 9, 2, 2, 70, ['#f0b429', '#a8740c'], { statue: 3 });
   [[5, 6], [25, 6], [5, 15], [25, 15]].forEach(function (p) { deco(m, 'torch', p[0], p[1]); });
@@ -1730,6 +1776,7 @@ function objTarget() {
   else if (o.k === 'kill') { z = 'tierras'; if (o.type === 'golem') id = 'golem'; }
   else if (o.k === 'forge') { z = 'forja'; id = 'npc:tobias'; }
   else if (o.k === 'tourney' || o.k === 'boss') { z = 'coliseo'; id = 'npc:heraldo'; }
+  else if (o.k === 'fish') { z = 'plaza'; id = 'pesca'; }
   if (!z || mode !== 'world') return null;
   if (MAP.id !== z) { var to = MAP.id === 'plaza' ? z : 'plaza'; for (var i = 0; i < MAP.portals.length; i++) if (MAP.portals[i].to === to) return { x: MAP.portals[i].x, y: MAP.portals[i].y, por: 1 }; return null; }
   if (id === 'golem') { var g = null; ents.forEach(function (e) { if (e.type === 'golem' && !e.dead) g = e; }); return g ? { x: g.x, y: g.y - 40 } : { x: 39.5 * T, y: 18 * T }; }
@@ -2023,7 +2070,7 @@ function hud() {
 }
 function questBox() {
   var st = C.STORY[S.story.i], pr = C.stepProg(S);
-  $('qA').textContent = (st.act <= 3 ? 'ACTO ' + ['I', 'II', 'III'][st.act - 1] : 'EPÍLOGO') + ' · MISIÓN ' + (S.story.i + 1);
+  $('qA').textContent = (st.act <= 4 ? 'ACTO ' + ['I', 'II', 'III', 'IV'][st.act - 1] : 'EPÍLOGO') + ' · MISIÓN ' + (S.story.i + 1);
   $('qT').textContent = st.t; $('qH').textContent = C.stepHint(S) + (pr[1] > 1 ? '  ·  ' + C.fmt(pr[0]) + '/' + C.fmt(pr[1]) : '');
   $('qP').style.width = Math.min(100, pr[0] / pr[1] * 100) + '%';
 }
@@ -2144,7 +2191,7 @@ var PANELS = {
   },
   pan: function () {
     var c = C.foodCost(S), ok = S.tyc.pan > 0;
-    return head('PANADERÍA', 'Comer', 'Recupera 40 de energía para entrenar.') + (ok ? '<p class="m">Energía: <b class="w">' + Math.floor(S.en) + '/' + C.enMax(S) + '</b></p>' + bt('eat', '', 'Comer pan · ' + C.fmt(c) + ' ●', c) : '<p class="bad">Primero compra un Puesto de Pan en la mesa del Tycoon.</p>');
+    return head('PANADERÍA', 'Comer', 'Recupera 40 de energía para entrenar.') + (ok ? '<p class="m">Energía: <b class="w">' + Math.floor(S.en) + '/' + C.enMax(S) + '</b></p>' + bt('eat', '', 'Comer pan · ' + C.fmt(c) + ' ●', c) + ' ' + bt('cook', '', '👩‍🍳 Cocinar (minijuego)', undefined, '', 'red') : '<p class="bad">Primero compra un Puesto de Pan en la mesa del Tycoon.</p>');
   },
   forge: function () {
     var h = head('FORJA DE DON TOBÍAS', 'Brazaletes', 'Los brazaletes multiplican tu Poder y NUNCA se pierden en el torneo.');
@@ -2301,6 +2348,7 @@ var ACTS = {
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   clanJoin: function (v) { var r = C.clanJoin(S, v, Date.now()); if (r === true) { toast('¡Bienvenida, bienvenido al ' + C.CLANI[v].n + '! ' + C.CLANI[v].ic, 'gold'); sfx('win'); refreshCombat(); save(); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'bot'; }); spawnBots(MAP.id); } } else if (r === 'espera') toast('Solo puedes cambiar de clan una vez cada 24 h', 'bad'); renderPanel(); },
+  cook: function () { closePanel(); mgStart('cocina'); },
   stratEq: function (v) { C.equip(S, +v); refreshCombat(); sfx('up'); renderPanel(); },
   pageOk: function () { var all = PANEL.a.all; closePanel(); if (all) { banner('¡GUARDIÁN DEL ORIGEN!', 'Completaste el Códice'); sfx('win'); } hudFull(); },
   choose: function (v) { closePanel(); C.choose(S, v); refreshCombat(); save(); sfx('win'); dialog(ENDS[S.ending], function () { banner('FIN', S.title); hudFull(); }); },
@@ -2339,17 +2387,40 @@ window.addEventListener('pagehide', save);
 
 /* ---------- minijuegos ---------- */
 var MG = { on: 0 }, mg = $('mgc').getContext('2d'), MW = 1, MH = 1;
-var MGT = { saco: ['Saco de Fuerza', 'Golpea con RITMO (3–6 golpes/s). Spamear sin técnica rinde menos.', '¡Golpe!'], kata: ['Katas de Técnica', 'Toca cuando el anillo coincida con el círculo. Rachas = más difícil y más premio.', '¡Ahora!'], medita: ['Cascada Serena', 'MANTÉN para inhalar 4 s · SUELTA para exhalar 4 s. Recupera energía.', 'Mantén'], yunque: ['Yunque', 'Golpea el yunque para forjar monedas.', '¡Martillo!'] };
+var MGT = { saco: ['Saco de Fuerza', 'Golpea con RITMO (3–6 golpes/s). Spamear sin técnica rinde menos.', '¡Golpe!'], kata: ['Katas de Técnica', 'Toca cuando el anillo coincida con el círculo. Rachas = más difícil y más premio.', '¡Ahora!'], medita: ['Cascada Serena', 'MANTÉN para inhalar 4 s · SUELTA para exhalar 4 s. Recupera energía.', 'Mantén'], yunque: ['Yunque', 'Golpea el yunque para forjar monedas.', '¡Martillo!'], pesca: ['Pesca en la Fuente', 'Lanza cuando la barra esté arriba · espera la picada (¡no antes!) · MANTÉN para subir la zona verde y que el pez quede dentro.', '¡Lanzar!'], cocina: ['Cocina de la Panadería', 'Mira la receta y repítela tocando los ingredientes en el mismo orden. Cada ronda: oro y energía.', 'Ver receta'] };
+var INGR = ['🌾', '🥚', '🥛', '🍯'];
 function mgStart(kind) {
   MG = { on: 1, kind: kind, t: 0, taps: [], sw: 0, sv: 0, ring: 160, streak: 0, ph: 'idle', inS: 0, outS: 0, din: 0, last: '', lastT: 0, gain: 0, n: 0 };
   paused++; $('mg').hidden = false; $('mgT').textContent = MGT[kind][0]; $('mgH').textContent = MGT[kind][1]; $('mgB').textContent = MGT[kind][2];
+  if (kind === 'pesca') { MG.ph = 'cast'; MG.zy = .5; MG.fy = .5; MG.fv = 0; MG.pr = .3; }
+  if (kind === 'cocina') { MG.seq = []; MG.ph = 'next'; MG.k = 0; MG.tt = .6; MG.lit = -1; }
   mgResize(); mgStat();
 }
-function mgEnd() { if (!MG.on) return; MG.on = 0; $('mg').hidden = true; paused = Math.max(0, paused - 1); refreshCombat(); save(); hudFull(); if (MG.n) toast('Sesión: +' + MG.gain.toFixed(1) + (MG.kind === 'yunque' ? ' oro' : ' ' + { saco: 'FUE', kata: 'TEC', medita: 'ESP' }[MG.kind]), 'ok'); }
+function mgEnd() { if (!MG.on) return; MG.on = 0; $('mg').hidden = true; paused = Math.max(0, paused - 1); refreshCombat(); save(); hudFull(); if (MG.n) toast('Sesión: +' + MG.gain.toFixed(1) + (MG.kind === 'yunque' || MG.kind === 'pesca' || MG.kind === 'cocina' ? ' oro' : ' ' + { saco: 'FUE', kata: 'TEC', medita: 'ESP' }[MG.kind]), 'ok'); }
 function mgResize() { var c = $('mgc'), r = c.getBoundingClientRect(); MW = Math.max(1, r.width); MH = Math.max(1, r.height); c.width = MW * DPR; c.height = MH * DPR; }
-function mgStat() { $('mgS').textContent = MG.kind === 'yunque' ? C.fmt(S.oro) + ' ●' : '⚡ ' + Math.floor(S.en) + '/' + C.enMax(S); }
+function mgStat() { $('mgS').textContent = MG.kind === 'yunque' || MG.kind === 'pesca' || MG.kind === 'cocina' ? C.fmt(S.oro) + ' ●' : '⚡ ' + Math.floor(S.en) + '/' + C.enMax(S); }
 function mgFloat(t, c) { MG.fl = (MG.fl || []).concat([{ t: t, c: c, y: 0, life: 1 }]).slice(-6); }
-function mgAct(type) {
+function cookNext() { MG.seq.push(Math.random() * 4 | 0); MG.ph = 'show'; MG.k = 0; MG.tt = .7; MG.lit = -1; $('mgB').textContent = 'Mirando…'; }
+function mgAct(type, e) {
+  if (MG.on && MG.kind === 'pesca') {
+    if (type === 'up') { MG.hold = 0; return; }
+    if (type !== 'down') return; MG.hold = 1;
+    if (MG.ph === 'cast') { MG.q = .5 + .5 * Math.sin(MG.t * 3.2); MG.ph = 'wait'; MG.wt = rnd(1.3, 4); $('mgB').textContent = 'Esperando…'; sfx('dash'); mgFloat(MG.q > .85 ? '¡LANZAMIENTO PERFECTO!' : 'Lanzado', MG.q > .85 ? '#2dffb3' : '#fff'); }
+    else if (MG.ph === 'wait') { MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; mgFloat('¡Muy pronto! El pez se asustó', '#e0262f'); sfx('hurt'); }
+    else if (MG.ph === 'bite') { MG.ph = 'reel'; MG.pr = .35; MG.zy = .5; MG.fy = .5; MG.fv = 0; $('mgB').textContent = 'MANTÉN'; sfx('crit'); }
+    return;
+  }
+  if (MG.on && MG.kind === 'cocina') {
+    if (type !== 'down') return;
+    if (MG.ph === 'next' || MG.ph === 'fail') { if (MG.ph === 'fail') MG.seq = []; cookNext(); return; }
+    if (MG.ph !== 'input' || !e || e.currentTarget !== $('mgc')) return;
+    var r = $('mgc').getBoundingClientRect(), x = e.clientX - r.left - MW / 2, y = e.clientY - r.top - MH / 2, idx = (x > 0 ? 1 : 0) + (y > 0 ? 2 : 0);
+    MG.lit = idx; MG.litT = .25; tone([523, 659, 784, 988][idx], .12, 'square', .06);
+    if (idx !== MG.seq[MG.k]) { MG.ph = 'fail'; $('mgB').textContent = 'Otra vez'; mgFloat('¡Se quemó! Receta de ' + MG.seq.length, '#e0262f'); sfx('hurt'); return; }
+    MG.k++;
+    if (MG.k >= MG.seq.length) { var o = C.cookRound(S, MG.seq.length); MG.gain += o; MG.n++; mgFloat('¡Ronda ' + MG.seq.length + '! +' + C.fmt(o) + ' ● +8 ⚡', '#f0b429'); sfx('up'); MG.ph = 'next'; $('mgB').textContent = 'Siguiente receta'; mgStat(); }
+    return;
+  }
   if (!MG.on) return; var now = performance.now() / 1000, k = MG.kind;
   if (k === 'saco' && type === 'down') {
     MG.taps.push(now); MG.taps = MG.taps.filter(function (t) { return now - t < 1.2; });
@@ -2384,13 +2455,29 @@ function mgUpdate(dt) {
   MG.sv += -MG.sw * 30 * dt; MG.sv *= .96; MG.sw += MG.sv * dt * 4; MG.sw = C.clamp(MG.sw, -1, 1);
   if (MG.kind === 'kata') { MG.ring -= 95 * Math.min(1.8, 1 + MG.streak * .06) * dt; if (MG.ring < 30) { MG.streak = 0; C.train(S, 'kata', 0); mgFloat('TARDE', '#e0262f'); MG.ring = 160; mgStat(); } }
   if (MG.kind === 'yunque') MG.sv = Math.max(0, MG.sv - dt * 6);
+  if (MG.kind === 'pesca') {
+    if (MG.ph === 'wait') { MG.wt -= dt; if (MG.wt <= 0) { MG.ph = 'bite'; MG.bt = .75; MG.fid = C.fishRoll(Math.random, MG.q || 0); $('mgB').textContent = '¡TIRA!'; sfx('beat'); vib(40); } }
+    else if (MG.ph === 'bite') { MG.bt -= dt; if (MG.bt <= 0) { MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; mgFloat('Se escapó… ¡toca apenas pique!', '#e0262f'); } }
+    else if (MG.ph === 'reel') {
+      var F = C.FISHI[MG.fid], sp = F.sp;
+      MG.fv += (Math.random() - .5) * 4.2 * sp * dt; MG.fv *= .96; MG.fy = C.clamp(MG.fy + MG.fv * dt, .05, .95); if (MG.fy <= .05 || MG.fy >= .95) MG.fv *= -.6;
+      MG.zy = C.clamp(MG.zy + (MG.hold ? -1.1 : .9) * dt, .14, .86);
+      var inside = Math.abs(MG.fy - MG.zy) < .14; MG.pr = C.clamp(MG.pr + (inside ? .3 : -.12 * sp) * dt, 0, 1);
+      if (MG.pr >= 1) { var o = C.fishCatch(S, MG.fid); MG.gain += o; MG.n++; mgFloat('¡' + F.ic + ' ' + F.n + '! +' + C.fmt(o) + ' ●', F.i >= 5 ? '#ff2fb3' : F.i >= 3 ? '#f0b429' : '#fff'); sfx(F.i >= 5 ? 'win' : 'coin'); MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; mgStat(); }
+      else if (MG.pr <= 0) { mgFloat('El pez rompió el sedal', '#e0262f'); MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; }
+    }
+  }
+  if (MG.kind === 'cocina') {
+    MG.litT = (MG.litT || 0) - dt; if (MG.ph !== 'show' && MG.litT <= 0) MG.lit = -1;
+    if (MG.ph === 'show') { MG.tt -= dt; if (MG.tt <= 0) { if (MG.lit >= 0) { MG.lit = -1; MG.tt = .18; MG.k++; } else if (MG.k < MG.seq.length) { MG.lit = MG.seq[MG.k]; MG.tt = .5; tone([523, 659, 784, 988][MG.lit], .14, 'square', .05); } else { MG.ph = 'input'; MG.k = 0; $('mgB').textContent = '¡Tu turno!'; } } }
+  }
   (MG.fl || []).forEach(function (f) { f.y += dt * 60; f.life -= dt * .9; }); MG.fl = (MG.fl || []).filter(function (f) { return f.life > 0; });
   if ((MG.t * 4 | 0) !== ((MG.t - dt) * 4 | 0)) mgStat();
 }
 function mgDraw() {
   var g = mg, cx = MW / 2, cy = MH / 2, s = Math.min(MW, MH) / 320;
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
-  var bgc = { saco: '#8a1219', kata: '#0f5c66', medita: '#08343b', yunque: '#33333d' }[MG.kind];
+  var bgc = { saco: '#8a1219', kata: '#0f5c66', medita: '#08343b', yunque: '#33333d', pesca: '#0f5c66', cocina: '#a8740c' }[MG.kind];
   g.fillStyle = bgc; g.fillRect(0, 0, MW, MH);
   g.fillStyle = 'rgba(0,0,0,.22)'; for (var y = 0; y < MH; y += 9) for (var x = (y / 9 & 1) * 4.5; x < MW; x += 9) g.fillRect(x, y, 2, 2);
   g.lineWidth = 3; g.strokeStyle = INK;
@@ -2425,9 +2512,29 @@ function mgDraw() {
     if (MG.sv > .6) for (var i = 0; i < 8; i++) { g.fillStyle = '#f0b429'; g.fillRect(cx + Math.cos(i) * 60 * s * (1.6 - MG.sv), cy - 30 * s + Math.sin(i * 2) * 30 * s, 5, 5); }
     ctext(g, C.fmt(C.prod(S)) + ' ●/s', cx, 44, 22, '#f0b429');
   }
+  if (MG.kind === 'pesca') {
+    g.fillStyle = '#39c8ff'; g.globalAlpha = .25; for (var wv = 0; wv < 6; wv++) g.fillRect(0, cy - 40 + wv * 26 + Math.sin(MG.t * 2 + wv) * 6, MW, 3); g.globalAlpha = 1;
+    rr(g, 0, MH - 70 * s, MW * .45, 70 * s, '#5a3825');
+    g.save(); g.translate(MW * .2, MH - 70 * s); g.scale(1.6 * s, 1.6 * s); drawAvatar(g, 0, 0, playerLook(), { dir: 3, el: brzColor() }); g.restore();
+    var bx = cx + 30 * s, by = cy - 10 * s + (MG.ph === 'bite' ? Math.sin(MG.t * 40) * 6 : Math.sin(MG.t * 2) * 3);
+    g.strokeStyle = '#f2e8d5'; g.lineWidth = 2; g.beginPath(); g.moveTo(MW * .2 + 30 * s, MH - 150 * s); g.quadraticCurveTo(bx - 40, by - 80, bx, by); g.stroke();
+    if (MG.ph !== 'cast') { g.lineWidth = 2; g.strokeStyle = INK; g.fillStyle = '#e0262f'; g.beginPath(); g.arc(bx, by, 8, Math.PI, 0); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 8, 0, Math.PI); g.fill(); g.stroke(); }
+    if (MG.ph === 'bite') ctext(g, '¡!', bx, by - 40, 46, '#f0b429');
+    if (MG.ph === 'cast') { var q = .5 + .5 * Math.sin(MG.t * 3.2); g.fillStyle = INK; g.fillRect(20, 30, 22, MH * .5); g.fillStyle = q > .85 ? '#2dffb3' : '#f0b429'; g.fillRect(22, 30 + MH * .5 * (1 - q), 18, MH * .5 * q); ctext(g, 'FUERZA', 31, 20, 12, PAP); }
+    if (MG.ph === 'reel') {
+      var x0 = MW - 70, y0 = 40, hh = MH - 120; g.fillStyle = INK; g.fillRect(x0, y0, 40, hh); g.fillStyle = 'rgba(45,255,179,.55)'; g.fillRect(x0 + 2, y0 + hh * (MG.zy - .14), 36, hh * .28);
+      ctext(g, C.FISHI[MG.fid].i >= 5 ? '★' : '🐟', x0 + 20, y0 + hh * MG.fy, 22, '#fff', 0, 'sans-serif');
+      g.fillStyle = INK; g.fillRect(x0 - 22, y0, 12, hh); g.fillStyle = '#f0b429'; g.fillRect(x0 - 20, y0 + hh * (1 - MG.pr), 8, hh * MG.pr);
+    }
+    var nsp = C.FISH.filter(function (f) { return S.fish[f.id]; }).length; ctext(g, 'COLECCIÓN ' + nsp + '/' + C.FISH.length, cx, MH - 18, 16, PAP);
+  } else if (MG.kind === 'cocina') {
+    var cw = Math.min(MW, MH) * .34;
+    for (var ii = 0; ii < 4; ii++) { var ix = cx + (ii % 2 ? 1 : -1) * cw * .58, iy = cy + (ii > 1 ? 1 : -1) * cw * .58, on = MG.lit === ii; g.lineWidth = 4; g.strokeStyle = INK; g.fillStyle = on ? '#fff3b0' : PAP; g.fillRect(ix - cw / 2, iy - cw / 2, cw, cw); g.strokeRect(ix - cw / 2, iy - cw / 2, cw, cw); ctext(g, INGR[ii], ix, iy, cw * (on ? .62 : .5), '#fff', 0, 'sans-serif'); }
+    ctext(g, MG.ph === 'show' ? 'MIRA LA RECETA…' : MG.ph === 'input' ? 'REPITE · ' + MG.k + '/' + MG.seq.length : MG.ph === 'fail' ? 'TOCA «OTRA VEZ»' : 'RECETA ' + (MG.seq.length + 1), cx, 34, 22, '#fff');
+  }
   (MG.fl || []).forEach(function (f, i) { g.globalAlpha = Math.max(0, f.life); ctext(g, f.t, cx, cy - 150 * s - f.y - i * 4, 20, f.c); g.globalAlpha = 1; });
 }
-function mgDown(e) { e.preventDefault(); au(); mgAct('down'); }
+function mgDown(e) { e.preventDefault(); au(); mgAct('down', e); }
 $('mgB').addEventListener('pointerdown', mgDown); $('mgc').addEventListener('pointerdown', mgDown);
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { $('mgB').addEventListener(n, function () { mgAct('up'); }); $('mgc').addEventListener(n, function () { mgAct('up'); }); });
 $('mgX').addEventListener('click', mgEnd);
