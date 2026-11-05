@@ -227,7 +227,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px}
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.3.0';
+var VERSION = '0.4.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -256,7 +256,7 @@ var EL = {
 var ELK5 = ['fuego', 'agua', 'rayo', 'tierra', 'viento'];
 /* afinidades: cada uno es FUERTE (×1.25) contra el siguiente del ciclo y DÉBIL (×0.8) contra el anterior; Sombra y Luz se dañan ×1.25 entre sí */
 var CYCLE = ['fuego', 'viento', 'tierra', 'rayo', 'agua'];
-var FOE_EL = { eco: 'sombra', lobo: 'fuego', bandido: 'tierra', golem: 'tierra', sombra: 'sombra', vant: 'sombra' };
+var FOE_EL = { eco: 'sombra', lobo: 'fuego', bandido: 'tierra', golem: 'tierra', sombra: 'sombra', vant: 'sombra', reyeco: 'sombra', alfa: 'fuego' };
 function afin(a, d) {
   if (!a || !d || a === d) return 1;
   if ((a === 'sombra' && d === 'luz') || (a === 'luz' && d === 'sombra')) return 1.25;
@@ -277,7 +277,7 @@ var ORIG = {
 var NPC = {
   ren: { n: 'Maestra Ren', c: '#e0262f' }, tobias: { n: 'Don Tobías', c: '#f0b429' }, kira: { n: 'Kira', c: '#2dffb3' },
   pip: { n: 'Pip', c: '#39c8ff' }, heraldo: { n: 'El Heraldo', c: '#d6dee9' }, vant: { n: 'Vant, el Anfitrión', c: '#a42cff' },
-  dax: { n: 'Dax', c: '#ff2fb3' }, nima: { n: 'Oráculo Nima', c: '#fff1a8' }, nar: { n: 'Narración', c: '#f0b429' }
+  dax: { n: 'Dax', c: '#ff2fb3' }, nima: { n: 'Oráculo Nima', c: '#fff1a8' }, sol: { n: 'Capitana Sol', c: '#f0b429' }, nar: { n: 'Narración', c: '#f0b429' }
 };
 var ZONES = {
   plaza:   { n: 'Plaza Ágora',        k: 'Social · Paz' },
@@ -291,7 +291,9 @@ var FOES = {
   eco:     { n: 'Eco',               hp: .35, dm: .45, sp: 70,  x: 1,  o: 2,  ch: .08, r: 13, rng: 34, wind: .5,  cd: 1.3 },
   lobo:    { n: 'Lobo de Ceniza',    hp: .6,  dm: .55, sp: 125, x: 1.8, o: 4, ch: .12, r: 15, rng: 36, wind: .4,  cd: 1.1 },
   bandido: { n: 'Bandido',           hp: 1,   dm: .75, sp: 95,  x: 3,  o: 9,  ch: .18, r: 14, rng: 40, wind: .45, cd: 1.2 },
-  golem:   { n: 'Gólem de Obsidiana', hp: 7,  dm: 1.5, sp: 55,  x: 22, o: 80, ch: 1, chn: 6, r: 30, rng: 74, wind: .9, cd: 2.4, boss: 1 },
+  golem:   { n: 'Gólem de Obsidiana', hp: 7,  dm: 1.5, sp: 55,  x: 22, o: 80, ch: 1, chn: 6, r: 30, rng: 74, wind: .9, cd: 2.4, boss: 1, aoe: 1 },
+  reyeco:  { n: 'Rey Eco',           hp: 5,  dm: 1.1, sp: 60,  x: 12, o: 40, ch: 1, chn: 3, r: 24, rng: 62, wind: .75, cd: 2, boss: 1, aoe: 1 },
+  alfa:    { n: 'Alfa de Ceniza',    hp: 5.5, dm: 1.3, sp: 150, x: 16, o: 60, ch: 1, chn: 4, r: 22, rng: 230, wind: .6, cd: 1.8, boss: 1 },
   rival:   { n: 'Rival',             hp: 1.4, dm: .85, sp: 140, x: 5,  o: 15, ch: .3, r: 14, rng: 44, wind: .35, cd: .9, pvp: 1 },
   duelo:   { n: 'Duelista',          hp: 3,   dm: 1.3,  sp: 150, x: 0,  o: 0,  ch: 0, r: 14, rng: 46, wind: .3,  cd: .55, pvp: 1 },
   vant:    { n: 'Vant',              hp: 6,   dm: 1.1, sp: 150, x: 0,  o: 0,  ch: 0, r: 16, rng: 50, wind: .36, cd: .6, pvp: 1, boss: 1 },
@@ -424,7 +426,7 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} },
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
@@ -461,6 +463,7 @@ function migrate(o) {
   d.party = d.party.filter(function (bi) { return d.friends.some(function (f) { return f.bi === bi; }); }).slice(0, 2);
   for (var sid in d.side) if (!SIDEI[sid] || !d.side[sid] || !isNum(d.side[sid].n)) delete d.side[sid];
   for (var fid in d.frag) if (!FRAGI[fid]) delete d.frag[fid];
+  if (d.clan.id && !CLANI[d.clan.id]) d.clan.id = '';
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -519,7 +522,7 @@ function ringPower(s, ring) { var r = RINGS[clamp(ring, 0, 2)]; return Math.max(
 function addOro(s, n) { if (!(n > 0)) return; s.oro += n; s.cnt.oroTot += n; ev(s, 'oro', { n: n }); }
 function gearMul(lv) { return 1 + 0.15 * lv; }
 function gearCost(lv) { return Math.ceil(80 * Math.pow(1.75, lv)); }
-function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q; }
+function trainGain(s, act, q) { var A = ACT[act]; return 0.05 * (1 + Math.sqrt(base(s)) / 8) * gearMul(s.gear[A.st]) * mLeg(s) * A.k * q * clanMul(s, A.st); }
 function train(s, act, q) {
   var A = ACT[act]; if (!A) return 0;
   if (A.en > 0 && s.en < A.en) return -1;
@@ -551,7 +554,7 @@ function killReward(s, type, eP, R) {
 function bCost(id, n) { return Math.ceil(BLDI[id].c * Math.pow(1.15, n)); }
 function bMile(n) { return n >= 100 ? 8 : n >= 50 ? 4 : n >= 25 ? 2 : 1; }
 function magia(s) { return 1 + Math.sqrt(s.stats.esp) / 20; }
-function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s); }
+function bProd(s, id) { var n = s.tyc[id] || 0; return BLDI[id].b * n * bMile(n) * magia(s) * (s.clan.id === 'marea' ? 1.05 : 1); }
 function prod(s) { var t = 0; for (var i = 0; i < BLD.length; i++) t += bProd(s, BLD[i].id); return t; }
 function bUnlocked(s, id) { var i = BLDI[id].i; return i === 0 || s.tyc[BLD[i - 1].id] > 0; }
 function buyB(s, id) { if (!BLDI[id] || !bUnlocked(s, id)) return false; var n = s.tyc[id], c = bCost(id, n); if (s.oro < c) return false; s.oro -= c; s.tyc[id] = n + 1; ev(s, 'build', { n: 1 }); return true; }
@@ -666,6 +669,7 @@ function ev(s, type, d) {
   var q = s.daily.q;
   for (var i = 0; i < q.length; i++) if (!q[i].done && match(q[i], type, d)) q[i].p += type === 'oro' ? d.n : (d.n || 1);
   for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
+  if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp; }
 }
 function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
 function stepProg(s) {
@@ -715,7 +719,10 @@ var SIDE = [
     e: [['dax', 'Mira: tres chicos aprendiendo a forjar. Hace un mes yo solo pensaba en mí.']] },
   { id: 'espejo', who: 'nima', t: 'El espejo del agua', req: 'c1', o: { k: 'perf', st: 'esp', n: 5 }, r: { gemas: 15 }, title: 'Alma Serena', h: 'Logra 5 respiraciones PERFECTAS (Dojo)',
     d: [['nima', 'Mira tu reflejo en la cascada del Dojo. ¿Qué ves? ¿Un número? ¿O a alguien?'], ['nima', 'Respira cinco veces, perfecto. Luego vuelve.']],
-    e: [['nima', 'El agua no refleja tu poder. Refleja tu calma.'], ['nima', 'Te doy un nombre: Alma Serena. Úsalo cuando lo necesites.']] }
+    e: [['nima', 'El agua no refleja tu poder. Refleja tu calma.'], ['nima', 'Te doy un nombre: Alma Serena. Úsalo cuando lo necesites.']] },
+  { id: 'alfa', who: 'kira', t: 'El Alfa de Ceniza', req: 'b1', o: { k: 'kill', type: 'alfa', n: 1 }, r: { chispas: 10, gemas: 10 }, h: 'Derrota al Alfa de Ceniza (anillo 2)',
+    d: [['kira', 'Hay un lobo enorme guiando a la manada. Le dicen el Alfa de Ceniza.'], ['kira', 'Cuando baje la cabeza, va a embestir en línea recta. No te quedes delante: esquiva hacia un lado.']],
+    e: [['kira', 'Lo lograste. Sin él, la manada se dispersa y deja de atacar a la gente.'], ['kira', 'A veces el valor no es pelear más fuerte. Es leer al otro y moverse a tiempo.']] }
 ];
 var SIDEI = {}; SIDE.forEach(function (q) { SIDEI[q.id] = q; });
 function sideFor(s, w) {
@@ -738,6 +745,39 @@ var FRAG = [
   { id: 'f7', z: 'coliseo', x: 27, y: 21, t: 'Lo que no se cuenta', p: ['En el palco, Vant guarda frascos de luz con nombres escritos a mano.', 'Cada frasco es un pedazo de alguien que confió en él.', 'A veces, de noche, les habla. Les pide perdón. Y vuelve a empezar.'] }
 ];
 var FRAGI = {}; FRAG.forEach(function (f) { FRAGI[f.id] = f; });
+
+/* ---------- clanes: meta semanal cooperativa (todos reciben premio; nada se pierde) ---------- */
+var CLANS = [
+  { id: 'llama', n: 'Clan Llama Roja', ic: '🔥', c: '#e0262f', st: 'fue', d: 'Fuerza y coraje. +5% al entrenar Fuerza.' },
+  { id: 'viento', n: 'Clan Viento Verde', ic: '🍃', c: '#2dffb3', st: 'tec', d: 'Técnica y exploración. +5% al entrenar Técnica.' },
+  { id: 'marea', n: 'Clan Marea Azul', ic: '🌊', c: '#39c8ff', st: 'esp', d: 'Espíritu y comercio. +5% al entrenar Espíritu y +5% de oro del negocio.' }
+];
+var CLANI = {}; CLANS.forEach(function (c, i) { CLANI[c.id] = c; c.i = i; });
+var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5 };
+function weekKey(now) { return Math.floor((now / 864e5 + 3) / 7); } /* semanas de lunes a domingo (UTC) */
+function clanMul(s, st) { var c = CLANI[s.clan.id]; return c && c.st === st ? 1.05 : 1; }
+function clanBase(s, key) { var R = mulberry((s.seed ^ (key * 7919)) >>> 0); return CLANS.map(function () { return 2500 + Math.floor(R() * 2500); }); }
+function clanStand(s, now) {
+  var key = weekKey(now), frac = clamp((now / 864e5 + 3) / 7 - key, 0, 1), t = clanBase(s, key).map(function (x) { return Math.round(x * frac); });
+  var c = CLANI[s.clan.id]; if (c && s.clan.week === key) t[c.i] += Math.round(s.clan.pts);
+  return t;
+}
+function clanJoin(s, id, now) {
+  if (!CLANI[id] || s.clan.id === id) return false;
+  if (s.clan.id && now - s.clan.since < 864e5) return 'espera';
+  s.clan.id = id; s.clan.since = now; s.clan.pts = 0; s.clan.week = weekKey(now); return true;
+}
+function clanWeek(s, now) {
+  var key = weekKey(now); if (s.clan.week === key) return null;
+  var res = null, c = CLANI[s.clan.id];
+  if (c && s.clan.week && s.clan.pts > 0) {
+    var b = clanBase(s, s.clan.week); b[c.i] += Math.round(s.clan.pts);
+    var place = b.filter(function (x) { return x > b[c.i]; }).length, p = s.clan.pts;
+    var gems = [30, 20, 15][place] + (p >= 500 ? 15 : p >= 200 ? 10 : p >= 50 ? 5 : 0);
+    s.gemas += gems; res = { w: s.clan.week, place: place + 1, gems: gems, pts: Math.round(p) }; s.clan.last = res;
+  }
+  s.clan.week = key; s.clan.pts = 0; return res;
+}
 function fragCount(s) { var n = 0; for (var k in s.frag) if (FRAGI[k]) n++; return n; }
 function fragTake(s, id) {
   if (!FRAGI[id] || s.frag[id]) return false;
@@ -809,7 +849,8 @@ var API = {
   SIDE: SIDE, SIDEI: SIDEI, sideFor: sideFor, sideAccept: sideAccept, sideReady: sideReady, sideFinish: sideFinish, giveChispas: giveChispas,
   addFriend: addFriend, friendXP: friendXP, setParty: setParty,
   NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
-  CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake
+  CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
+  CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -892,7 +933,7 @@ var TH = {
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
-var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza' };
+var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza' };
 var NPCL = {
   ren: { skin: '#f5d0a9', shirt: '#e0262f', pants: '#1b1b22', hair: '#1b1b22', bun: 1 },
   tobias: { skin: '#c68642', shirt: '#7a4a2a', pants: '#33333d', hair: '#d6dee9', beard: 1 },
@@ -902,6 +943,7 @@ var NPCL = {
   vant: { skin: '#e8dcff', shirt: '#1b1b22', pants: '#1b1b22', hair: '#f2e8d5', cape: '#a42cff', crown: 1, sc: 1.15 },
   dax: { skin: '#8d5524', shirt: '#ff2fb3', pants: '#1b1b22', hair: '#1b1b22', scarf: '#1b1b22' },
   nima: { skin: '#c68642', shirt: '#fff1a8', pants: '#e8d98a', hair: '#f2e8d5', robe: 1, hood: '#0f5c66' },
+  sol: { skin: '#e0ac69', shirt: '#f0b429', pants: '#0f5c66', hair: '#e0262f', cape: '#e0262f', scarf: '#0f5c66' },
   nar: { skin: '#f2e8d5', shirt: '#0b0b0f', pants: '#0b0b0f', hair: '#0b0b0f' }
 };
 function playerLook() {
@@ -971,7 +1013,7 @@ function buildPlaza() {
   border(m, [[17, 0], [17, 28], [0, 14], [34, 14]]); fragsIn(m);
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
-  npc(m, 'pip', 13, 10);
+  npc(m, 'pip', 13, 10); npc(m, 'sol', 24, 11);
   block(m, 20, 9, 2, 1, 30, ['#f2e8d5', '#b8a583'], { sign: 'TABLÓN' }); inter(m, 'board', 21 * T, 10.6 * T, 'TABLÓN · MISIONES DIARIAS', function () { openPanel('board'); });
   block(m, 12, 18, 2, 1, 44, ['#e0262f', '#8a1219'], { sign: 'RANKING' }); inter(m, 'rank', 13 * T, 19.6 * T, 'RANKING MUNDIAL', function () { openPanel('rank'); });
   block(m, 20, 18, 3, 1, 34, ['#a42cff', '#4d1785'], { sign: 'TIENDA' }); inter(m, 'shop', 21.5 * T, 19.6 * T, 'TIENDA DE GEMAS', function () { openPanel('shop'); });
@@ -1028,7 +1070,7 @@ function buildTierras() {
   npc(m, 'kira', 4, 14); npc(m, 'dax', 4, 22, function () { return S.story.i >= C.STI.b1; });
   portal(m, 1, 18, 'plaza', 'W');
   deco(m, 'sign', 14, 18, { txt: 'ANILLO 2 · PODER 100+' }); deco(m, 'sign', 29, 18, { txt: 'ANILLO 3 · PODER 400+' });
-  var lair = function (x, y) { return Math.hypot(x - 39, y - 18) < 5.5 || (x < 8 && Math.abs(y - 18) < 4); };
+  var lair = function (x, y) { return Math.hypot(x - 39, y - 18) < 5.5 || Math.hypot(x - 9, y - 6) < 3.5 || Math.hypot(x - 22, y - 28) < 3.5 || (x < 8 && Math.abs(y - 18) < 4); };
   scatter(m, R, 46, rock, 2, 2, 44, 35, lair);
   scatter(m, R, 14, function (mm, x, y) { tree(mm, x, y, .9); mm.objs[mm.objs.length - 1].dead = 1; }, 2, 2, 44, 35, lair);
   MAPS.tierras = m; return m;
@@ -1161,9 +1203,12 @@ function drawFoe(g, e) {
   g.save(); g.translate(x, y); g.lineWidth = 2; g.strokeStyle = INK;
   g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(0, 0, e.r + 2, 5, 0, 0, TAU); g.fill();
   var fl = e.flash > 0, b = Math.sin(time * 6 + e.ph) * 2;
+  if (t === 'reyeco') { g.scale(2, 2); t = 'eco'; }
+  if (t === 'alfa') { g.scale(1.6, 1.6); t = 'lobo'; e.mane = 1; }
   if (t === 'eco') {
     g.fillStyle = fl ? '#fff' : '#2b1640'; g.beginPath(); g.ellipse(0, -12 + b * .5, 13, 12 - b * .3, 0, 0, TAU); g.fill(); g.stroke();
     g.fillStyle = '#ff2fb3'; g.fillRect(-6, -16, 4, 4); g.fillRect(3, -16, 4, 4);
+    if (e.type === 'reyeco') { g.fillStyle = '#f0b429'; g.beginPath(); g.moveTo(-8, -22); g.lineTo(-8, -30); g.lineTo(-3, -25); g.lineTo(0, -32); g.lineTo(3, -25); g.lineTo(8, -30); g.lineTo(8, -22); g.closePath(); g.fill(); g.stroke(); }
   } else if (t === 'lobo') {
     var s = e.dir === 2 ? -1 : 1; g.scale(s, 1);
     g.fillStyle = fl ? '#fff' : '#6b6b78'; g.beginPath(); g.ellipse(0, -13, 16, 9, 0, 0, TAU); g.fill(); g.stroke();
@@ -1171,6 +1216,7 @@ function drawFoe(g, e) {
     g.beginPath(); g.arc(15, -18, 7, 0, TAU); g.fill(); g.stroke();
     g.beginPath(); g.moveTo(12, -24); g.lineTo(14, -31); g.lineTo(18, -24); g.fill(); g.stroke();
     g.fillStyle = '#e0262f'; g.fillRect(16, -20, 3, 3);
+    if (e.mane) { g.fillStyle = '#e0262f'; g.beginPath(); g.moveTo(4, -22); g.lineTo(9, -30); g.lineTo(12, -22); g.lineTo(6, -16); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#ffd23a'; g.fillRect(16, -20, 3, 3); }
   } else if (t === 'golem') {
     var c1 = fl ? '#fff' : '#2a2433';
     rr(g, -20, -30, 40, 28, c1); rr(g, -26, -28 + b, 10, 22, c1); rr(g, 16, -28 - b, 10, 22, c1); rr(g, -12, -48, 24, 18, c1);
@@ -1360,6 +1406,7 @@ function killFoe(f) {
       if (f.type === 'rival') feed('<b>' + S.name + '</b> venció a ' + f.name + ' en PvP');
     }
     if (f.type === 'golem') MAP.golemT = 60;
+    if (f.type === 'reyeco' || f.type === 'alfa') { MAP.bossT[f.type] = 90; banner('¡' + C.FOES[f.type].n.toUpperCase() + ' CAE!', '+chispas garantizadas'); }
   }
 }
 function heal(n) { P.hp = Math.min(P.cs.maxHp, P.hp + n); }
@@ -1462,7 +1509,13 @@ function updFoe(f, dt) {
       if (d < F.rng + P.r) { f.st = 'wind'; f.t = F.wind * (f.type === 'vant' && f.hp < f.maxHp / 2 ? .7 : 1); f.ax = (P.x - f.x) / (d || 1); f.ay = (P.y - f.y) / (d || 1); setDir(f, f.ax, f.ay); }
       break;
     case 'wind':
-      f.t -= dt; if (f.t <= 0) { foeStrike(f); if (f.pvp && !f.combo && Math.random() < .35) { f.combo = 1; f.st = 'wind'; f.t = F.wind * .6; break; } f.combo = 0; f.st = 'rec'; f.t = F.cd * rnd(.8, 1.2) * (f.spm > 1 ? .75 : 1); }
+      f.t -= dt; if (f.t <= 0 && f.type === 'alfa') { f.st = 'charge'; f.t = .42; f.hitDone = 0; sfx('dash'); break; }
+      if (f.t <= 0) { foeStrike(f); if (f.pvp && !f.combo && Math.random() < .35) { f.combo = 1; f.st = 'wind'; f.t = F.wind * .6; break; } f.combo = 0; f.st = 'rec'; f.t = F.cd * rnd(.8, 1.2) * (f.spm > 1 ? .75 : 1); }
+      break;
+    case 'charge': /* embestida en línea recta del Alfa */
+      f.t -= dt; moveEnt(f, f.ax * 560 * dt, f.ay * 560 * dt); if (Math.random() < .6) addFx({ k: 'part', x: f.x, y: f.y - 10, vx: 0, vy: -20, c: '#ff7a2e', life: .3, sz: 5 });
+      if (!f.hitDone && dist(f, P) < P.r + f.r + 8) { f.hitDone = 1; hurtP(f.dmg * 1.3, f); }
+      if (f.t <= 0) { f.st = 'rec'; f.t = F.cd; }
       break;
     case 'rec':
       f.t -= dt; if (f.pvp && d < 60) step(f.x * 2 - P.x, f.y * 2 - P.y, f.sp * .5); if (f.t <= 0) f.st = 'chase';
@@ -1474,11 +1527,12 @@ function updFoe(f, dt) {
   }
   if (f.type === 'vant' && f.hp < f.maxHp / 2 && !f.ph2) { f.ph2 = 1; f.spm = 1.25; txt(f.x, f.y - 90, '¡NO PUEDES GANARME!', '#a42cff', 22, 1.6); shake(10); summon(f, 3); }
   if (f.type === 'vant') { f.sumT = (f.sumT || 10) - dt; if (f.sumT <= 0) { f.sumT = 12; summon(f, 2); } }
+  if (f.type === 'reyeco' && f.st !== 'idle') { f.sumT = (f.sumT || 6) - dt; if (f.sumT <= 0 && ents.filter(function (q) { return q.type === 'eco' && !q.dead; }).length < 14) { f.sumT = 9; summon(f, 2); txt(f.x, f.y - 90, '¡HIJOS DEL ECO!', '#a42cff', 18, 1); } }
 }
 function summon(f, n) { for (var i = 0; i < n; i++) { var a = rnd(0, TAU); var e = mkFoe('eco', f.x + Math.cos(a) * 60, f.y + Math.sin(a) * 60, f.eP * .35); e.st = 'chase'; e.aggro = 900; ents.push(e); parts(e.x, e.y, '#a42cff', 8); } }
 function foeStrike(f) {
   var F = C.FOES[f.type], d = dist(f, P); f.atkA = .18;
-  if (F.boss && f.type === 'golem') { ring(f.x, f.y, F.rng * 2.2, '#ff2fb3', .4); shake(8); if (d < F.rng + P.r) hurtP(f.dmg * (Math.random() < f.crit ? 1.6 : 1), f); return; }
+  if (F.aoe) { ring(f.x, f.y, F.rng * 2.2, '#ff2fb3', .4); shake(8); if (d < F.rng + P.r) hurtP(f.dmg * (Math.random() < f.crit ? 1.6 : 1), f); return; }
   addFx({ k: 'slash', x: f.x + f.ax * 10, y: f.y - 20 + f.ay * 10, a: Math.atan2(f.ay, f.ax), r: 30, c: '#e0262f', life: .15 });
   if (d < F.rng + P.r + 10) { var dot = ((P.x - f.x) * f.ax + (P.y - f.y) * f.ay) / (d || 1); if (d < 20 || dot > .35) hurtP(f.dmg * (Math.random() < f.crit ? 1.6 : 1), f); }
 }
@@ -1517,7 +1571,7 @@ function freeSpot(minD) {
 }
 function updBot(b, dt) {
   b.t -= dt; b.mv = 0; b.atkA -= dt; b.chatT -= dt;
-  if (b.chatT <= 0) { b.chatT = rnd(10, 26); var l = C.BOTCHAT[MAP.id]; if (l) say(b, l[Math.random() * l.length | 0]); }
+  if (b.chatT <= 0) { b.chatT = rnd(10, 26); var l = C.BOTCHAT[MAP.id], cl = C.CLANS[b.bi % 3]; if (S.clan.id === cl.id && Math.random() < .3) say(b, '¡Vamos ' + cl.n.replace('Clan ', '') + '! ' + cl.ic); else if (l) say(b, l[Math.random() * l.length | 0]); }
   if (MAP.id === 'tierras' && b.t > 0) { var f = null, bd = 230; foes().forEach(function (q) { var d = dist(b, q); if (d < bd) { bd = d; f = q; } }); if (f) { if (bd > 40) stepTo(b, f.x, f.y, 120, dt); else if (b.atkA <= 0) { b.atkA = .6; face(b, f.x, f.y); f.hp -= f.maxHp * .08; f.flash = .1; burst(f.x, f.y - 22, '#fff'); if (f.hp <= 0) { f.hp = 0; f.dead = 1; parts(f.x, f.y - 20, '#a42cff', 10); txt(f.x, f.y - 60, '¡K.O.!', '#fff', 18); if (f.type === 'golem') MAP.golemT = 60; } } return; } }
   if (b.t <= 0) { var p = freeSpot(0); if (p && Math.random() < .7) { b.tx = p.x; b.ty = p.y; } else b.tx = undefined; b.t = rnd(3, 8); }
   if (b.tx !== undefined) { if (Math.hypot(b.tx - b.x, b.ty - b.y) > 10) stepTo(b, b.tx, b.ty, 105, dt); else b.tx = undefined; }
@@ -1561,8 +1615,10 @@ function orbs(x, y, c, n) { for (var i = 0; i < n; i++) { var an = rnd(0, TAU); 
 var RINGX = [[3, 14], [16, 29], [31, 43]];
 function spawnFoes(dt) {
   spawnT -= dt; if (spawnT > 0) return; spawnT = 1;
-  var cnt = [0, 0, 0], gol = null;
-  ents.forEach(function (e) { if (e.k === 'foe' && !e.dead) { if (e.type === 'golem') gol = e; else cnt[e.ring]++; } });
+  var cnt = [0, 0, 0], gol = null, bos = {};
+  ents.forEach(function (e) { if (e.k === 'foe' && !e.dead) { if (e.type === 'golem') gol = e; else if (e.boss) bos[e.type] = 1; else cnt[e.ring]++; } });
+  MAP.bossT = MAP.bossT || { reyeco: 0, alfa: 0 };
+  [['reyeco', 0, 9.5, 6.6], ['alfa', 1, 22.5, 28.6]].forEach(function (b) { if (bos[b[0]]) return; MAP.bossT[b[0]] -= 1; if (MAP.bossT[b[0]] <= 0 && Math.hypot(b[2] * T - P.x, b[3] * T - P.y) > 300) { ents.push(mkFoe(b[0], b[2] * T, b[3] * T, C.ringPower(S, b[1]) * 1.15, { ring: b[1], name: C.FOES[b[0]].n })); MAP.bossT[b[0]] = 90; } });
   for (var r = 0; r < 3; r++) {
     if (cnt[r] >= [7, 7, 6][r]) continue;
     for (var k = 0; k < 20; k++) {
@@ -1599,7 +1655,7 @@ function loadZone(id, from) {
   ents.push(P); spawnParty(); spawnBots(id); spawnT = 0;
   if (id === 'tierras') { MAP.golemT = MAP.golemT || 0; for (var i = 0; i < 6; i++) spawnFoes(1); }
   C.ev(S, 'visit', { z: id });
-  var ZT = { plaza: 'En la Plaza puedes hacer amigos: toca 💬 y di «¿Amigos?» cerca de otros jugadores.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Mira el minimapa (arriba a la derecha).', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
+  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Mira el minimapa (arriba a la derecha).', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
   if (ZT[id]) tip('z_' + id, ZT[id], 1);
   zoneTitle(); hudFull();
 }
@@ -1696,7 +1752,7 @@ function render() {
     var sc = (e.look && e.look.sc) || 1, top = e.y - 54 * sc;
     if (mode === 'night' && e !== P && dist(e, P) > lightR()) continue;
     if (e.k === 'npc') { nameTag(e.x, top - 6, C.NPC[e.key].n, C.NPC[e.key].c); var ob = objTarget(); if (ob && !ob.por && Math.abs(ob.x - e.x) < 2 && Math.abs(ob.y + 40 - e.y) < 2) ctext(ctx, '!', e.x, top - 30 + Math.sin(time * 6) * 4, 30, '#f0b429'); else { var sq = C.sideFor(S, e.key); if (sq) { var rd = sq.st && (C.sideReady(S, sq.q.id) || (sq.q.o.k === 'giveCh' && S.chispas >= sq.q.o.n)); if (!sq.st || rd) ctext(ctx, rd ? '✓' : '?', e.x, top - 30 + Math.sin(time * 5) * 3, 26, rd ? '#2dffb3' : '#f2e8d5'); } } }
-    else if (e.k === 'bot' || e.k === 'cont') nameTag(e.x, top - 6, e.name, '#f2e8d5');
+    else if (e.k === 'bot' || e.k === 'cont') { var cl = C.CLANS[e.bi % 3]; nameTag(e.x, top - 6, (e.k === 'bot' ? cl.ic + ' ' : '') + e.name, e.k === 'bot' && S.clan.id === cl.id ? cl.c : '#f2e8d5'); }
     else if (e.k === 'ally') nameTag(e.x, top - 6, '🤝 ' + e.name, '#2dffb3');
     else if (e.k === 'foe' && !e.dead && e.type !== 'sombra') { var bw = e.boss ? 70 : 40; ctx.fillStyle = INK; ctx.fillRect(e.x - bw / 2 - 2, top - 12, bw + 4, 8); ctx.fillStyle = '#e0262f'; ctx.fillRect(e.x - bw / 2, top - 10, bw * Math.max(0, e.hp / e.maxHp), 4); if (e.name || e.boss) nameTag(e.x, top - 20, e.name || C.FOES[e.type].n, e.pvp ? '#ff2fb3' : '#f0b429'); }
     if (e.bub) bubble(e.x, top - (e.k === 'foe' ? 34 : 22), e.bub.t);
@@ -1706,7 +1762,8 @@ function render() {
 }
 function drawTele(g, e) {
   var F = C.FOES[e.type], p = 1 - e.t / F.wind; g.globalAlpha = .25 + p * .35; g.fillStyle = '#e0262f';
-  if (e.type === 'golem') { g.beginPath(); g.ellipse(e.x, e.y, F.rng * p, F.rng * p * .55, 0, 0, TAU); g.fill(); g.globalAlpha = .8; g.strokeStyle = '#e0262f'; g.lineWidth = 2; g.beginPath(); g.ellipse(e.x, e.y, F.rng, F.rng * .55, 0, 0, TAU); g.stroke(); }
+  if (e.type === 'alfa') { g.save(); g.translate(e.x, e.y); g.rotate(Math.atan2(e.ay, e.ax)); g.beginPath(); g.rect(0, -22, 250 * (.4 + p * .6), 44); g.fill(); g.restore(); g.beginPath(); g.save(); g.translate(e.x, e.y); g.rotate(Math.atan2(e.ay, e.ax)); g.rect(0, -22, 250, 44); g.restore(); }
+  else if (C.FOES[e.type].aoe) { g.beginPath(); g.ellipse(e.x, e.y, F.rng * p, F.rng * p * .55, 0, 0, TAU); g.fill(); g.globalAlpha = .8; g.strokeStyle = '#e0262f'; g.lineWidth = 2; g.beginPath(); g.ellipse(e.x, e.y, F.rng, F.rng * .55, 0, 0, TAU); g.stroke(); }
   else { var a = Math.atan2(e.ay, e.ax); g.beginPath(); g.moveTo(e.x, e.y); g.arc(e.x, e.y, (F.rng + 14) * (.5 + p * .5), a - 1, a + 1); g.closePath(); g.fill(); }
   /* rayas blancas: el aviso se entiende sin depender del color (daltonismo) */
   g.save(); g.clip(); g.globalAlpha = .45; g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath();
@@ -1956,7 +2013,8 @@ var FLAV = {
   pip: [['pip', '¡Hola, {n}! ¿Sabías que el tablón tiene misiones nuevas cada día?'], ['pip', 'El ranking muestra a todos los jugadores de Ánima. ¡Algún día estarás arriba!'], ['pip', 'Si pierdes en el torneo, una parte de tu poder vuelve como Legado. Nada se pierde del todo.']],
   heraldo: [['heraldo', '¡El Torneo Mundial te espera! Cien entran, uno gana.']],
   dax: [['dax', 'Estoy entrenando desde cero. Es raro… pero se siente honesto.'], ['dax', 'Si quedas mal en el torneo, no te rindas. Yo casi lo hago.']],
-  nima: [['nima', 'El valor de una persona no cabe en un número, {n}.'], ['nima', 'Ayudar a otros también te hace fuerte. Solo que no sale en el ranking.']]
+  nima: [['nima', 'El valor de una persona no cabe en un número, {n}.'], ['nima', 'Ayudar a otros también te hace fuerte. Solo que no sale en el ranking.']],
+  sol: [['sol', '¡Hola, {n}! Soy la Capitana Sol. En Ánima nadie llega lejos solo.'], ['sol', 'Cada semana los clanes suman esfuerzo. Todos reciben premio: el primer puesto, un poco más.'], ['sol', 'Un clan no es para presumir. Es para no rendirse cuando estás cansado.']]
 };
 function talkTo(key) {
   var o = C.stepObj(S);
@@ -1973,7 +2031,7 @@ function talkTo(key) {
   if (sq && !sq.st) { var q1 = sq.q; dialog(q1.d, function () { C.sideAccept(S, q1.id); sfx('up'); toast('Nueva misión secundaria: ' + q1.t, 'ok'); save(); }); return; }
   if (sq && sq.st) { dialog([[key, '(' + sq.q.t + ') ' + sq.q.h + ' · ' + Math.min(sq.st.n, sq.q.o.n) + '/' + sq.q.o.n]]); return; }
   var f = FLAV[key] || [[key, '…']], l = f[(S.cnt.taps + S.cnt.kills + (time | 0)) % f.length];
-  dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); });
+  dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); else if (key === 'sol') openPanel('clan'); });
 }
 function rewardText(r) { var a = []; if (r.oro) a.push('+' + C.fmt(r.oro) + ' oro'); if (r.gemas) a.push('+' + r.gemas + ' gemas'); if (r.chispas) a.push('+' + r.chispas + ' chispas'); return a.length ? 'Recompensa: ' + a.join(' · ') : 'Misión completada'; }
 function storyCheck(force) {
@@ -2065,7 +2123,7 @@ var PANELS = {
   rank: function () {
     var b = C.board(S), me = 0; b.forEach(function (x, i) { if (x.me) me = i; });
     var h = head('RANKING MUNDIAL', 'Top de Ánima', 'Tu puesto: #' + (me + 1) + ' de 100') + '<table class="tb">';
-    b.forEach(function (x, i) { if (i < 30 || Math.abs(i - me) < 3) h += '<tr class="' + (x.me ? 'me' : '') + '"><td>#' + (i + 1) + '</td><td>' + C.EL[x.el].ic + ' ' + esc(x.n) + '</td><td style="text-align:right">' + C.fmt(x.p) + ' ⚡</td></tr>'; });
+    b.forEach(function (x, i) { if (i < 30 || Math.abs(i - me) < 3) h += '<tr class="' + (x.me ? 'me' : '') + '"><td>#' + (i + 1) + '</td><td>' + C.EL[x.el].ic + ' ' + (x.me ? (C.CLANI[S.clan.id] ? C.CLANI[S.clan.id].ic + ' ' : '') : C.CLANS[i0(x)].ic + ' ') + esc(x.n) + '</td><td style="text-align:right">' + C.fmt(x.p) + ' ⚡</td></tr>'; });
     return h + '</table>';
   },
   tour: function () {
@@ -2102,6 +2160,23 @@ var PANELS = {
       '<button class="it" data-a="choose" data-v="compartir" style="background:#0f5c66;color:#fff"><div class="ic">💛</div><div class="tx"><div class="nm">Romperlo y devolver el poder</div><div class="ds" style="color:#e3d3b0">Ánima entera se fortalece. Tú ganas un gran Legado.</div></div></button>' +
       '<button class="it" data-a="choose" data-v="corona" style="background:#12061f;color:#fff"><div class="ic">👑</div><div class="tx"><div class="nm">Quedártelo</div><div class="ds" style="color:#c77dff">Brazalete de Origen ×4.5 para ti. Te conviertes en el nuevo Anfitrión.</div></div></button></div>';
   },
+  clan: function () {
+    var now = Date.now(), c = C.CLANI[S.clan.id], h = '<div class="band"><span class="spaced">CLANES DE ÁNIMA</span><span class="spaced">SEMANA ' + C.weekKey(now) + '</span></div>';
+    if (!c) {
+      h += '<h2 class="mega">Elige tu clan</h2><p class="kick">Meta semanal cooperativa: todos los clanes reciben premio. Puedes cambiar de clan cada 24 h, sin costo.</p><div class="list">';
+      C.CLANS.forEach(function (k) { h += item(k.ic, '<span style="color:' + k.c + '">' + k.n + '</span>', k.d, bt('clanJoin', k.id, 'Unirme', undefined, '', 'red')); });
+      return h + '</div>';
+    }
+    var st = C.clanStand(S, now), mx = Math.max.apply(null, st) || 1, p = S.clan.pts, nxt = p < 50 ? 50 : p < 200 ? 200 : p < 500 ? 500 : 0;
+    h += '<h2 class="mega" style="color:' + c.c + '">' + c.ic + ' ' + c.n + '</h2><p class="m">' + c.d + '</p><div class="list">';
+    C.CLANS.forEach(function (k, i) { h += '<div><div class="m" style="color:' + k.c + '">' + k.ic + ' ' + k.n + ' · ' + C.fmt(st[i]) + ' pts' + (k.id === c.id ? ' (tu clan)' : '') + '</div><div class="bar" style="height:12px"><i style="width:' + (st[i] / mx * 100) + '%;background:' + k.c + '"></i></div></div>'; });
+    h += '</div><div class="film">TU APORTE ESTA SEMANA: ' + Math.floor(p) + ' PTS' + (nxt ? ' · PRÓXIMO PREMIO PERSONAL A ' + nxt : ' · ¡PREMIO PERSONAL MÁXIMO!') + '<br>Puntos: enemigo 1 · edificio 1 · kata/respiración perfecta 0.5 · golpe al saco 0.2 · fragmento 10 · torneo hasta 20</div>';
+    h += '<p class="m">Al terminar la semana (lunes UTC): 1.º +30 ◆ · 2.º +20 ◆ · 3.º +15 ◆, más +5/+10/+15 ◆ por tu aporte (50/200/500).' + (S.clan.last && S.clan.last.w ? ' Semana pasada: puesto ' + S.clan.last.place + ', +' + S.clan.last.gems + ' ◆.' : '') + '</p>';
+    var mem = S.bots.map(function (b, i) { return { b: b, i: i }; }).filter(function (o) { return o.i % 3 === c.i; }).sort(function (a, b) { return b.b.p - a.b.p; }).slice(0, 8);
+    h += '<div class="spaced gold" style="margin:10px 0 4px">Miembros destacados</div><table class="tb">' + mem.map(function (o) { return '<tr><td>' + C.EL[o.b.el].ic + ' ' + esc(o.b.n) + '</td><td style="text-align:right">' + C.fmt(o.b.p) + ' ⚡</td></tr>'; }).join('') + '</table>';
+    h += '<div class="row" style="margin-top:10px">' + C.CLANS.filter(function (k) { return k.id !== c.id; }).map(function (k) { return bt('clanJoin', k.id, 'Cambiar a ' + k.ic, undefined, '', 'pap'); }).join('') + '</div>';
+    return h;
+  },
   page: function (a) {
     var f = a.f, n = C.fragCount(S);
     return '<div class="band"><span class="spaced">CÓDICE DEL ORIGEN</span><span class="spaced">FRAGMENTO ' + n + ' / ' + C.FRAG.length + '</span></div><h2 class="mega">' + f.t + '</h2>' + f.p.map(function (x) { return '<p style="font-size:16px">' + x + '</p>'; }).join('') +
@@ -2109,7 +2184,7 @@ var PANELS = {
   },
   chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
-    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
+    var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'rank') return h + PANELS.rank(); if (t === 'shop') return h + PANELS.shop(); if (t === 'brz') return h + PANELS.forge().replace(/data-a="(up|newb)"[^>]*>/g, 'disabled>');
     if (t === 'perfil') {
@@ -2134,6 +2209,7 @@ var PANELS = {
       S.friends.forEach(function (f) { var b = S.bots[f.bi], inP = S.party.indexOf(f.bi) >= 0; h += item(C.EL[b.el].ic, esc(b.n) + (inP ? ' · en tu grupo' : ''), '⚡ ' + C.fmt(b.p) + ' · amistad ' + Math.floor(f.af) + '/100 ' + '❤'.repeat(Math.floor(f.af / 25)), bt('party', f.bi, inP ? 'Sacar' : 'Invitar', undefined, '', inP ? 'pap' : 'tea', !inP && S.party.length >= 2)); });
       return h + '</div>';
     }
+    if (t === 'clan') return h + PANELS.clan().replace(/<div class="band">.*?<\/div>/, '');
     if (t === 'codice') {
       h += '<h2 class="mega">Códice</h2><p class="m">Fragmentos del Brazalete del Origen: ' + C.fragCount(S) + ' / ' + C.FRAG.length + '. Busca haces de luz azul en las zonas.</p><div class="list">';
       C.FRAG.forEach(function (f, i) { var ok = S.frag[f.id]; h += ok ? '<div class="film"><b style="color:#f0b429">' + (i + 1) + '. ' + f.t + '</b><br>' + f.p.join(' ') + '</div>' : item('❔', (i + 1) + '. ???', 'Aún no encontrado · en algún lugar de ' + C.ZONES[f.z].n); });
@@ -2166,6 +2242,7 @@ var ACTS = {
   strat: function (v) { if (v === 'atk') TR.buf.atk *= 1.12; else if (v === 'hp') TR.buf.hp *= 1.15; else TR.buf.au *= 1.3; var cb = PANEL.a.cb; closePanel(); cb(); },
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
+  clanJoin: function (v) { var r = C.clanJoin(S, v, Date.now()); if (r === true) { toast('¡Bienvenida, bienvenido al ' + C.CLANI[v].n + '! ' + C.CLANI[v].ic, 'gold'); sfx('win'); refreshCombat(); save(); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'bot'; }); spawnBots(MAP.id); } } else if (r === 'espera') toast('Solo puedes cambiar de clan una vez cada 24 h', 'bad'); renderPanel(); },
   stratEq: function (v) { C.equip(S, +v); refreshCombat(); sfx('up'); renderPanel(); },
   pageOk: function () { var all = PANEL.a.all; closePanel(); if (all) { banner('¡GUARDIÁN DEL ORIGEN!', 'Completaste el Códice'); sfx('win'); } hudFull(); },
   choose: function (v) { closePanel(); C.choose(S, v); refreshCombat(); save(); sfx('win'); dialog(ENDS[S.ending], function () { banner('FIN', S.title); hudFull(); }); },
@@ -2391,6 +2468,8 @@ function showCreate() {
     var sc = c.scrollTop; showCreate(); c.scrollTop = sc;
   };
 }
+function clanCheck() { var r = C.clanWeek(S, Date.now()); if (r) { banner('¡SEMANA DE CLAN!', 'Puesto ' + r.place + ' · +' + r.gems + ' ◆'); toast('Tu clan quedó ' + r.place + '.º. Aportaste ' + r.pts + ' pts → +' + r.gems + ' ◆', 'gold'); save(); } }
+function i0(x) { for (var i = 0; i < S.bots.length; i++) if (S.bots[i].n === x.n) return i % 3; return 0; }
 function applyA11y() { document.body.classList.toggle('big', !!S.cfg.big); document.body.classList.toggle('calm', !!S.cfg.calm); }
 function showPage(f, all) { openPanel('page', { f: f, all: all }); }
 function startGame(st, isNew) {
@@ -2404,6 +2483,7 @@ function startGame(st, isNew) {
   if (S.pend) { var r = C.applyTour(S, S.pend.r); refreshCombat(); save(); toast('Abandonaste el torneo: puesto #' + r.rank + ' (−' + r.pct + '% de poder)', 'bad'); }
   if (off && off.oro > 1) toast('Mientras no estabas tu negocio ganó ' + C.fmt(off.oro) + ' de oro' + (off.capped ? ' (caja llena)' : ''), 'gold');
   if (gift) toast('¡Regalo diario! +5 ◆ · Nuevas misiones en el tablón', 'gold');
+  clanCheck();
   if (isNew) setTimeout(function () { tip('mover', 'Muévete con el joystick (lado izquierdo de la pantalla) o con WASD.'); tip('flecha', 'Sigue la flecha amarilla y el «!» : te llevan a tu misión.'); }, 9000);
   if (isNew) dialog([['nar', 'En Ánima cada persona nace con un brazalete. No responde a lo que deseas: responde a lo que haces.'], ['nar', 'Cada temporada, el Anfitrión organiza el Torneo Mundial. Cien entran. Uno gana. Los demás pierden poder según su puesto.'], ['nar', 'Hoy empieza tu historia, ' + S.name + '. ' + C.ORIG[S.origin].d]], function () { storyCheck(); });
   else setTimeout(storyCheck, 600);
@@ -2422,7 +2502,7 @@ function frame(ts) {
   var dt = Math.min(.05, Math.max(0, (ts - lastTs) / 1000) || 0); lastTs = ts; time += dt;
   try {
     if (S && mode !== 'off') { C.tick(S, dt); saveT += dt; if (saveT > 10) { saveT = 0; save(); } }
-    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); } }
+    if (mode !== 'off' && mode !== 'pause' && !paused && P) { var g = dt; if (hitstop > 0) { hitstop -= dt; g = dt * .15; } for (var ts = 0; ts < TSCALE && mode !== 'pause' && !paused; ts++) update(g); scT += dt; if (scT > .5) { scT = 0; storyCheck(); if ((time | 0) % 60 === 0) clanCheck(); } }
     if (MG.on) { mgUpdate(dt); mgDraw(); }
     if (mode !== 'off') render(); else if (coverAnim) drawCover();
     hudT += dt; if (hudT > .1 && S && mode !== 'off') { hudT = 0; hud(); if (PANEL && !$('ov').hidden) afford(); }
