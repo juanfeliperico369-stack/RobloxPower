@@ -52,6 +52,14 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
   eq(C.achCheck(s).join(), 'golpes', 'logro al llegar'); eq(s.gemas - gm, 5, 'gemas del logro'); eq(C.achCheck(s).length, 0, 'logro una sola vez');
   const m = C.migrate(JSON.parse(JSON.stringify(Object.assign({}, s, { ach: { golpes: 1, falso: 1 }, evt: 'raro' })))); eq(Object.keys(m.ach).join() + '|' + m.evt, 'golpes|', 'migrate limpia logros y evento');
 }
+{ // pesca, cocina y diálogos del Acto IV según el final
+  const R0 = C.mulberry(1), R1 = C.mulberry(1), rare = (R, q) => { let n = 0; for (let i = 0; i < 20000; i++) if (C.FISHI[C.fishRoll(R, q)].i >= 5) n++; return n / 20000; };
+  const r0 = rare(R0, 0), r1 = rare(R1, 1); ok(r0 > .03 && r0 < .1 && r1 > r0 * 1.5, 'lanzamiento perfecto mejora raros: ' + r0.toFixed(3) + ' → ' + r1.toFixed(3));
+  const s = C.newState({ name: 'P', seed: 6 }), o0 = s.oro; ok(C.fishCatch(s, 'koi') > 0 && s.fish.koi === 1 && s.oro > o0, 'pescar paga y colecciona'); eq(C.fishCatch(s, 'nada'), 0, 'pez inválido');
+  s.en = 50; const g = C.cookRound(s, 3); ok(g > 0 && s.en === 58 && s.cnt.cook === 1, 'cocina da oro y energía'); eq(C.cookRound(s, 0), 0, 'ronda inválida');
+  s.story.i = C.STI.d1; s.ending = 'compartir'; const dA = C.stepDialog(s, 'd'); s.ending = 'corona'; const dB = C.stepDialog(s, 'd');
+  ok(dA && dB && dA[0][1] !== dB[0][1], 'el Acto IV cambia según el final'); s.ending = ''; ok(C.stepDialog(s, 'd').length > 0, 'diálogo con respaldo sin final');
+}
 { // fragmentos del Códice
   const s = C.newState({ name: 'F', seed: 8 }); const l0 = s.legado;
   C.FRAG.forEach((f, i) => eq(C.fragTake(s, f.id), i === C.FRAG.length - 1 ? 'all' : true, 'fragmento ' + f.id));
@@ -85,6 +93,7 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
       else if (ob.k === 'power') s.stats.fue += ob.n;
       else if (ob.k === 'forge') C.ev(s, 'forge', { t: ob.t });
       else if (ob.k === 'tourney') C.ev(s, 'tourney', { rank: ob.r });
+      else if (ob.k === 'fish') for (let i = 0; i < ob.n; i++) C.fishCatch(s, 'linterna');
       else if (ob.k === 'choice') { C.choose(s, 'compartir'); continue; }
       ok(C.stepDone(s), 'paso ' + C.STORY[s.story.i].id + ' (' + o + ') no se completa con su evento');
       C.advance(s);
@@ -163,7 +172,7 @@ for (let g = 0; g < N; g++) {
       else { C.killReward(s, f.type, f.eP, R); if (ring === 2 && R() < .03 * sk) C.killReward(s, 'golem', C.ringPower(s, 2) * 1.1, R); if (R() < .02 * sk) C.killReward(s, ring ? 'alfa' : 'reyeco', C.ringPower(s, ring) * 1.15, R); }
       hp = Math.min(f.max, hp + f.max * .012 * 3 * f.ttk);
       sec += Math.max(0, f.ttk - dt);
-    } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); }
+    } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); if (R() < .3) C.fishCatch(s, C.fishRoll(R, sk)); if (R() < .2) C.cookRound(s, 1 + Math.floor(R() * 5)); }
     C.tick(s, dt); sec += dt;
     if (s.story.i < lastStory) fail('la historia retrocedió en partida ' + g); lastStory = s.story.i;
     if (sec % 600 < dt) { // cada 10 min: validar y guardar/cargar

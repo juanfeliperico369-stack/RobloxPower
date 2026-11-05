@@ -43,6 +43,7 @@ return function(Reglas, G)
 	for _, c in ipairs(G.fn) do
 		local r
 		if c.f == "eventOfId" then r = Reglas.eventOf(c.a[1]).id
+		elseif c.f == "fishSeq" then local R = Reglas.mulberry(c.a[1]); r = {}; for i = 1, 25 do r[i] = Reglas.fishRoll(R, c.a[2]) end
 		elseif c.f == "botNames" then local R, used = Reglas.mulberry(c.a[1]), {}; r = {}; for i = 1, 12 do r[i] = Reglas.botName(R, used) end
 		else r = Reglas[c.f](table.unpack(c.a)) end
 		check("fn " .. c.f .. "(" .. tostring(c.a[1]) .. ")", r, c.r)
@@ -53,8 +54,10 @@ return function(Reglas, G)
 		check(sc.origin .. " inicio", snap(s), sc.init)
 		for k, op in ipairs(sc.ops) do
 			local f, a, r = op.f, op.a or {}, nil
-			if f == "setCnt" then for k2, v2 in pairs(a[1]) do s.cnt[k2] = v2 end
+			if f == "setStory" then s.story.i = a[1]; s.ending = a[2]; r = Reglas.stepDialog(s, "d")
+			elseif f == "setCnt" then for k2, v2 in pairs(a[1]) do s.cnt[k2] = v2 end
 			elseif f == "cheat" then local c = a[1]; s.oro += c.oro; s.gemas += c.gemas; s.chispas += c.chispas; s.stats.fue += c.fue
+			elseif f == "fishRoll" then r = Reglas.fishRoll(Reglas.mulberry(a[1]), a[2])
 			elseif f == "killReward" then r = Reglas.killReward(s, a[1], a[2], Reglas.mulberry(a[3]))
 			elseif f == "advance" then r = Reglas.advance(s).id
 			elseif f == "makeField" then

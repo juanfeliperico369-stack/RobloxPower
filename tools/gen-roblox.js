@@ -50,7 +50,7 @@ const norm = v => JSON.parse(JSON.stringify(v, (k, x) => (x && typeof x === 'obj
 /* ---------- 1. Datos.luau ---------- */
 const DATA = { VERSION: C.VERSION, SAVE_KEY: C.SAVE_KEY, M: C.M, EL: C.EL, ELK5: C.ELK5, TIERS: C.TIERS, RANKS: C.RANKS, ORIG: C.ORIG, NPC: C.NPC, ZONES: C.ZONES, FOES: C.FOES, RINGS: C.RINGS,
   BLD: C.BLD, ACT: C.ACT, GEAR: C.GEAR, SHOP: C.SHOPL, TOUR: C.TOUR, LOOK: C.LOOK, CHAT: C.CHAT, BOTCHAT: C.BOTCHAT, REPLY: C.REPLY, STORY: C.STORY, SIDE: C.SIDE, DQ: C.DQ,
-  FORGE: C.FORGE.slice(1), NEWB: C.NEWB, NA: C.NA, NB: C.NB, BAD: C.BAD, CYCLE: C.CYCLE, FOE_EL: C.FOE_EL, FRAG: C.FRAG, CLANS: C.CLANS, CLANPTS: C.CLANPTS, EVENTS: C.EVENTS, ACH: C.ACH };
+  FORGE: C.FORGE.slice(1), NEWB: C.NEWB, NA: C.NA, NB: C.NB, BAD: C.BAD, CYCLE: C.CYCLE, FOE_EL: C.FOE_EL, FRAG: C.FRAG, CLANS: C.CLANS, CLANPTS: C.CLANPTS, EVENTS: C.EVENTS, ACH: C.ACH, FISH: C.FISH };
 const datosSrc = '--!nonstrict\n-- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.\n-- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.\nreturn ' + lua(DATA) + '\n';
 const back = parseLua(datosSrc.slice(datosSrc.indexOf('return ') + 7));
 if (JSON.stringify(norm(back)) !== JSON.stringify(norm(DATA))) { console.error('✖ Datos.luau no coincide al releerlo'); process.exit(1); }
@@ -83,6 +83,7 @@ Object.keys(C.FOES).forEach(t => [15, 500].forEach(eP => fn('foeStats', [t, eP],
 [NOW, Date.UTC(2026, 10, 9, 0, 0), Date.UTC(2026, 10, 8, 23, 59), Date.UTC(1970, 0, 5)].forEach(t => fn('weekKey', [t], C.weekKey(t)));
 [0, 1, 2, 3, 4, 5].forEach(w => fn('eventOfId', [NOW + w * 7 * 864e5], C.eventOf(NOW + w * 7 * 864e5).id));
 Object.keys(C.EL).forEach(a => { fn('strongVs', [a], C.strongVs(a)); fn('weakVs', [a], C.weakVs(a)); Object.keys(C.EL).forEach(d => fn('afin', [a, d], C.afin(a, d))); });
+[[1, 0], [2, .5], [3, 1], [99, .25]].forEach(([sd, q]) => { const R = C.mulberry(sd); fn('fishSeq', [sd, q], Array.from({ length: 25 }, () => C.fishRoll(R, q))); });
 { const R = C.mulberry(5), used = {}; fn('botNames', [5], Array.from({ length: 12 }, () => C.botName(R, used))); }
 
 /* escenarios: operaciones aleatorias deterministas sobre un estado */
@@ -111,11 +112,11 @@ function scenario(origin, seed, el, nops) {
     else if (x < .57) { now += Math.round(R() * 5e7); f = 'offline'; a = [now]; r = C.offline(s, now); }
     else if (x < .59) { now += Math.round(R() * 1e8); f = 'dailyCheck'; a = [now]; r = C.dailyCheck(s, now); }
     else if (x < .61) { f = 'dailyClaim'; a = [Math.floor(R() * 3)]; r = C.dailyClaim(s, a[0]); }
-    else if (x < .66) { const o = C.stepObj(s) || {}; f = 'ev'; const t = pk(['train', 'kill', 'build', 'oro', 'talk', 'give', 'boss', 'forge', 'tourney', 'visit', 'perf', 'anvil', 'find']);
+    else if (x < .66) { const o = C.stepObj(s) || {}; f = 'ev'; const t = pk(['train', 'kill', 'build', 'oro', 'talk', 'give', 'boss', 'forge', 'tourney', 'visit', 'perf', 'anvil', 'find', 'fish', 'cook']);
       const d = { st: pk(STS), type: pk(TYPES), n: pk([undefined, 1, 3, 250]), who: R() < .6 ? C.who(s, o.who || 'pip') : 'pip', t: Math.floor(R() * 4), rank: Math.floor(R() * 100) + 1, z: pk(['plaza', 'coliseo']), id: 'gato' };
       if (t === 'oro' && d.n === undefined) d.n = 100;
       a = [t, JSON.parse(JSON.stringify(d))]; r = C.ev(s, t, d); }
-    else if (x < .68) { const y = R(); now += Math.round(R() * 2e8); if (y < .15) { f = 'eventSync'; a = [now]; r = C.eventSync(s, now); } else if (y < .3) { f = 'achCheck'; r = C.achCheck(s); } else if (y < .5) { f = 'clanJoin'; a = [pk(['llama', 'viento', 'marea', 'nada']), now]; r = C.clanJoin(s, a[0], now); } else if (y < .8) { f = 'clanWeek'; a = [now]; r = C.clanWeek(s, now); } else { f = 'clanStand'; a = [now]; r = C.clanStand(s, now); } }
+    else if (x < .68) { const y = R(); now += Math.round(R() * 2e8); if (y < .08) { f = 'fishRoll'; a = [Math.floor(R() * 1e6), Math.round(R() * 100) / 100]; r = C.fishRoll(C.mulberry(a[0]), a[1]); } else if (y < .12) { f = 'fishCatch'; a = [R() < .9 ? pk(C.FISH).id : 'nada']; r = C.fishCatch(s, a[0]); } else if (y < .15) { f = 'cookRound'; a = [Math.floor(R() * 6)]; r = C.cookRound(s, a[0]); } else if (y < .2) { f = 'eventSync'; a = [now]; r = C.eventSync(s, now); } else if (y < .3) { f = 'achCheck'; r = C.achCheck(s); } else if (y < .5) { f = 'clanJoin'; a = [pk(['llama', 'viento', 'marea', 'nada']), now]; r = C.clanJoin(s, a[0], now); } else if (y < .8) { f = 'clanWeek'; a = [now]; r = C.clanWeek(s, now); } else { f = 'clanStand'; a = [now]; r = C.clanStand(s, now); } }
     else if (x < .70) { f = 'fragTake'; a = [R() < .9 ? pk(C.FRAG).id : 'zz']; r = C.fragTake(s, a[0]); }
     else if (x < .74) { f = 'advance'; r = C.stepDone(s) || R() < .5 ? C.advance(s).id : (f = 'stepDone', C.stepDone(s)); }
     else if (x < .75) { f = 'choose'; a = [pk(['compartir', 'corona'])]; r = C.choose(s, a[0]); }
@@ -161,6 +162,9 @@ cases.sc.push(scenario('discipulo', 11, 'fuego', 300), scenario('mercader', 22, 
   op('train', ['kata', 1.25], C.train(s, 'kata', 1.25));
   op('clanStand', [NOW + 10 * 864e5], C.clanStand(s, NOW + 10 * 864e5));
   for (let w = 0; w < 4; w++) { const t = NOW + w * 7 * 864e5; op('eventSync', [t], C.eventSync(s, t)); op('train', ['saco', 1], C.train(s, 'saco', 1)); op('killReward', ['lobo', 300, 77 + w], C.killReward(s, 'lobo', 300, C.mulberry(77 + w))); op('tick', [2], C.tick(s, 2)); op('friendXP', [3, 10], C.friendXP(s, 3, 10)); op('ev', ['kill', { type: 'eco' }], C.ev(s, 'kill', { type: 'eco' })); }
+  C.FISH.forEach((fi, k) => op('fishCatch', [fi.id], C.fishCatch(s, fi.id))); for (let r2 = 1; r2 <= 4; r2++) op('cookRound', [r2], C.cookRound(s, r2));
+  for (const [st, en] of [['d1', 'compartir'], ['d1', 'corona'], ['d5', 'corona'], ['d8', '']]) { s.story.i = C.STI[st]; s.ending = en; op('setStory', [C.STI[st], en], C.stepDialog(s, 'd')); }
+  s.story.i = 0; s.ending = ''; op('setStory', [0, ''], C.stepDialog(s, 'd'));
   s.cnt.taps = 600; s.cnt.kills = 1200; op('setCnt', [{ taps: 600, kills: 1200 }]); op('achCheck', [], C.achCheck(s)); op('achCheck', [], C.achCheck(s));
   cases.sc.push(sc);
 }

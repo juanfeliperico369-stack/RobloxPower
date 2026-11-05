@@ -53,6 +53,10 @@ async function run(b, i, port) {
             await sleep(60);
           }
           await E(() => { if (!document.getElementById('ov').hidden) __bdp.close(); }); await flush();
+          if (await E(() => !document.getElementById('mg').hidden)) { // minijuego abierto desde un panel (cocina)
+            for (let t = 0; t < 10; t++) { await p.click('#mgB'); await sleep(400); const bb = await p.$('#mgc'); const bx = await bb.boundingBox(); await p.mouse.click(bx.x + bx.width * (t % 2 ? .75 : .25), bx.y + bx.height * (t % 3 ? .3 : .7)); await sleep(150); }
+            await E(() => __bdp.mgEnd());
+          }
         }
       }
       if (z === 'tierras') {

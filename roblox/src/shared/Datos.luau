@@ -2,7 +2,7 @@
 -- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.
 -- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.
 return {
-	VERSION = "0.5.0",
+	VERSION = "0.6.0",
 	SAVE_KEY = "bdp.save.v1",
 	M = "@m",
 	EL = {
@@ -789,8 +789,117 @@ return {
 			},
 			h = "Decide qué hacer con el Brazalete del Origen"
 		}, {
-			id = "ep",
+			id = "d1",
 			act = 4,
+			t = "Luces sin dueño",
+			o = {
+				k = "talk",
+				who = "nima"
+			},
+			r = {
+				gemas = 10
+			},
+			h = "Habla con el Oráculo Nima (Plaza)",
+			i = {{"nar", "ACTO IV · LAS LUCES SIN DUEÑO"}, {"nar", "Semanas después, algo extraño ocurre en Ánima: de noche, pequeñas luces flotan sin rumbo."}},
+			d = {
+				compartir = {{"nima", "Rompiste el Brazalete y el poder volvió a la gente… pero no todo encontró su camino."}, {"nima", "Los frascos del palco guardaban luces de personas que ya no viven en Ánima. Esas luces no tienen a dónde volver."}},
+				corona = {{"nima", "Llevas el Brazalete del Origen. ¿Sientes su peso? Son miles de luces ajenas."}, {"nima", "Algunas ya no tienen dueño a quien volver. Vagan. Y si nadie las cuida, se vuelven Ecos."}}
+			}
+		}, {
+			id = "d2",
+			act = 4,
+			t = "El palco vacío",
+			o = {
+				k = "talk",
+				who = "vant"
+			},
+			r = {
+				gemas = 10
+			},
+			h = "Busca a Vant en el Coliseo",
+			d = {{"vant", "Viniste. Pensé que nadie volvería a hablarme."}, {"vant", "Cada luz de esos frascos tenía un nombre. Me los sé todos. Los repito de noche."}, {"vant", "No te pido que me perdones. Te pido ayuda para hacer algo bien, por una vez."}}
+		}, {
+			id = "d3",
+			act = 4,
+			t = "Reyes de lo perdido",
+			o = {
+				k = "kill",
+				type = "reyeco",
+				n = 2
+			},
+			r = {
+				chispas = 15
+			},
+			h = "Libera a 2 Reyes Eco (Tierras Rotas, anillo 1)",
+			i = {{"kira", "Los Reyes Eco son luces que se cansaron de buscar. Liberarlos no es destruirlos: es dejarlos descansar."}}
+		}, {
+			id = "d4",
+			act = 4,
+			t = "Luces en el agua",
+			o = {
+				k = "fish",
+				n = 5
+			},
+			r = {
+				oro = 3000,
+				gemas = 10
+			},
+			h = "Pesca 5 peces en la fuente de la Plaza",
+			i = {{"nima", "Las luces más tímidas se esconden en el agua. Pescarlas con paciencia las calma."}, {"pip", "¡Yo te enseño a pescar! Lanza, espera la picada y no tires demasiado fuerte."}}
+		}, {
+			id = "d5",
+			act = 4,
+			t = "Lo que no se olvida",
+			o = {
+				k = "talk",
+				who = "@m"
+			},
+			r = {
+				gemas = 10
+			},
+			h = "Habla con tu mentor sobre el perdón",
+			d = {{"@m", "¿Perdonar a Vant? Perdonar no es olvidar lo que hizo."}, {"@m", "Es decidir que el daño no va a decidir quién eres tú."}, {"@m", "Y a veces, es darle a alguien la oportunidad de reparar lo que rompió."}}
+		}, {
+			id = "d6",
+			act = 4,
+			t = "Maestría",
+			o = {
+				k = "power",
+				n = 40000
+			},
+			r = {
+				oro = 50000
+			},
+			h = "Alcanza 40.000 de Poder (rango Maestro)"
+		}, {
+			id = "d7",
+			act = 4,
+			t = "El Festival del Origen",
+			o = {
+				k = "tourney",
+				r = 3
+			},
+			r = {
+				gemas = 40
+			},
+			h = "Queda en el Top 3 del torneo (Festival del Origen)",
+			i = {{"heraldo", "Este año el torneo lo organiza el pueblo. Se llama Festival del Origen. Y el palco… está abierto para todos."}}
+		}, {
+			id = "d8",
+			act = 4,
+			t = "Un nombre nuevo",
+			o = {
+				k = "talk",
+				who = "vant"
+			},
+			r = {
+				gemas = 50
+			},
+			h = "Habla con Vant después del Festival",
+			d = {{"vant", "Te vi pelear. No para quitarle nada a nadie. Para demostrar algo a ti."}, {"vant", "Devolví la última luz esta mañana. Era de una niña que me sonrió una vez, cuando nadie lo hacía."}, {"vant", "Ya no quiero que me llamen Anfitrión. Llámame Vant. Solo Vant."}, {"nar", "FIN DEL ACTO IV · Ánima sigue. Tú también. Gracias por jugar con el corazón."}}
+		}, {
+			id = "ep",
+			act = 5,
 			t = "Epílogo: Ánima libre",
 			o = {
 				k = "none"
@@ -963,6 +1072,14 @@ return {
 			n = 0,
 			t = "Gana oro"
 		}, {
+			k = "fish",
+			n = 4,
+			t = "Pesca 4 peces"
+		}, {
+			k = "cook",
+			n = 6,
+			t = "Completa 6 rondas de cocina"
+		}, {
 			k = "visit",
 			z = "coliseo",
 			n = 1,
@@ -1082,7 +1199,9 @@ return {
 		anvil = 0.05,
 		build = 1,
 		frag = 10,
-		find = 5
+		find = 5,
+		fish = 0.5,
+		cook = 0.5
 	},
 	EVENTS = {{
 			id = "dojo",
@@ -1223,5 +1342,84 @@ return {
 			v = "ending",
 			n = 1,
 			g = 20
+		}, {
+			id = "pesca",
+			t = "Paciencia de agua",
+			d = "Pesca las 8 especies",
+			v = "fish",
+			n = 8,
+			g = 20
+		}, {
+			id = "chef",
+			t = "Manos de panadero",
+			d = "Completa 50 rondas de cocina",
+			v = "cook",
+			n = 50,
+			g = 10
+		}},
+	FISH = {{
+			id = "linterna",
+			n = "Pez Linterna",
+			ic = "🐟",
+			w = 40,
+			v = 8,
+			sp = 1,
+			i = 0
+		}, {
+			id = "tinta",
+			n = "Carpa de Tinta",
+			ic = "🐠",
+			w = 25,
+			v = 14,
+			sp = 1.2,
+			i = 1
+		}, {
+			id = "arcoiris",
+			n = "Trucha Arcoíris",
+			ic = "🌈",
+			w = 14,
+			v = 25,
+			sp = 1.4,
+			i = 2
+		}, {
+			id = "brazalete",
+			n = "Pez Brazalete",
+			ic = "💍",
+			w = 9,
+			v = 45,
+			sp = 1.6,
+			i = 3
+		}, {
+			id = "anguila",
+			n = "Anguila Rayo",
+			ic = "⚡",
+			w = 6,
+			v = 80,
+			sp = 1.9,
+			i = 4
+		}, {
+			id = "koi",
+			n = "Koi del Eclipse",
+			ic = "🎏",
+			w = 3.5,
+			v = 150,
+			sp = 2.1,
+			i = 5
+		}, {
+			id = "fantasma",
+			n = "Pez Fantasma",
+			ic = "👻",
+			w = 2,
+			v = 260,
+			sp = 2.4,
+			i = 6
+		}, {
+			id = "leviatan",
+			n = "Leviatán Bebé",
+			ic = "🐉",
+			w = 0.5,
+			v = 900,
+			sp = 2.8,
+			i = 7
 		}}
 }

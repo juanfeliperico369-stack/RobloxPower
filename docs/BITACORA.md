@@ -2,6 +2,15 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-05 · v0.6.0 · Acto IV, pesca y cocina
+1. Nuevo: **Acto IV “Las luces sin dueño”** (8 pasos, d1–d8): las luces de los frascos de Vant vagan sin dueño; Vant pide ayuda para reparar; perdón ≠ olvido; Festival del Origen; Vant deja de ser “el Anfitrión”. Diálogos que cambian según el final elegido (`d[s.ending]`). Vant aparece en el Coliseo desde d2.
+2. Nuevo: **pesca** en la fuente de la Plaza (barra de fuerza → espera la picada → tensión del carrete); 8 especies con rareza realista (Leviatán 0.5–1.1%); colección y logro.
+3. Nuevo: **cocina** en la Panadería (memoria tipo “Simón” con 4 ingredientes): oro y energía por ronda; logro “Manos de panadero”.
+4. Misiones diarias nuevas (pescar, cocinar), puntos de clan por pescar/cocinar, 18 logros.
+5. Port Luau de todo + casos de oro de pesca (secuencias) y diálogos por final: **3271/3271 idénticos a JS**, análisis sin errores.
+6. Probado: check OK; sim 120×8 h OK (la historia ahora llega en promedio a la misión 25.7/31); bot 3 partidas OK (juega pesca y cocina); celular modesto 61–62 fps en calidad baja.
+7. Falta: exportar a Roblox Studio (mapas 3D, combate, interfaz), más contenido social.
+
 ## 2026-11-05 · v0.5.0 · Rendimiento de la Noche, eventos semanales y logros
 1. Rendimiento: la oscuridad de la Noche costaba ~20 fps en celulares modestos. Ahora es un solo degradado con forma de linterna, relleno opaco fuera de la luz y **resolución dinámica** (el gobernador baja a 75% si aún va lento): Noche 33 → 45 fps, Tierras 53 → 60 fps (CPU 4× más lenta).
 2. Nuevo: **eventos semanales rotativos** sin presión (Dojo, Feria, Luna de los Ecos, Amistad) que se repiten cada 4 semanas; se anuncian al entrar y se ven en el Tablón.

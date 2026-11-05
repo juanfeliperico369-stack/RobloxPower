@@ -154,10 +154,10 @@ function Reglas.newState(o)
 		stats = { fue = O.st.fue, tec = O.st.tec, esp = O.st.esp }, legado = 0, en = 100, hp = -1,
 		oro = O.oro, gemas = 10, chispas = 0,
 		brz = { { id = 1, el = el, t = 0 } }, eq = 1, nid = 2,
-		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {},
+		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {}, fish = {},
 		zone = O.z, story = { i = 0, n = 0, seen = "" }, unlock = {}, ending = "",
 		daily = { day = "", q = {} },
-		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0 },
+		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0, cook = 0 },
 		tours = {}, title = "", pend = nil,
 		bots = makeBots(seed),
 		cfg = { snd = 1, mus = 1, q = 1, vib = 1, big = 0, calm = 0 },
@@ -212,6 +212,7 @@ function Reglas.migrate(o)
 	if T(d.clan.id) and not Reglas.CLANI[d.clan.id] then d.clan.id = "" end
 	if T(d.evt) and not Reglas.EVENTI[d.evt] then d.evt = "" end
 	for aid in pairs(d.ach) do if not Reglas.ACHI[aid] then d.ach[aid] = nil end end
+	for fid2, v in pairs(d.fish) do if not Reglas.FISHI[fid2] or not isNum(v) then d.fish[fid2] = nil end end
 	d.story.i = clamp(trunc(isNum(d.story.i) and d.story.i or 0), 0, #D.STORY - 1)
 	if not D.ZONES[d.zone] then d.zone = "plaza" end
 	local nm = Reglas.cleanName(d.name); d.name = nm ~= "" and nm or "Heroe"; d.v = 1; d.ver = D.VERSION
@@ -483,14 +484,14 @@ end
 function Reglas.stepDialog(s, key)
 	local st = D.STORY[s.story.i + 1]; local d = st[key or "d"]
 	if not d then return nil end
-	if d[1] == nil then d = d[s.origin] end
+	if d[1] == nil then d = d[s.ending] or d[s.origin] or d.compartir or d.discipulo end
 	local out = {}
 	for i, l in ipairs(d) do out[i] = { Reglas.who(s, l[1]), l[2] } end
 	return out
 end
 local function stepNeed(s)
 	local o = Reglas.stepObj(s); if not o then return 1 end
-	if o.k == "oro" or o.k == "train" or o.k == "kill" or o.k == "build" then return o.n end
+	if o.k == "oro" or o.k == "train" or o.k == "kill" or o.k == "build" or o.k == "fish" then return o.n end
 	return 1
 end
 function Reglas.stepProg(s)
@@ -650,6 +651,7 @@ function Reglas.achVal(s, a)
 	if v == "poder" then return Reglas.poder(s) end
 	if v == "clan" then return s.clan.pts end
 	if v == "ending" then return T(s.ending) and 1 or 0 end
+	if v == "fish" then local f = 0 for q, c in pairs(s.fish) do if Reglas.FISHI[q] and c > 0 then f += 1 end end return f end
 	return s.cnt[v] or 0
 end
 function Reglas.achCheck(s)
@@ -658,6 +660,29 @@ function Reglas.achCheck(s)
 		if not T(s.ach[a.id]) and Reglas.achVal(s, a) >= a.n then s.ach[a.id] = 1; s.gemas += a.g; table.insert(got, a.id) end
 	end
 	return got
+end
+
+---------------------------------------------------------------- pesca y cocina
+local FISHI = {}
+for _, f in ipairs(D.FISH) do FISHI[f.id] = f end
+Reglas.FISHI = FISHI
+function Reglas.fishRoll(R, q)
+	local tot, ws = 0, {}
+	for i, f in ipairs(D.FISH) do local w = f.w * (1 + q * f.i * 0.35); tot += w; ws[i] = w end
+	local x = R() * tot
+	for i, f in ipairs(D.FISH) do x -= ws[i]; if x < 0 then return f.id end end
+	return D.FISH[1].id
+end
+function Reglas.fishValue(s, id) return round(FISHI[id].v * (1 + math.sqrt(Reglas.base(s)) / 20)) end
+function Reglas.fishCatch(s, id)
+	if not FISHI[id] then return 0 end
+	s.fish[id] = (s.fish[id] or 0) + 1
+	local o = Reglas.fishValue(s, id); Reglas.addOro(s, o); ev(s, "fish", { n = 1 }); return o
+end
+function Reglas.cookRound(s, r)
+	if not (r and r >= 1) then return 0 end
+	local o = math.ceil((10 + Reglas.prod(s) * 2) * (1 + r * 0.15))
+	s.en = math.min(Reglas.enMax(s), s.en + 8); Reglas.addOro(s, o); s.cnt.cook = (s.cnt.cook or 0) + 1; ev(s, "cook", { n = 1 }); return o
 end
 
 ---------------------------------------------------------------- amigos y grupo (bi = índice base 0 en s.bots)

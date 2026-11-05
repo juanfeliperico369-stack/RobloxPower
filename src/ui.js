@@ -41,7 +41,7 @@ function hud() {
 }
 function questBox() {
   var st = C.STORY[S.story.i], pr = C.stepProg(S);
-  $('qA').textContent = (st.act <= 3 ? 'ACTO ' + ['I', 'II', 'III'][st.act - 1] : 'EPÍLOGO') + ' · MISIÓN ' + (S.story.i + 1);
+  $('qA').textContent = (st.act <= 4 ? 'ACTO ' + ['I', 'II', 'III', 'IV'][st.act - 1] : 'EPÍLOGO') + ' · MISIÓN ' + (S.story.i + 1);
   $('qT').textContent = st.t; $('qH').textContent = C.stepHint(S) + (pr[1] > 1 ? '  ·  ' + C.fmt(pr[0]) + '/' + C.fmt(pr[1]) : '');
   $('qP').style.width = Math.min(100, pr[0] / pr[1] * 100) + '%';
 }
@@ -162,7 +162,7 @@ var PANELS = {
   },
   pan: function () {
     var c = C.foodCost(S), ok = S.tyc.pan > 0;
-    return head('PANADERÍA', 'Comer', 'Recupera 40 de energía para entrenar.') + (ok ? '<p class="m">Energía: <b class="w">' + Math.floor(S.en) + '/' + C.enMax(S) + '</b></p>' + bt('eat', '', 'Comer pan · ' + C.fmt(c) + ' ●', c) : '<p class="bad">Primero compra un Puesto de Pan en la mesa del Tycoon.</p>');
+    return head('PANADERÍA', 'Comer', 'Recupera 40 de energía para entrenar.') + (ok ? '<p class="m">Energía: <b class="w">' + Math.floor(S.en) + '/' + C.enMax(S) + '</b></p>' + bt('eat', '', 'Comer pan · ' + C.fmt(c) + ' ●', c) + ' ' + bt('cook', '', '👩‍🍳 Cocinar (minijuego)', undefined, '', 'red') : '<p class="bad">Primero compra un Puesto de Pan en la mesa del Tycoon.</p>');
   },
   forge: function () {
     var h = head('FORJA DE DON TOBÍAS', 'Brazaletes', 'Los brazaletes multiplican tu Poder y NUNCA se pierden en el torneo.');
@@ -319,6 +319,7 @@ var ACTS = {
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   clanJoin: function (v) { var r = C.clanJoin(S, v, Date.now()); if (r === true) { toast('¡Bienvenida, bienvenido al ' + C.CLANI[v].n + '! ' + C.CLANI[v].ic, 'gold'); sfx('win'); refreshCombat(); save(); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'bot'; }); spawnBots(MAP.id); } } else if (r === 'espera') toast('Solo puedes cambiar de clan una vez cada 24 h', 'bad'); renderPanel(); },
+  cook: function () { closePanel(); mgStart('cocina'); },
   stratEq: function (v) { C.equip(S, +v); refreshCombat(); sfx('up'); renderPanel(); },
   pageOk: function () { var all = PANEL.a.all; closePanel(); if (all) { banner('¡GUARDIÁN DEL ORIGEN!', 'Completaste el Códice'); sfx('win'); } hudFull(); },
   choose: function (v) { closePanel(); C.choose(S, v); refreshCombat(); save(); sfx('win'); dialog(ENDS[S.ending], function () { banner('FIN', S.title); hudFull(); }); },
@@ -357,17 +358,40 @@ window.addEventListener('pagehide', save);
 
 /* ---------- minijuegos ---------- */
 var MG = { on: 0 }, mg = $('mgc').getContext('2d'), MW = 1, MH = 1;
-var MGT = { saco: ['Saco de Fuerza', 'Golpea con RITMO (3–6 golpes/s). Spamear sin técnica rinde menos.', '¡Golpe!'], kata: ['Katas de Técnica', 'Toca cuando el anillo coincida con el círculo. Rachas = más difícil y más premio.', '¡Ahora!'], medita: ['Cascada Serena', 'MANTÉN para inhalar 4 s · SUELTA para exhalar 4 s. Recupera energía.', 'Mantén'], yunque: ['Yunque', 'Golpea el yunque para forjar monedas.', '¡Martillo!'] };
+var MGT = { saco: ['Saco de Fuerza', 'Golpea con RITMO (3–6 golpes/s). Spamear sin técnica rinde menos.', '¡Golpe!'], kata: ['Katas de Técnica', 'Toca cuando el anillo coincida con el círculo. Rachas = más difícil y más premio.', '¡Ahora!'], medita: ['Cascada Serena', 'MANTÉN para inhalar 4 s · SUELTA para exhalar 4 s. Recupera energía.', 'Mantén'], yunque: ['Yunque', 'Golpea el yunque para forjar monedas.', '¡Martillo!'], pesca: ['Pesca en la Fuente', 'Lanza cuando la barra esté arriba · espera la picada (¡no antes!) · MANTÉN para subir la zona verde y que el pez quede dentro.', '¡Lanzar!'], cocina: ['Cocina de la Panadería', 'Mira la receta y repítela tocando los ingredientes en el mismo orden. Cada ronda: oro y energía.', 'Ver receta'] };
+var INGR = ['🌾', '🥚', '🥛', '🍯'];
 function mgStart(kind) {
   MG = { on: 1, kind: kind, t: 0, taps: [], sw: 0, sv: 0, ring: 160, streak: 0, ph: 'idle', inS: 0, outS: 0, din: 0, last: '', lastT: 0, gain: 0, n: 0 };
   paused++; $('mg').hidden = false; $('mgT').textContent = MGT[kind][0]; $('mgH').textContent = MGT[kind][1]; $('mgB').textContent = MGT[kind][2];
+  if (kind === 'pesca') { MG.ph = 'cast'; MG.zy = .5; MG.fy = .5; MG.fv = 0; MG.pr = .3; }
+  if (kind === 'cocina') { MG.seq = []; MG.ph = 'next'; MG.k = 0; MG.tt = .6; MG.lit = -1; }
   mgResize(); mgStat();
 }
-function mgEnd() { if (!MG.on) return; MG.on = 0; $('mg').hidden = true; paused = Math.max(0, paused - 1); refreshCombat(); save(); hudFull(); if (MG.n) toast('Sesión: +' + MG.gain.toFixed(1) + (MG.kind === 'yunque' ? ' oro' : ' ' + { saco: 'FUE', kata: 'TEC', medita: 'ESP' }[MG.kind]), 'ok'); }
+function mgEnd() { if (!MG.on) return; MG.on = 0; $('mg').hidden = true; paused = Math.max(0, paused - 1); refreshCombat(); save(); hudFull(); if (MG.n) toast('Sesión: +' + MG.gain.toFixed(1) + (MG.kind === 'yunque' || MG.kind === 'pesca' || MG.kind === 'cocina' ? ' oro' : ' ' + { saco: 'FUE', kata: 'TEC', medita: 'ESP' }[MG.kind]), 'ok'); }
 function mgResize() { var c = $('mgc'), r = c.getBoundingClientRect(); MW = Math.max(1, r.width); MH = Math.max(1, r.height); c.width = MW * DPR; c.height = MH * DPR; }
-function mgStat() { $('mgS').textContent = MG.kind === 'yunque' ? C.fmt(S.oro) + ' ●' : '⚡ ' + Math.floor(S.en) + '/' + C.enMax(S); }
+function mgStat() { $('mgS').textContent = MG.kind === 'yunque' || MG.kind === 'pesca' || MG.kind === 'cocina' ? C.fmt(S.oro) + ' ●' : '⚡ ' + Math.floor(S.en) + '/' + C.enMax(S); }
 function mgFloat(t, c) { MG.fl = (MG.fl || []).concat([{ t: t, c: c, y: 0, life: 1 }]).slice(-6); }
-function mgAct(type) {
+function cookNext() { MG.seq.push(Math.random() * 4 | 0); MG.ph = 'show'; MG.k = 0; MG.tt = .7; MG.lit = -1; $('mgB').textContent = 'Mirando…'; }
+function mgAct(type, e) {
+  if (MG.on && MG.kind === 'pesca') {
+    if (type === 'up') { MG.hold = 0; return; }
+    if (type !== 'down') return; MG.hold = 1;
+    if (MG.ph === 'cast') { MG.q = .5 + .5 * Math.sin(MG.t * 3.2); MG.ph = 'wait'; MG.wt = rnd(1.3, 4); $('mgB').textContent = 'Esperando…'; sfx('dash'); mgFloat(MG.q > .85 ? '¡LANZAMIENTO PERFECTO!' : 'Lanzado', MG.q > .85 ? '#2dffb3' : '#fff'); }
+    else if (MG.ph === 'wait') { MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; mgFloat('¡Muy pronto! El pez se asustó', '#e0262f'); sfx('hurt'); }
+    else if (MG.ph === 'bite') { MG.ph = 'reel'; MG.pr = .35; MG.zy = .5; MG.fy = .5; MG.fv = 0; $('mgB').textContent = 'MANTÉN'; sfx('crit'); }
+    return;
+  }
+  if (MG.on && MG.kind === 'cocina') {
+    if (type !== 'down') return;
+    if (MG.ph === 'next' || MG.ph === 'fail') { if (MG.ph === 'fail') MG.seq = []; cookNext(); return; }
+    if (MG.ph !== 'input' || !e || e.currentTarget !== $('mgc')) return;
+    var r = $('mgc').getBoundingClientRect(), x = e.clientX - r.left - MW / 2, y = e.clientY - r.top - MH / 2, idx = (x > 0 ? 1 : 0) + (y > 0 ? 2 : 0);
+    MG.lit = idx; MG.litT = .25; tone([523, 659, 784, 988][idx], .12, 'square', .06);
+    if (idx !== MG.seq[MG.k]) { MG.ph = 'fail'; $('mgB').textContent = 'Otra vez'; mgFloat('¡Se quemó! Receta de ' + MG.seq.length, '#e0262f'); sfx('hurt'); return; }
+    MG.k++;
+    if (MG.k >= MG.seq.length) { var o = C.cookRound(S, MG.seq.length); MG.gain += o; MG.n++; mgFloat('¡Ronda ' + MG.seq.length + '! +' + C.fmt(o) + ' ● +8 ⚡', '#f0b429'); sfx('up'); MG.ph = 'next'; $('mgB').textContent = 'Siguiente receta'; mgStat(); }
+    return;
+  }
   if (!MG.on) return; var now = performance.now() / 1000, k = MG.kind;
   if (k === 'saco' && type === 'down') {
     MG.taps.push(now); MG.taps = MG.taps.filter(function (t) { return now - t < 1.2; });
@@ -402,13 +426,29 @@ function mgUpdate(dt) {
   MG.sv += -MG.sw * 30 * dt; MG.sv *= .96; MG.sw += MG.sv * dt * 4; MG.sw = C.clamp(MG.sw, -1, 1);
   if (MG.kind === 'kata') { MG.ring -= 95 * Math.min(1.8, 1 + MG.streak * .06) * dt; if (MG.ring < 30) { MG.streak = 0; C.train(S, 'kata', 0); mgFloat('TARDE', '#e0262f'); MG.ring = 160; mgStat(); } }
   if (MG.kind === 'yunque') MG.sv = Math.max(0, MG.sv - dt * 6);
+  if (MG.kind === 'pesca') {
+    if (MG.ph === 'wait') { MG.wt -= dt; if (MG.wt <= 0) { MG.ph = 'bite'; MG.bt = .75; MG.fid = C.fishRoll(Math.random, MG.q || 0); $('mgB').textContent = '¡TIRA!'; sfx('beat'); vib(40); } }
+    else if (MG.ph === 'bite') { MG.bt -= dt; if (MG.bt <= 0) { MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; mgFloat('Se escapó… ¡toca apenas pique!', '#e0262f'); } }
+    else if (MG.ph === 'reel') {
+      var F = C.FISHI[MG.fid], sp = F.sp;
+      MG.fv += (Math.random() - .5) * 4.2 * sp * dt; MG.fv *= .96; MG.fy = C.clamp(MG.fy + MG.fv * dt, .05, .95); if (MG.fy <= .05 || MG.fy >= .95) MG.fv *= -.6;
+      MG.zy = C.clamp(MG.zy + (MG.hold ? -1.1 : .9) * dt, .14, .86);
+      var inside = Math.abs(MG.fy - MG.zy) < .14; MG.pr = C.clamp(MG.pr + (inside ? .3 : -.12 * sp) * dt, 0, 1);
+      if (MG.pr >= 1) { var o = C.fishCatch(S, MG.fid); MG.gain += o; MG.n++; mgFloat('¡' + F.ic + ' ' + F.n + '! +' + C.fmt(o) + ' ●', F.i >= 5 ? '#ff2fb3' : F.i >= 3 ? '#f0b429' : '#fff'); sfx(F.i >= 5 ? 'win' : 'coin'); MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; mgStat(); }
+      else if (MG.pr <= 0) { mgFloat('El pez rompió el sedal', '#e0262f'); MG.ph = 'cast'; $('mgB').textContent = '¡Lanzar!'; }
+    }
+  }
+  if (MG.kind === 'cocina') {
+    MG.litT = (MG.litT || 0) - dt; if (MG.ph !== 'show' && MG.litT <= 0) MG.lit = -1;
+    if (MG.ph === 'show') { MG.tt -= dt; if (MG.tt <= 0) { if (MG.lit >= 0) { MG.lit = -1; MG.tt = .18; MG.k++; } else if (MG.k < MG.seq.length) { MG.lit = MG.seq[MG.k]; MG.tt = .5; tone([523, 659, 784, 988][MG.lit], .14, 'square', .05); } else { MG.ph = 'input'; MG.k = 0; $('mgB').textContent = '¡Tu turno!'; } } }
+  }
   (MG.fl || []).forEach(function (f) { f.y += dt * 60; f.life -= dt * .9; }); MG.fl = (MG.fl || []).filter(function (f) { return f.life > 0; });
   if ((MG.t * 4 | 0) !== ((MG.t - dt) * 4 | 0)) mgStat();
 }
 function mgDraw() {
   var g = mg, cx = MW / 2, cy = MH / 2, s = Math.min(MW, MH) / 320;
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
-  var bgc = { saco: '#8a1219', kata: '#0f5c66', medita: '#08343b', yunque: '#33333d' }[MG.kind];
+  var bgc = { saco: '#8a1219', kata: '#0f5c66', medita: '#08343b', yunque: '#33333d', pesca: '#0f5c66', cocina: '#a8740c' }[MG.kind];
   g.fillStyle = bgc; g.fillRect(0, 0, MW, MH);
   g.fillStyle = 'rgba(0,0,0,.22)'; for (var y = 0; y < MH; y += 9) for (var x = (y / 9 & 1) * 4.5; x < MW; x += 9) g.fillRect(x, y, 2, 2);
   g.lineWidth = 3; g.strokeStyle = INK;
@@ -443,9 +483,29 @@ function mgDraw() {
     if (MG.sv > .6) for (var i = 0; i < 8; i++) { g.fillStyle = '#f0b429'; g.fillRect(cx + Math.cos(i) * 60 * s * (1.6 - MG.sv), cy - 30 * s + Math.sin(i * 2) * 30 * s, 5, 5); }
     ctext(g, C.fmt(C.prod(S)) + ' ●/s', cx, 44, 22, '#f0b429');
   }
+  if (MG.kind === 'pesca') {
+    g.fillStyle = '#39c8ff'; g.globalAlpha = .25; for (var wv = 0; wv < 6; wv++) g.fillRect(0, cy - 40 + wv * 26 + Math.sin(MG.t * 2 + wv) * 6, MW, 3); g.globalAlpha = 1;
+    rr(g, 0, MH - 70 * s, MW * .45, 70 * s, '#5a3825');
+    g.save(); g.translate(MW * .2, MH - 70 * s); g.scale(1.6 * s, 1.6 * s); drawAvatar(g, 0, 0, playerLook(), { dir: 3, el: brzColor() }); g.restore();
+    var bx = cx + 30 * s, by = cy - 10 * s + (MG.ph === 'bite' ? Math.sin(MG.t * 40) * 6 : Math.sin(MG.t * 2) * 3);
+    g.strokeStyle = '#f2e8d5'; g.lineWidth = 2; g.beginPath(); g.moveTo(MW * .2 + 30 * s, MH - 150 * s); g.quadraticCurveTo(bx - 40, by - 80, bx, by); g.stroke();
+    if (MG.ph !== 'cast') { g.lineWidth = 2; g.strokeStyle = INK; g.fillStyle = '#e0262f'; g.beginPath(); g.arc(bx, by, 8, Math.PI, 0); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 8, 0, Math.PI); g.fill(); g.stroke(); }
+    if (MG.ph === 'bite') ctext(g, '¡!', bx, by - 40, 46, '#f0b429');
+    if (MG.ph === 'cast') { var q = .5 + .5 * Math.sin(MG.t * 3.2); g.fillStyle = INK; g.fillRect(20, 30, 22, MH * .5); g.fillStyle = q > .85 ? '#2dffb3' : '#f0b429'; g.fillRect(22, 30 + MH * .5 * (1 - q), 18, MH * .5 * q); ctext(g, 'FUERZA', 31, 20, 12, PAP); }
+    if (MG.ph === 'reel') {
+      var x0 = MW - 70, y0 = 40, hh = MH - 120; g.fillStyle = INK; g.fillRect(x0, y0, 40, hh); g.fillStyle = 'rgba(45,255,179,.55)'; g.fillRect(x0 + 2, y0 + hh * (MG.zy - .14), 36, hh * .28);
+      ctext(g, C.FISHI[MG.fid].i >= 5 ? '★' : '🐟', x0 + 20, y0 + hh * MG.fy, 22, '#fff', 0, 'sans-serif');
+      g.fillStyle = INK; g.fillRect(x0 - 22, y0, 12, hh); g.fillStyle = '#f0b429'; g.fillRect(x0 - 20, y0 + hh * (1 - MG.pr), 8, hh * MG.pr);
+    }
+    var nsp = C.FISH.filter(function (f) { return S.fish[f.id]; }).length; ctext(g, 'COLECCIÓN ' + nsp + '/' + C.FISH.length, cx, MH - 18, 16, PAP);
+  } else if (MG.kind === 'cocina') {
+    var cw = Math.min(MW, MH) * .34;
+    for (var ii = 0; ii < 4; ii++) { var ix = cx + (ii % 2 ? 1 : -1) * cw * .58, iy = cy + (ii > 1 ? 1 : -1) * cw * .58, on = MG.lit === ii; g.lineWidth = 4; g.strokeStyle = INK; g.fillStyle = on ? '#fff3b0' : PAP; g.fillRect(ix - cw / 2, iy - cw / 2, cw, cw); g.strokeRect(ix - cw / 2, iy - cw / 2, cw, cw); ctext(g, INGR[ii], ix, iy, cw * (on ? .62 : .5), '#fff', 0, 'sans-serif'); }
+    ctext(g, MG.ph === 'show' ? 'MIRA LA RECETA…' : MG.ph === 'input' ? 'REPITE · ' + MG.k + '/' + MG.seq.length : MG.ph === 'fail' ? 'TOCA «OTRA VEZ»' : 'RECETA ' + (MG.seq.length + 1), cx, 34, 22, '#fff');
+  }
   (MG.fl || []).forEach(function (f, i) { g.globalAlpha = Math.max(0, f.life); ctext(g, f.t, cx, cy - 150 * s - f.y - i * 4, 20, f.c); g.globalAlpha = 1; });
 }
-function mgDown(e) { e.preventDefault(); au(); mgAct('down'); }
+function mgDown(e) { e.preventDefault(); au(); mgAct('down', e); }
 $('mgB').addEventListener('pointerdown', mgDown); $('mgc').addEventListener('pointerdown', mgDown);
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { $('mgB').addEventListener(n, function () { mgAct('up'); }); $('mgc').addEventListener(n, function () { mgAct('up'); }); });
 $('mgX').addEventListener('click', mgEnd);

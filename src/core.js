@@ -2,7 +2,7 @@
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.5.0';
+var VERSION = '0.6.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -179,7 +179,24 @@ var STORY = [
   { id: 'c5', act: 3, t: 'El campeón del Eclipse', o: { k: 'boss', who: 'vant' }, r: { gemas: 50 }, h: 'Gana el torneo y vence a Vant',
     e: [['vant', '¿Cómo…? Tenía el poder de miles…'], ['vant', 'Tómalo. Toma el Brazalete del Origen. Ahora tú decides quién vale.']] },
   { id: 'c6', act: 3, t: 'La decisión', o: { k: 'choice' }, r: { gemas: 30 }, h: 'Decide qué hacer con el Brazalete del Origen' },
-  { id: 'ep', act: 4, t: 'Epílogo: Ánima libre', o: { k: 'none' }, r: {}, h: 'Juego libre: sigue mejorando, el torneo continúa' }
+  { id: 'd1', act: 4, t: 'Luces sin dueño', o: { k: 'talk', who: 'nima' }, r: { gemas: 10 }, h: 'Habla con el Oráculo Nima (Plaza)',
+    i: [['nar', 'ACTO IV · LAS LUCES SIN DUEÑO'], ['nar', 'Semanas después, algo extraño ocurre en Ánima: de noche, pequeñas luces flotan sin rumbo.']],
+    d: { compartir: [['nima', 'Rompiste el Brazalete y el poder volvió a la gente… pero no todo encontró su camino.'], ['nima', 'Los frascos del palco guardaban luces de personas que ya no viven en Ánima. Esas luces no tienen a dónde volver.']],
+      corona: [['nima', 'Llevas el Brazalete del Origen. ¿Sientes su peso? Son miles de luces ajenas.'], ['nima', 'Algunas ya no tienen dueño a quien volver. Vagan. Y si nadie las cuida, se vuelven Ecos.']] } },
+  { id: 'd2', act: 4, t: 'El palco vacío', o: { k: 'talk', who: 'vant' }, r: { gemas: 10 }, h: 'Busca a Vant en el Coliseo',
+    d: [['vant', 'Viniste. Pensé que nadie volvería a hablarme.'], ['vant', 'Cada luz de esos frascos tenía un nombre. Me los sé todos. Los repito de noche.'], ['vant', 'No te pido que me perdones. Te pido ayuda para hacer algo bien, por una vez.']] },
+  { id: 'd3', act: 4, t: 'Reyes de lo perdido', o: { k: 'kill', type: 'reyeco', n: 2 }, r: { chispas: 15 }, h: 'Libera a 2 Reyes Eco (Tierras Rotas, anillo 1)',
+    i: [['kira', 'Los Reyes Eco son luces que se cansaron de buscar. Liberarlos no es destruirlos: es dejarlos descansar.']] },
+  { id: 'd4', act: 4, t: 'Luces en el agua', o: { k: 'fish', n: 5 }, r: { oro: 3000, gemas: 10 }, h: 'Pesca 5 peces en la fuente de la Plaza',
+    i: [['nima', 'Las luces más tímidas se esconden en el agua. Pescarlas con paciencia las calma.'], ['pip', '¡Yo te enseño a pescar! Lanza, espera la picada y no tires demasiado fuerte.']] },
+  { id: 'd5', act: 4, t: 'Lo que no se olvida', o: { k: 'talk', who: M }, r: { gemas: 10 }, h: 'Habla con tu mentor sobre el perdón',
+    d: [[M, '¿Perdonar a Vant? Perdonar no es olvidar lo que hizo.'], [M, 'Es decidir que el daño no va a decidir quién eres tú.'], [M, 'Y a veces, es darle a alguien la oportunidad de reparar lo que rompió.']] },
+  { id: 'd6', act: 4, t: 'Maestría', o: { k: 'power', n: 40000 }, r: { oro: 50000 }, h: 'Alcanza 40.000 de Poder (rango Maestro)' },
+  { id: 'd7', act: 4, t: 'El Festival del Origen', o: { k: 'tourney', r: 3 }, r: { gemas: 40 }, h: 'Queda en el Top 3 del torneo (Festival del Origen)',
+    i: [['heraldo', 'Este año el torneo lo organiza el pueblo. Se llama Festival del Origen. Y el palco… está abierto para todos.']] },
+  { id: 'd8', act: 4, t: 'Un nombre nuevo', o: { k: 'talk', who: 'vant' }, r: { gemas: 50 }, h: 'Habla con Vant después del Festival',
+    d: [['vant', 'Te vi pelear. No para quitarle nada a nadie. Para demostrar algo a ti.'], ['vant', 'Devolví la última luz esta mañana. Era de una niña que me sonrió una vez, cuando nadie lo hacía.'], ['vant', 'Ya no quiero que me llamen Anfitrión. Llámame Vant. Solo Vant.'], ['nar', 'FIN DEL ACTO IV · Ánima sigue. Tú también. Gracias por jugar con el corazón.']] },
+  { id: 'ep', act: 5, t: 'Epílogo: Ánima libre', o: { k: 'none' }, r: {}, h: 'Juego libre: sigue mejorando, el torneo continúa' }
 ];
 var STI = {}; STORY.forEach(function (s, i) { STI[s.id] = i; });
 
@@ -201,10 +218,10 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {}, fish: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
-    cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0 },
+    cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0, cook: 0 },
     tours: [], title: '', pend: null,
     bots: makeBots(seed),
     cfg: { snd: 1, mus: 1, q: 1, vib: 1, big: 0, calm: 0 }
@@ -241,6 +258,7 @@ function migrate(o) {
   if (d.clan.id && !CLANI[d.clan.id]) d.clan.id = '';
   if (d.evt && !EVENTI[d.evt]) d.evt = '';
   for (var aid in d.ach) if (!ACHI[aid]) delete d.ach[aid];
+  for (var fid2 in d.fish) if (!FISHI[fid2] || !isNum(d.fish[fid2])) delete d.fish[fid2];
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -420,7 +438,7 @@ function who(s, w) { return w === M ? mentor(s) : w; }
 function stepHint(s) { var st = STORY[s.story.i], h = st.h; if (h && typeof h === 'object') h = h[s.origin]; if (!h && st.o.k === 'talk') h = 'Habla con ' + NPC[who(s, st.o.who)].n; return h || st.t; }
 function stepDialog(s, key) {
   var st = STORY[s.story.i], d = st[key || 'd']; if (!d) return null;
-  if (!Array.isArray(d)) d = d[s.origin];
+  if (!Array.isArray(d)) d = d[s.ending] || d[s.origin] || d[Object.keys(d)[0]];
   return d.map(function (l) { return [who(s, l[0]), l[1]]; });
 }
 function match(o, type, d) {
@@ -448,7 +466,7 @@ function ev(s, type, d) {
   for (var id in s.side) { var sq = s.side[id], so = SIDEI[id]; if (sq.s === 1 && so && match(so.o, type, d)) sq.n += type === 'tourney' ? 1 : (d.n || 1); }
   if (s.clan.id) { var cp = type === 'tourney' ? Math.max(1, (101 - d.rank) / 5) : (CLANPTS[type] || 0) * (d.n || 1); s.clan.pts += cp * evMul(s, 'clan'); }
 }
-function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' ? o.n : 1; }
+function stepNeed(s) { var o = stepObj(s); if (!o) return 1; return o.k === 'oro' || o.k === 'train' || o.k === 'kill' || o.k === 'build' || o.k === 'fish' ? o.n : 1; }
 function stepProg(s) {
   var o = stepObj(s); if (!o) return [0, 1];
   if (o.k === 'power') return [Math.min(poder(s), o.n), o.n];
@@ -530,7 +548,7 @@ var CLANS = [
   { id: 'marea', n: 'Clan Marea Azul', ic: '🌊', c: '#39c8ff', st: 'esp', d: 'Espíritu y comercio. +5% al entrenar Espíritu y +5% de oro del negocio.' }
 ];
 var CLANI = {}; CLANS.forEach(function (c, i) { CLANI[c.id] = c; c.i = i; });
-var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5 };
+var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5, fish: .5, cook: .5 };
 function weekKey(now) { return Math.floor((now / 864e5 + 3) / 7); } /* semanas de lunes a domingo (UTC) */
 function clanMul(s, st) { var c = CLANI[s.clan.id]; return c && c.st === st ? 1.05 : 1; }
 function clanBase(s, key) { var R = mulberry((s.seed ^ (key * 7919)) >>> 0); return CLANS.map(function () { return 2500 + Math.floor(R() * 2500); }); }
@@ -573,7 +591,9 @@ var ACH = [
   { id: 'guerrero', t: 'Guerrero', d: 'Alcanza 1.500 de Poder', v: 'poder', n: 1500, g: 10 },
   { id: 'leyenda', t: 'Leyenda viva', d: 'Alcanza 1 M de Poder', v: 'poder', n: 1e6, g: 30 },
   { id: 'clan', t: 'Espíritu de equipo', d: 'Aporta 200 puntos a tu clan en una semana', v: 'clan', n: 200, g: 10 },
-  { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 }
+  { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 },
+  { id: 'pesca', t: 'Paciencia de agua', d: 'Pesca las 8 especies', v: 'fish', n: 8, g: 20 },
+  { id: 'chef', t: 'Manos de panadero', d: 'Completa 50 rondas de cocina', v: 'cook', n: 50, g: 10 }
 ];
 var ACHI = {}; ACH.forEach(function (a) { ACHI[a.id] = a; });
 function achVal(s, a) {
@@ -585,12 +605,36 @@ function achVal(s, a) {
   if (v === 'poder') return poder(s);
   if (v === 'clan') return s.clan.pts;
   if (v === 'ending') return s.ending ? 1 : 0;
+  if (v === 'fish') { var f = 0; for (var q in s.fish) if (FISHI[q] && s.fish[q] > 0) f++; return f; }
   return s.cnt[v] || 0;
 }
 function achCheck(s) {
   var got = [];
   for (var i = 0; i < ACH.length; i++) { var a = ACH[i]; if (!s.ach[a.id] && achVal(s, a) >= a.n) { s.ach[a.id] = 1; s.gemas += a.g; got.push(a.id); } }
   return got;
+}
+
+/* ---------- pesca (fuente de la Plaza) y cocina (Panadería) ---------- */
+var FISH = [
+  { id: 'linterna', n: 'Pez Linterna', ic: '🐟', w: 40, v: 8, sp: 1 }, { id: 'tinta', n: 'Carpa de Tinta', ic: '🐠', w: 25, v: 14, sp: 1.2 },
+  { id: 'arcoiris', n: 'Trucha Arcoíris', ic: '🌈', w: 14, v: 25, sp: 1.4 }, { id: 'brazalete', n: 'Pez Brazalete', ic: '💍', w: 9, v: 45, sp: 1.6 },
+  { id: 'anguila', n: 'Anguila Rayo', ic: '⚡', w: 6, v: 80, sp: 1.9 }, { id: 'koi', n: 'Koi del Eclipse', ic: '🎏', w: 3.5, v: 150, sp: 2.1 },
+  { id: 'fantasma', n: 'Pez Fantasma', ic: '👻', w: 2, v: 260, sp: 2.4 }, { id: 'leviatan', n: 'Leviatán Bebé', ic: '🐉', w: .5, v: 900, sp: 2.8 }
+];
+var FISHI = {}; FISH.forEach(function (f, i) { FISHI[f.id] = f; f.i = i; });
+/* la calidad del lanzamiento (0..1) inclina la suerte hacia peces raros */
+function fishRoll(R, q) {
+  var tot = 0, ws = FISH.map(function (f) { var w = f.w * (1 + q * f.i * 0.35); tot += w; return w; }), x = R() * tot;
+  for (var i = 0; i < FISH.length; i++) { x -= ws[i]; if (x < 0) return FISH[i].id; }
+  return FISH[0].id;
+}
+function fishValue(s, id) { return Math.round(FISHI[id].v * (1 + Math.sqrt(base(s)) / 20)); }
+function fishCatch(s, id) {
+  if (!FISHI[id]) return 0; s.fish[id] = (s.fish[id] || 0) + 1; var o = fishValue(s, id); addOro(s, o); ev(s, 'fish', { n: 1 }); return o;
+}
+function cookRound(s, r) {
+  if (!(r >= 1)) return 0; var o = Math.ceil((10 + prod(s) * 2) * (1 + r * 0.15));
+  s.en = Math.min(enMax(s), s.en + 8); addOro(s, o); s.cnt.cook = (s.cnt.cook || 0) + 1; ev(s, 'cook', { n: 1 }); return o;
 }
 
 function clanWeek(s, now) {
@@ -629,7 +673,7 @@ var DQ = [
   { k: 'perf', st: 'tec', n: 5, t: 'Logra 5 katas perfectas' }, { k: 'anvil', n: 30, t: 'Golpea el yunque 30 veces' },
   { k: 'train', st: 'fue', n: 80, t: 'Golpea el saco 80 veces' }, { k: 'train', st: 'tec', n: 15, t: 'Logra 15 katas' },
   { k: 'train', st: 'esp', n: 5, t: 'Completa 5 respiraciones' }, { k: 'kill', n: 15, t: 'Derrota 15 enemigos' },
-  { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
+  { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'fish', n: 4, t: 'Pesca 4 peces' }, { k: 'cook', n: 6, t: 'Completa 6 rondas de cocina' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
 ];
 function dailyCheck(s, now) {
   var d = today(now); if (s.daily.day === d) return false;
@@ -677,7 +721,8 @@ var API = {
   NA: NA, NB: NB, BAD: BAD, DQ: DQ, M: M, SHOPL: SHOP,
   CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
   CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek,
-  EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck
+  EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck,
+  FISH: FISH, FISHI: FISHI, fishRoll: fishRoll, fishValue: fishValue, fishCatch: fishCatch, cookRound: cookRound
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

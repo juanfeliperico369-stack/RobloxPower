@@ -72,7 +72,7 @@ var TH = {
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
-var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza' };
+var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza', vant: 'coliseo' };
 var NPCL = {
   ren: { skin: '#f5d0a9', shirt: '#e0262f', pants: '#1b1b22', hair: '#1b1b22', bun: 1 },
   tobias: { skin: '#c68642', shirt: '#7a4a2a', pants: '#33333d', hair: '#d6dee9', beard: 1 },
@@ -153,6 +153,7 @@ function buildPlaza() {
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
   npc(m, 'pip', 13, 10); npc(m, 'sol', 24, 11);
+  inter(m, 'pesca', 17.5 * T, 17.4 * T, 'PESCAR EN LA FUENTE', function () { mgStart('pesca'); }); deco(m, 'sign', 14, 17, { txt: '🎣 PESCA AQUÍ' });
   block(m, 20, 9, 2, 1, 30, ['#f2e8d5', '#b8a583'], { sign: 'TABLÓN' }); inter(m, 'board', 21 * T, 10.6 * T, 'TABLÓN · MISIONES DIARIAS', function () { openPanel('board'); });
   block(m, 12, 18, 2, 1, 44, ['#e0262f', '#8a1219'], { sign: 'RANKING' }); inter(m, 'rank', 13 * T, 19.6 * T, 'RANKING MUNDIAL', function () { openPanel('rank'); });
   block(m, 20, 18, 3, 1, 34, ['#a42cff', '#4d1785'], { sign: 'TIENDA' }); inter(m, 'shop', 21.5 * T, 19.6 * T, 'TIENDA DE GEMAS', function () { openPanel('shop'); });
@@ -218,7 +219,7 @@ function buildColiseo() {
   var m = newMap('coliseo', 31, 25), R = C.mulberry(55);
   tRect(m, 14, 5, 3, 19, 1); tRect(m, 7, 7, 17, 7, 1); border(m, [[15, 24]]); fragsIn(m);
   block(m, 4, 1, 23, 4, 74, ['#a42cff', '#4d1785'], { arches: 1, sign: 'COLISEO DEL ECLIPSE' });
-  npc(m, 'heraldo', 15, 7);
+  npc(m, 'heraldo', 15, 7); npc(m, 'vant', 20, 12, function () { return S.story.i >= C.STI.d2; });
   block(m, 7, 9, 2, 2, 92, ['#2c2542', '#16121f'], { statue: 2 }); inter(m, 'estatua', 8 * T, 11.8 * T, 'ESTATUA DE VANT', function () { dialog([['nar', 'Una estatua de Vant, el Anfitrión. La placa dice: “El poder es lo único que vale”. Alguien rayó debajo: “mentira”.']]); });
   block(m, 22, 9, 2, 2, 70, ['#f0b429', '#a8740c'], { statue: 3 });
   [[5, 6], [25, 6], [5, 15], [25, 15]].forEach(function (p) { deco(m, 'torch', p[0], p[1]); });
@@ -817,6 +818,7 @@ function objTarget() {
   else if (o.k === 'kill') { z = 'tierras'; if (o.type === 'golem') id = 'golem'; }
   else if (o.k === 'forge') { z = 'forja'; id = 'npc:tobias'; }
   else if (o.k === 'tourney' || o.k === 'boss') { z = 'coliseo'; id = 'npc:heraldo'; }
+  else if (o.k === 'fish') { z = 'plaza'; id = 'pesca'; }
   if (!z || mode !== 'world') return null;
   if (MAP.id !== z) { var to = MAP.id === 'plaza' ? z : 'plaza'; for (var i = 0; i < MAP.portals.length; i++) if (MAP.portals[i].to === to) return { x: MAP.portals[i].x, y: MAP.portals[i].y, por: 1 }; return null; }
   if (id === 'golem') { var g = null; ents.forEach(function (e) { if (e.type === 'golem' && !e.dead) g = e; }); return g ? { x: g.x, y: g.y - 40 } : { x: 39.5 * T, y: 18 * T }; }
