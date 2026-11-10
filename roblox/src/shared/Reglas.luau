@@ -154,10 +154,10 @@ function Reglas.newState(o)
 		stats = { fue = O.st.fue, tec = O.st.tec, esp = O.st.esp }, legado = 0, en = 100, hp = -1,
 		oro = O.oro, gemas = 10, chispas = 0,
 		brz = { { id = 1, el = el, t = 0 } }, eq = 1, nid = 2,
-		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {}, fish = {},
+		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {}, fish = {}, farm = { p = { 0 }, lv = 0, auto = 0 },
 		zone = O.z, story = { i = 0, n = 0, seen = "" }, unlock = {}, ending = "",
 		daily = { day = "", q = {} },
-		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0, cook = 0 },
+		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0, cook = 0, harvest = 0, chest = 0 },
 		tours = {}, title = "", pend = nil,
 		bots = makeBots(seed),
 		cfg = { snd = 1, mus = 1, q = 1, vib = 1, big = 0, calm = 0 },
@@ -213,6 +213,10 @@ function Reglas.migrate(o)
 	if T(d.evt) and not Reglas.EVENTI[d.evt] then d.evt = "" end
 	for aid in pairs(d.ach) do if not Reglas.ACHI[aid] then d.ach[aid] = nil end end
 	for fid2, v in pairs(d.fish) do if not Reglas.FISHI[fid2] or not isNum(v) then d.fish[fid2] = nil end end
+	local fp = {}
+	for _, x in ipairs(d.farm.p) do if isNum(x) and #fp < 16 then table.insert(fp, clamp(x, 0, 1)) end end
+	if #fp == 0 then fp = { 0 } end
+	d.farm.p = fp; d.farm.lv = clamp(trunc(isNum(d.farm.lv) and d.farm.lv or 0), 0, 15); d.farm.auto = clamp(trunc(isNum(d.farm.auto) and d.farm.auto or 0), 0, 4)
 	d.story.i = clamp(trunc(isNum(d.story.i) and d.story.i or 0), 0, #D.STORY - 1)
 	if not D.ZONES[d.zone] then d.zone = "plaza" end
 	local nm = Reglas.cleanName(d.name); d.name = nm ~= "" and nm or "Heroe"; d.v = 1; d.ver = D.VERSION
@@ -685,6 +689,59 @@ function Reglas.cookRound(s, r)
 	s.en = math.min(Reglas.enMax(s), s.en + 8); Reglas.addOro(s, o); s.cnt.cook = (s.cnt.cook or 0) + 1; ev(s, "cook", { n = 1 }); return o
 end
 
+---------------------------------------------------------------- Huertos del Valle (tycoon de granja) y Bosque de la Niebla (cofres)
+function Reglas.farmG(s) return 30 * 0.85 ^ s.farm.lv / math.sqrt(Reglas.magia(s)) end
+function Reglas.farmVal(s) return round(20 * (1 + #s.farm.p * 0.05) * Reglas.magia(s) * (1 + s.farm.lv * 0.1) * Reglas.evMul(s, "oro")) end
+function Reglas.farmCost(s, k)
+	local f = s.farm
+	if k == "plot" then if #f.p >= 16 then return 0 end return math.ceil(200 * 1.35 ^ (#f.p - 1)) end
+	if k == "lv" then if f.lv >= 15 then return 0 end return math.ceil(300 * 1.6 ^ f.lv) end
+	if k == "auto" then if f.auto >= 4 then return 0 end return math.ceil(1500 * 2 ^ f.auto) end
+	return 0
+end
+function Reglas.farmBuy(s, k)
+	local c = Reglas.farmCost(s, k)
+	if c == 0 or s.oro < c then return false end
+	s.oro -= c
+	if k == "plot" then table.insert(s.farm.p, 0) elseif k == "lv" then s.farm.lv += 1 else s.farm.auto += 1 end
+	ev(s, "build", { n = 1 }); return true
+end
+function Reglas.farmTick(s, dt) -- los ayudantes (4 parcelas cada uno) cosechan solos al 60%
+	if not (dt and dt > 0) then return 0 end
+	local G, f = Reglas.farmG(s), s.farm
+	local auto, got = f.auto * 4, 0
+	for i = 1, #f.p do
+		local p = f.p[i] + dt / G
+		if i - 1 < auto and p >= 1 then local c = math.floor(p); got += c; p -= c end
+		f.p[i] = math.min(p, 1)
+	end
+	if got > 0 then Reglas.addOro(s, Reglas.farmVal(s) * 0.6 * got) end
+	return got
+end
+function Reglas.farmHarvest(s, i) -- i base 0 (como JS)
+	local f = s.farm
+	if not (f.p[i + 1] and f.p[i + 1] >= 1) then return 0 end
+	f.p[i + 1] = 0
+	local o = Reglas.farmVal(s); Reglas.addOro(s, o); s.cnt.harvest += 1; ev(s, "harvest", { n = 1 }); return o
+end
+function Reglas.farmWater(s, i)
+	local f = s.farm
+	if not (i >= 0 and i < #f.p) or f.p[i + 1] >= 1 or s.en < 1 then return false end
+	s.en -= 1; f.p[i + 1] = math.min(1, f.p[i + 1] + .15); return true
+end
+function Reglas.chestLoot(s, R, depth)
+	depth = clamp(trunc(depth or 0), 0, 2)
+	local P = math.max(Reglas.poder(s), 50)
+	local o = round((40 + math.sqrt(P) * 6) * (1 + depth * .6))
+	local ch = 1 + math.floor(R() * (2 + depth * 2))
+	local gem = 0; if R() < .08 + depth * .06 then gem = 1 + depth end
+	return { o = o, ch = ch, gem = gem }
+end
+function Reglas.bankBag(s, bag)
+	if not bag or not (bag.n and bag.n > 0) then return false end
+	Reglas.addOro(s, bag.o); s.chispas += bag.ch; s.gemas += bag.gem; s.cnt.chest += bag.n; ev(s, "chest", { n = bag.n }); return true
+end
+
 ---------------------------------------------------------------- amigos y grupo (bi = índice base 0 en s.bots)
 local function findFriend(s, bi) for _, f in ipairs(s.friends) do if f.bi == bi then return f end end return nil end
 function Reglas.addFriend(s, bi)
@@ -730,7 +787,7 @@ function Reglas.tick(s, dt)
 	dt = math.min(dt, 5)
 	local p = Reglas.prod(s); if p > 0 then Reglas.addOro(s, p * dt) end
 	s.en = math.min(Reglas.enMax(s), s.en + 0.6 * dt)
-	Reglas.botsTick(s, dt); s.cnt.play = s.cnt.play + dt
+	Reglas.botsTick(s, dt); s.cnt.play = s.cnt.play + dt; Reglas.farmTick(s, dt)
 end
 function Reglas.offline(s, now)
 	local el = math.max(0, (now - s.last) / 1000); s.last = now
@@ -739,8 +796,8 @@ function Reglas.offline(s, now)
 	local t = math.min(el, capS)
 	local o = Reglas.prod(s) * t * 0.5
 	if o > 0 then Reglas.addOro(s, o) end
-	s.en = Reglas.enMax(s); Reglas.botsTick(s, math.min(el, 7200))
-	return { secs = el, oro = o, capped = el > capS }
+	s.en = Reglas.enMax(s); Reglas.botsTick(s, math.min(el, 7200)); local fh = Reglas.farmTick(s, t)
+	return { secs = el, oro = o, capped = el > capS, farm = fh }
 end
 
 return Reglas

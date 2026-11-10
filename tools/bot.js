@@ -34,7 +34,7 @@ async function run(b, i, port) {
     for (const k of ['w', 'd', 's', 'a']) { await p.keyboard.down(k); await sleep(350); await p.keyboard.press('j'); await p.keyboard.press('l'); await p.keyboard.up(k); }
     await p.keyboard.press('k'); await flush();
   });
-  for (const z of ['plaza', 'dojo', 'forja', 'tierras', 'coliseo']) {
+  for (const z of ['plaza', 'dojo', 'forja', 'huertos', 'tierras', 'bosque', 'coliseo']) {
     await step('zona ' + z, async () => {
       await E(z => __bdp.go(z), z); await sleep(250); await flush();
       const inter = await E(() => __bdp.MAP.inter.filter(it => !it.when || it.when()).map(it => ({ id: it.id, x: it.x, y: it.y })));

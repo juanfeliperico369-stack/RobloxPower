@@ -60,6 +60,17 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
   s.story.i = C.STI.d1; s.ending = 'compartir'; const dA = C.stepDialog(s, 'd'); s.ending = 'corona'; const dB = C.stepDialog(s, 'd');
   ok(dA && dB && dA[0][1] !== dB[0][1], 'el Acto IV cambia según el final'); s.ending = ''; ok(C.stepDialog(s, 'd').length > 0, 'diálogo con respaldo sin final');
 }
+{ // granja (tycoon) y bosque (supervivencia)
+  const s = C.newState({ name: 'G', seed: 7 }); s.oro = 1e6;
+  ok(C.farmBuy(s, 'plot') && s.farm.p.length === 2, 'comprar parcela'); ok(C.farmBuy(s, 'auto') && s.farm.auto === 1, 'contratar ayudante');
+  const G = C.farmG(s), o0 = s.oro; eq(C.farmTick(s, G * 2.5), 4, 'ayudante cosecha 2 parcelas × 2 ciclos'); ok(s.oro > o0, 'cosecha automática paga');
+  s.farm.auto = 0; s.farm.p = [1, .5]; const o1 = s.oro; ok(C.farmHarvest(s, 0) > 0 && s.oro > o1 && s.farm.p[0] === 0, 'cosecha manual'); eq(C.farmHarvest(s, 1), 0, 'no cosecha verde');
+  s.en = 10; ok(C.farmWater(s, 1) && Math.abs(s.farm.p[1] - .65) < 1e-9 && s.en === 9, 'regar'); s.en = 0; eq(C.farmWater(s, 1), false, 'regar sin energía');
+  for (let i = 0; i < 20; i++) C.farmBuy(s, 'plot'); eq(s.farm.p.length, 16, 'máximo 16 parcelas'); eq(C.farmCost(s, 'plot'), 0, 'sin costo al máximo');
+  const L = C.chestLoot(s, C.mulberry(3), 2), L0 = C.chestLoot(s, C.mulberry(3), 0); ok(L.o > L0.o, 'cofres profundos valen más');
+  const c0 = s.cnt.chest; ok(C.bankBag(s, { o: 10, ch: 1, gem: 0, n: 2 }) && s.cnt.chest === c0 + 2, 'cobrar bolsa'); eq(C.bankBag(s, { o: 0, ch: 0, gem: 0, n: 0 }), false, 'bolsa vacía');
+  const m = C.migrate(JSON.parse(JSON.stringify(Object.assign({}, s, { farm: { p: [2, -1, 'x'], lv: 99, auto: 9 } })))); ok(m.farm.p.join() === '1,0' && m.farm.lv === 15 && m.farm.auto === 4, 'migrate repara granja');
+}
 { // fragmentos del Códice
   const s = C.newState({ name: 'F', seed: 8 }); const l0 = s.legado;
   C.FRAG.forEach((f, i) => eq(C.fragTake(s, f.id), i === C.FRAG.length - 1 ? 'all' : true, 'fragmento ' + f.id));
@@ -172,7 +183,9 @@ for (let g = 0; g < N; g++) {
       else { C.killReward(s, f.type, f.eP, R); if (ring === 2 && R() < .03 * sk) C.killReward(s, 'golem', C.ringPower(s, 2) * 1.1, R); if (R() < .02 * sk) C.killReward(s, ring ? 'alfa' : 'reyeco', C.ringPower(s, ring) * 1.15, R); }
       hp = Math.min(f.max, hp + f.max * .012 * 3 * f.ttk);
       sec += Math.max(0, f.ttk - dt);
-    } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); if (R() < .3) C.fishCatch(s, C.fishRoll(R, sk)); if (R() < .2) C.cookRound(s, 1 + Math.floor(R() * 5)); }
+    } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); if (R() < .3) C.fishCatch(s, C.fishRoll(R, sk)); if (R() < .2) C.cookRound(s, 1 + Math.floor(R() * 5));
+      for (const k of ['plot', 'lv', 'auto']) if (R() < .1) C.farmBuy(s, k); s.farm.p.forEach((x, i) => { if (x >= 1) C.farmHarvest(s, i); else if (R() < .3) C.farmWater(s, i); });
+      if (R() < .05) { const bag = { o: 0, ch: 0, gem: 0, n: 0 }; const n = 1 + Math.floor(R() * 4); for (let i = 0; i < n; i++) { const L = C.chestLoot(s, R, Math.min(2, i)); bag.o += L.o; bag.ch += L.ch; bag.gem += L.gem; bag.n++; } if (R() < .4 + sk * .5) C.bankBag(s, bag); } }
     C.tick(s, dt); sec += dt;
     if (s.story.i < lastStory) fail('la historia retrocedió en partida ' + g); lastStory = s.story.i;
     if (sec % 600 < dt) { // cada 10 min: validar y guardar/cargar

@@ -2,7 +2,7 @@
 -- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.
 -- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.
 return {
-	VERSION = "0.6.0",
+	VERSION = "0.7.0",
 	SAVE_KEY = "bdp.save.v1",
 	M = "@m",
 	EL = {
@@ -180,6 +180,14 @@ return {
 			n = "Capitana Sol",
 			c = "#f0b429"
 		},
+		elio = {
+			n = "Guardabosques Elio",
+			c = "#2dffb3"
+		},
+		rosa = {
+			n = "Abuela Rosa",
+			c = "#ff8fb8"
+		},
 		nar = {
 			n = "Narración",
 			c = "#f0b429"
@@ -205,6 +213,14 @@ return {
 		coliseo = {
 			n = "Coliseo del Eclipse",
 			k = "Torneo Mundial"
+		},
+		bosque = {
+			n = "Bosque de la Niebla",
+			k = "Terror · Supervivencia"
+		},
+		huertos = {
+			n = "Huertos del Valle",
+			k = "Tycoon · Granja"
 		}
 	},
 	FOES = {
@@ -1038,6 +1054,38 @@ return {
 			h = "Derrota al Alfa de Ceniza (anillo 2)",
 			d = {{"kira", "Hay un lobo enorme guiando a la manada. Le dicen el Alfa de Ceniza."}, {"kira", "Cuando baje la cabeza, va a embestir en línea recta. No te quedes delante: esquiva hacia un lado."}},
 			e = {{"kira", "Lo lograste. Sin él, la manada se dispersa y deja de atacar a la gente."}, {"kira", "A veces el valor no es pelear más fuerte. Es leer al otro y moverse a tiempo."}}
+		}, {
+			id = "cosecha",
+			who = "rosa",
+			t = "La primera cosecha",
+			req = "a3",
+			o = {
+				k = "harvest",
+				n = 20
+			},
+			r = {
+				oro = 800,
+				gemas = 5
+			},
+			h = "Cosecha 20 veces en los Huertos del Valle",
+			d = {{"rosa", "¡Ay, qué alegría ver gente joven en el valle! Mis rodillas ya no me dejan agacharme."}, {"rosa", "La tierra responde a la paciencia, igual que tu brazalete. Riega, espera y cosecha veinte veces."}},
+			e = {{"rosa", "¡Mira qué canasta! Lo que siembras con cariño alimenta a muchos."}, {"rosa", "Vuelve cuando quieras. Aquí siempre hay sopa caliente."}}
+		}, {
+			id = "niebla",
+			who = "elio",
+			t = "Lo que guarda la niebla",
+			req = "a5",
+			o = {
+				k = "chest",
+				n = 3
+			},
+			r = {
+				gemas = 15,
+				chispas = 10
+			},
+			h = "Saca 3 cofres del Bosque de la Niebla y sal con vida",
+			d = {{"elio", "Ese bosque no siempre fue así. La niebla son luces que perdieron la esperanza."}, {"elio", "Dentro hay cofres que dejaron los viajeros. Si te alcanzan las sombras, pierdes lo que llevas. Si sales, es tuyo."}, {"elio", "Regla del guardabosques: el miedo avisa, pero no manda."}},
+			e = {{"elio", "Saliste. Y con las manos llenas."}, {"elio", "No es que no tuvieras miedo. Es que caminaste igual. Eso es valentía."}}
 		}},
 	DQ = {{
 			k = "perf",
@@ -1075,6 +1123,14 @@ return {
 			k = "fish",
 			n = 4,
 			t = "Pesca 4 peces"
+		}, {
+			k = "harvest",
+			n = 10,
+			t = "Cosecha 10 veces"
+		}, {
+			k = "chest",
+			n = 2,
+			t = "Saca 2 cofres del Bosque"
 		}, {
 			k = "cook",
 			n = 6,
@@ -1201,7 +1257,9 @@ return {
 		frag = 10,
 		find = 5,
 		fish = 0.5,
-		cook = 0.5
+		cook = 0.5,
+		harvest = 0.5,
+		chest = 3
 	},
 	EVENTS = {{
 			id = "dojo",
@@ -1356,6 +1414,20 @@ return {
 			v = "cook",
 			n = 50,
 			g = 10
+		}, {
+			id = "granjero",
+			t = "Manos de tierra",
+			d = "Cosecha 200 veces",
+			v = "harvest",
+			n = 200,
+			g = 15
+		}, {
+			id = "valiente",
+			t = "El miedo avisa",
+			d = "Saca 25 cofres del Bosque de la Niebla",
+			v = "chest",
+			n = 25,
+			g = 20
 		}},
 	FISH = {{
 			id = "linterna",

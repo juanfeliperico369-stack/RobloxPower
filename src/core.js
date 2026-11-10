@@ -2,7 +2,7 @@
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.6.0';
+var VERSION = '0.7.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -52,14 +52,16 @@ var ORIG = {
 var NPC = {
   ren: { n: 'Maestra Ren', c: '#e0262f' }, tobias: { n: 'Don Tobías', c: '#f0b429' }, kira: { n: 'Kira', c: '#2dffb3' },
   pip: { n: 'Pip', c: '#39c8ff' }, heraldo: { n: 'El Heraldo', c: '#d6dee9' }, vant: { n: 'Vant, el Anfitrión', c: '#a42cff' },
-  dax: { n: 'Dax', c: '#ff2fb3' }, nima: { n: 'Oráculo Nima', c: '#fff1a8' }, sol: { n: 'Capitana Sol', c: '#f0b429' }, nar: { n: 'Narración', c: '#f0b429' }
+  dax: { n: 'Dax', c: '#ff2fb3' }, nima: { n: 'Oráculo Nima', c: '#fff1a8' }, sol: { n: 'Capitana Sol', c: '#f0b429' }, elio: { n: 'Guardabosques Elio', c: '#2dffb3' }, rosa: { n: 'Abuela Rosa', c: '#ff8fb8' }, nar: { n: 'Narración', c: '#f0b429' }
 };
 var ZONES = {
   plaza:   { n: 'Plaza Ágora',        k: 'Social · Paz' },
   dojo:    { n: 'Dojo de la Cumbre',  k: 'Entrenamiento' },
   forja:   { n: 'Ciudad Forja',       k: 'Tycoon · Paz' },
   tierras: { n: 'Tierras Rotas',      k: 'Farmeo · Peligro' },
-  coliseo: { n: 'Coliseo del Eclipse', k: 'Torneo Mundial' }
+  coliseo: { n: 'Coliseo del Eclipse', k: 'Torneo Mundial' },
+  bosque:  { n: 'Bosque de la Niebla', k: 'Terror · Supervivencia' },
+  huertos: { n: 'Huertos del Valle',  k: 'Tycoon · Granja' }
 };
 /* hp/dm = multiplicadores sobre un luchador de poder eP; x = poder ganado; o = oro; ch = prob. de chispa */
 var FOES = {
@@ -218,10 +220,10 @@ function newState(o) {
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
     brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {}, fish: {},
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {}, fish: {}, farm: { p: [0], lv: 0, auto: 0 },
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
-    cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0, cook: 0 },
+    cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0, cook: 0, harvest: 0, chest: 0 },
     tours: [], title: '', pend: null,
     bots: makeBots(seed),
     cfg: { snd: 1, mus: 1, q: 1, vib: 1, big: 0, calm: 0 }
@@ -259,6 +261,8 @@ function migrate(o) {
   if (d.evt && !EVENTI[d.evt]) d.evt = '';
   for (var aid in d.ach) if (!ACHI[aid]) delete d.ach[aid];
   for (var fid2 in d.fish) if (!FISHI[fid2] || !isNum(d.fish[fid2])) delete d.fish[fid2];
+  d.farm.p = d.farm.p.filter(isNum).map(function (x) { return clamp(x, 0, 1); }).slice(0, 16); if (!d.farm.p.length) d.farm.p = [0];
+  d.farm.lv = clamp(d.farm.lv | 0, 0, 15); d.farm.auto = clamp(d.farm.auto | 0, 0, 4);
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -517,7 +521,13 @@ var SIDE = [
     e: [['nima', 'El agua no refleja tu poder. Refleja tu calma.'], ['nima', 'Te doy un nombre: Alma Serena. Úsalo cuando lo necesites.']] },
   { id: 'alfa', who: 'kira', t: 'El Alfa de Ceniza', req: 'b1', o: { k: 'kill', type: 'alfa', n: 1 }, r: { chispas: 10, gemas: 10 }, h: 'Derrota al Alfa de Ceniza (anillo 2)',
     d: [['kira', 'Hay un lobo enorme guiando a la manada. Le dicen el Alfa de Ceniza.'], ['kira', 'Cuando baje la cabeza, va a embestir en línea recta. No te quedes delante: esquiva hacia un lado.']],
-    e: [['kira', 'Lo lograste. Sin él, la manada se dispersa y deja de atacar a la gente.'], ['kira', 'A veces el valor no es pelear más fuerte. Es leer al otro y moverse a tiempo.']] }
+    e: [['kira', 'Lo lograste. Sin él, la manada se dispersa y deja de atacar a la gente.'], ['kira', 'A veces el valor no es pelear más fuerte. Es leer al otro y moverse a tiempo.']] },
+  { id: 'cosecha', who: 'rosa', t: 'La primera cosecha', req: 'a3', o: { k: 'harvest', n: 20 }, r: { oro: 800, gemas: 5 }, h: 'Cosecha 20 veces en los Huertos del Valle',
+    d: [['rosa', '¡Ay, qué alegría ver gente joven en el valle! Mis rodillas ya no me dejan agacharme.'], ['rosa', 'La tierra responde a la paciencia, igual que tu brazalete. Riega, espera y cosecha veinte veces.']],
+    e: [['rosa', '¡Mira qué canasta! Lo que siembras con cariño alimenta a muchos.'], ['rosa', 'Vuelve cuando quieras. Aquí siempre hay sopa caliente.']] },
+  { id: 'niebla', who: 'elio', t: 'Lo que guarda la niebla', req: 'a5', o: { k: 'chest', n: 3 }, r: { gemas: 15, chispas: 10 }, h: 'Saca 3 cofres del Bosque de la Niebla y sal con vida',
+    d: [['elio', 'Ese bosque no siempre fue así. La niebla son luces que perdieron la esperanza.'], ['elio', 'Dentro hay cofres que dejaron los viajeros. Si te alcanzan las sombras, pierdes lo que llevas. Si sales, es tuyo.'], ['elio', 'Regla del guardabosques: el miedo avisa, pero no manda.']],
+    e: [['elio', 'Saliste. Y con las manos llenas.'], ['elio', 'No es que no tuvieras miedo. Es que caminaste igual. Eso es valentía.']] }
 ];
 var SIDEI = {}; SIDE.forEach(function (q) { SIDEI[q.id] = q; });
 function sideFor(s, w) {
@@ -548,7 +558,7 @@ var CLANS = [
   { id: 'marea', n: 'Clan Marea Azul', ic: '🌊', c: '#39c8ff', st: 'esp', d: 'Espíritu y comercio. +5% al entrenar Espíritu y +5% de oro del negocio.' }
 ];
 var CLANI = {}; CLANS.forEach(function (c, i) { CLANI[c.id] = c; c.i = i; });
-var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5, fish: .5, cook: .5 };
+var CLANPTS = { kill: 1, train: .2, perf: .5, anvil: .05, build: 1, frag: 10, find: 5, fish: .5, cook: .5, harvest: .5, chest: 3 };
 function weekKey(now) { return Math.floor((now / 864e5 + 3) / 7); } /* semanas de lunes a domingo (UTC) */
 function clanMul(s, st) { var c = CLANI[s.clan.id]; return c && c.st === st ? 1.05 : 1; }
 function clanBase(s, key) { var R = mulberry((s.seed ^ (key * 7919)) >>> 0); return CLANS.map(function () { return 2500 + Math.floor(R() * 2500); }); }
@@ -593,7 +603,9 @@ var ACH = [
   { id: 'clan', t: 'Espíritu de equipo', d: 'Aporta 200 puntos a tu clan en una semana', v: 'clan', n: 200, g: 10 },
   { id: 'final', t: 'Fin del viaje', d: 'Elige un final', v: 'ending', n: 1, g: 20 },
   { id: 'pesca', t: 'Paciencia de agua', d: 'Pesca las 8 especies', v: 'fish', n: 8, g: 20 },
-  { id: 'chef', t: 'Manos de panadero', d: 'Completa 50 rondas de cocina', v: 'cook', n: 50, g: 10 }
+  { id: 'chef', t: 'Manos de panadero', d: 'Completa 50 rondas de cocina', v: 'cook', n: 50, g: 10 },
+  { id: 'granjero', t: 'Manos de tierra', d: 'Cosecha 200 veces', v: 'harvest', n: 200, g: 15 },
+  { id: 'valiente', t: 'El miedo avisa', d: 'Saca 25 cofres del Bosque de la Niebla', v: 'chest', n: 25, g: 20 }
 ];
 var ACHI = {}; ACH.forEach(function (a) { ACHI[a.id] = a; });
 function achVal(s, a) {
@@ -632,6 +644,39 @@ function fishValue(s, id) { return Math.round(FISHI[id].v * (1 + Math.sqrt(base(
 function fishCatch(s, id) {
   if (!FISHI[id]) return 0; s.fish[id] = (s.fish[id] || 0) + 1; var o = fishValue(s, id); addOro(s, o); ev(s, 'fish', { n: 1 }); return o;
 }
+/* ---------- Huertos del Valle: tycoon de granja (el Espíritu acelera y mejora las cosechas) ---------- */
+function farmG(s) { return 30 * Math.pow(0.85, s.farm.lv) / Math.sqrt(magia(s)); } /* segundos por cosecha */
+function farmVal(s) { return Math.round(20 * (1 + s.farm.p.length * 0.05) * magia(s) * (1 + s.farm.lv * 0.1) * evMul(s, 'oro')); }
+function farmCost(s, k) {
+  var f = s.farm;
+  if (k === 'plot') return f.p.length >= 16 ? 0 : Math.ceil(200 * Math.pow(1.35, f.p.length - 1));
+  if (k === 'lv') return f.lv >= 15 ? 0 : Math.ceil(300 * Math.pow(1.6, f.lv));
+  if (k === 'auto') return f.auto >= 4 ? 0 : Math.ceil(1500 * Math.pow(2, f.auto));
+  return 0;
+}
+function farmBuy(s, k) { var c = farmCost(s, k); if (!c || s.oro < c) return false; s.oro -= c; if (k === 'plot') s.farm.p.push(0); else if (k === 'lv') s.farm.lv++; else s.farm.auto++; ev(s, 'build', { n: 1 }); return true; }
+/* crecimiento; los ayudantes (4 parcelas cada uno) cosechan solos al 60% del valor */
+function farmTick(s, dt) {
+  if (!(dt > 0)) return 0; var G = farmG(s), f = s.farm, auto = f.auto * 4, got = 0;
+  for (var i = 0; i < f.p.length; i++) {
+    var p = f.p[i] + dt / G;
+    if (i < auto && p >= 1) { var c = Math.floor(p); got += c; p -= c; }
+    f.p[i] = Math.min(p, 1);
+  }
+  if (got) addOro(s, farmVal(s) * 0.6 * got);
+  return got;
+}
+function farmHarvest(s, i) { var f = s.farm; if (!(f.p[i] >= 1)) return 0; f.p[i] = 0; var o = farmVal(s); addOro(s, o); s.cnt.harvest++; ev(s, 'harvest', { n: 1 }); return o; }
+function farmWater(s, i) { var f = s.farm; if (!(i >= 0 && i < f.p.length) || f.p[i] >= 1 || s.en < 1) return false; s.en -= 1; f.p[i] = Math.min(1, f.p[i] + .15); return true; }
+
+/* ---------- Bosque de la Niebla: cofres (supervivencia: solo se cobran al salir con vida) ---------- */
+function chestLoot(s, R, depth) {
+  depth = clamp(depth | 0, 0, 2); var P = Math.max(poder(s), 50);
+  var o = Math.round((40 + Math.sqrt(P) * 6) * (1 + depth * .6)), ch = 1 + Math.floor(R() * (2 + depth * 2)), gem = R() < .08 + depth * .06 ? 1 + depth : 0;
+  return { o: o, ch: ch, gem: gem };
+}
+function bankBag(s, bag) { if (!bag || !(bag.n > 0)) return false; addOro(s, bag.o); s.chispas += bag.ch; s.gemas += bag.gem; s.cnt.chest += bag.n; ev(s, 'chest', { n: bag.n }); return true; }
+
 function cookRound(s, r) {
   if (!(r >= 1)) return 0; var o = Math.ceil((10 + prod(s) * 2) * (1 + r * 0.15));
   s.en = Math.min(enMax(s), s.en + 8); addOro(s, o); s.cnt.cook = (s.cnt.cook || 0) + 1; ev(s, 'cook', { n: 1 }); return o;
@@ -673,7 +718,7 @@ var DQ = [
   { k: 'perf', st: 'tec', n: 5, t: 'Logra 5 katas perfectas' }, { k: 'anvil', n: 30, t: 'Golpea el yunque 30 veces' },
   { k: 'train', st: 'fue', n: 80, t: 'Golpea el saco 80 veces' }, { k: 'train', st: 'tec', n: 15, t: 'Logra 15 katas' },
   { k: 'train', st: 'esp', n: 5, t: 'Completa 5 respiraciones' }, { k: 'kill', n: 15, t: 'Derrota 15 enemigos' },
-  { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'fish', n: 4, t: 'Pesca 4 peces' }, { k: 'cook', n: 6, t: 'Completa 6 rondas de cocina' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
+  { k: 'oro', n: 0, t: 'Gana oro' }, { k: 'fish', n: 4, t: 'Pesca 4 peces' }, { k: 'harvest', n: 10, t: 'Cosecha 10 veces' }, { k: 'chest', n: 2, t: 'Saca 2 cofres del Bosque' }, { k: 'cook', n: 6, t: 'Completa 6 rondas de cocina' }, { k: 'visit', z: 'coliseo', n: 1, t: 'Visita el Coliseo' }, { k: 'build', n: 3, t: 'Mejora 3 edificios' }
 ];
 function dailyCheck(s, now) {
   var d = today(now); if (s.daily.day === d) return false;
@@ -692,15 +737,15 @@ function tick(s, dt) {
   if (!(dt > 0)) return; dt = Math.min(dt, 5);
   var p = prod(s); if (p > 0) addOro(s, p * dt);
   s.en = Math.min(enMax(s), s.en + 0.6 * dt);
-  botsTick(s, dt); s.cnt.play += dt;
+  botsTick(s, dt); s.cnt.play += dt; farmTick(s, dt);
 }
 function offline(s, now) {
   var el = Math.max(0, (now - s.last) / 1000); s.last = now;
   if (el < 30) return null;
   var capS = cajaH(s) * 3600, t = Math.min(el, capS), o = prod(s) * t * 0.5;
   if (o > 0) addOro(s, o);
-  s.en = enMax(s); botsTick(s, Math.min(el, 7200));
-  return { secs: el, oro: o, capped: el > capS };
+  s.en = enMax(s); botsTick(s, Math.min(el, 7200)); var fh = farmTick(s, t);
+  return { secs: el, oro: o, capped: el > capS, farm: fh };
 }
 
 var API = {
@@ -722,7 +767,8 @@ var API = {
   CYCLE: CYCLE, FOE_EL: FOE_EL, afin: afin, strongVs: strongVs, weakVs: weakVs, FRAG: FRAG, FRAGI: FRAGI, fragCount: fragCount, fragTake: fragTake,
   CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek,
   EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck,
-  FISH: FISH, FISHI: FISHI, fishRoll: fishRoll, fishValue: fishValue, fishCatch: fishCatch, cookRound: cookRound
+  FISH: FISH, FISHI: FISHI, fishRoll: fishRoll, fishValue: fishValue, fishCatch: fishCatch, cookRound: cookRound,
+  farmG: farmG, farmVal: farmVal, farmCost: farmCost, farmBuy: farmBuy, farmTick: farmTick, farmHarvest: farmHarvest, farmWater: farmWater, chestLoot: chestLoot, bankBag: bankBag
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

@@ -2,6 +2,15 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-10 · v0.7.0 · Zona de terror, tycoon de granja y roleplay
+1. Nuevo: **Bosque de la Niebla** (terror y supervivencia fuera del torneo): linterna que se gasta, sombras, susurros, cofres con bolsa que solo se cobra al salir con vida; mapa distinto en cada visita.
+2. Nuevo: **Huertos del Valle** (segundo tycoon): regar con clics, cosechar, comprar parcelas/abono y contratar ayudantes que trabajan sin conexión.
+3. Nuevo: **gestos de roleplay** (saludar, bailar, sentarse), NPC Elio y Abuela Rosa con secundarias, 2 logros y 2 misiones diarias nuevas.
+4. Refactor: la linterna de la Noche ahora es compartida (`LAN`) entre Noche y Bosque.
+5. Port Luau de granja y cofres (+ cosecha automática en `tick`/`offline`): **3342/3342 idénticos a JS**, análisis sin errores.
+6. Probado: check OK; sim 120×8 h OK (10 secundarias, granja y bosque simulados); bot 3 partidas OK recorriendo las 7 zonas; celular modesto 60 fps en calidad baja.
+7. Falta: más torneos/ligas, casas de roleplay, exportar a Roblox Studio.
+
 ## 2026-11-05 · v0.6.0 · Acto IV, pesca y cocina
 1. Nuevo: **Acto IV “Las luces sin dueño”** (8 pasos, d1–d8): las luces de los frascos de Vant vagan sin dueño; Vant pide ayuda para reparar; perdón ≠ olvido; Festival del Origen; Vant deja de ser “el Anfitrión”. Diálogos que cambian según el final elegido (`d[s.ending]`). Vant aparece en el Coliseo desde d2.
 2. Nuevo: **pesca** en la fuente de la Plaza (barra de fuerza → espera la picada → tensión del carrete); 8 especies con rareza realista (Leviatán 0.5–1.1%); colección y logro.

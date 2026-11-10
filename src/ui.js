@@ -84,6 +84,8 @@ var FLAV = {
   heraldo: [['heraldo', '¡El Torneo Mundial te espera! Cien entran, uno gana.']],
   dax: [['dax', 'Estoy entrenando desde cero. Es raro… pero se siente honesto.'], ['dax', 'Si quedas mal en el torneo, no te rindas. Yo casi lo hago.']],
   nima: [['nima', 'El valor de una persona no cabe en un número, {n}.'], ['nima', 'Ayudar a otros también te hace fuerte. Solo que no sale en el ranking.']],
+  elio: [['elio', 'La niebla miente: hace parecer que estás solo. No lo estás.'], ['elio', 'Si la luz baja de 30%, busca llamas o sal. Volver a casa también es ganar.']],
+  rosa: [['rosa', '¡Hola, mijo! ¿Ya regaste? La tierra no tiene prisa, pero tampoco se olvida.'], ['rosa', 'Mis ayudantes cosechan aunque tú duermas. Contrata alguno en la mesa de la Granja.']],
   sol: [['sol', '¡Hola, {n}! Soy la Capitana Sol. En Ánima nadie llega lejos solo.'], ['sol', 'Cada semana los clanes suman esfuerzo. Todos reciben premio: el primer puesto, un poco más.'], ['sol', 'Un clan no es para presumir. Es para no rendirse cuando estás cansado.']]
 };
 function talkTo(key) {
@@ -101,7 +103,7 @@ function talkTo(key) {
   if (sq && !sq.st) { var q1 = sq.q; dialog(q1.d, function () { C.sideAccept(S, q1.id); sfx('up'); toast('Nueva misión secundaria: ' + q1.t, 'ok'); save(); }); return; }
   if (sq && sq.st) { dialog([[key, '(' + sq.q.t + ') ' + sq.q.h + ' · ' + Math.min(sq.st.n, sq.q.o.n) + '/' + sq.q.o.n]]); return; }
   var f = FLAV[key] || [[key, '…']], l = f[(S.cnt.taps + S.cnt.kills + (time | 0)) % f.length];
-  dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); else if (key === 'sol') openPanel('clan'); });
+  dialog([l], function () { if (key === 'ren') openPanel('gear'); else if (key === 'tobias') openPanel('forge'); else if (key === 'heraldo') openPanel('tour'); else if (key === 'sol') openPanel('clan'); else if (key === 'rosa') openPanel('granja'); });
 }
 function rewardText(r) { var a = []; if (r.oro) a.push('+' + C.fmt(r.oro) + ' oro'); if (r.gemas) a.push('+' + r.gemas + ' gemas'); if (r.chispas) a.push('+' + r.chispas + ' chispas'); return a.length ? 'Recompensa: ' + a.join(' · ') : 'Misión completada'; }
 function storyCheck(force) {
@@ -247,12 +249,18 @@ var PANELS = {
     h += '<div class="row" style="margin-top:10px">' + C.CLANS.filter(function (k) { return k.id !== c.id; }).map(function (k) { return bt('clanJoin', k.id, 'Cambiar a ' + k.ic, undefined, '', 'pap'); }).join('') + '</div>';
     return h;
   },
+  granja: function () {
+    var f = S.farm, h = head('HUERTOS DEL VALLE', 'Granja', 'Tu Espíritu es magia tangible: crece más rápido y vale más.');
+    h += '<div class="kv"><b>Parcelas</b><span>' + f.p.length + ' / 16</span><b>Cosecha cada</b><span>' + C.farmG(S).toFixed(1) + ' s</span><b>Valor por cosecha</b><span>' + C.fmt(C.farmVal(S)) + ' ●</span><b>Ayudantes</b><span>' + f.auto + ' (cosechan solos ' + Math.min(f.p.length, f.auto * 4) + ' parcelas al 60%)</span><b>Listas ahora</b><span>' + f.p.filter(function (x) { return x >= 1; }).length + '</span></div><div class="list" style="margin-top:10px">';
+    [['plot', '🌱', 'Nueva parcela', 'Más parcelas = más cosechas (+5% de valor cada una).'], ['lv', '🧪', 'Abono mágico · NV ' + f.lv, 'Cosechas 15% más rápidas y +10% de valor.'], ['auto', '👩‍🌾', 'Contratar ayudante', 'Cosecha 4 parcelas por ti, también sin conexión.']].forEach(function (x) { var c = C.farmCost(S, x[0]); h += item(x[1], x[2], x[3], c ? bt('farm', x[0], C.fmt(c) + ' ●', c) : '<span class="tag ok">Máximo</span>'); });
+    return h + '</div><p class="m">Regar cuesta 1 de energía y adelanta 15% una parcela. Cosechar a mano paga el 100%.</p>';
+  },
   page: function (a) {
     var f = a.f, n = C.fragCount(S);
     return '<div class="band"><span class="spaced">CÓDICE DEL ORIGEN</span><span class="spaced">FRAGMENTO ' + n + ' / ' + C.FRAG.length + '</span></div><h2 class="mega">' + f.t + '</h2>' + f.p.map(function (x) { return '<p style="font-size:16px">' + x + '</p>'; }).join('') +
       '<p class="kick" style="color:#8a1219">+10 Legado · +5 ◆' + (a.all ? ' · ¡Códice completo! +200 Legado y título “Guardián del Origen”' : '') + '</p><button class="btn red" data-a="pageOk">Guardar en el Códice</button>';
   },
-  chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
+  chat: function () { var h = '<h2 class="mega">Chat rápido</h2><p class="m">Gestos de roleplay:</p><div class="row">' + bt('emote', 'saludo', '👋 Saludar', undefined, '', 'tea') + bt('emote', 'baile', '💃 Bailar', undefined, '', 'tea') + bt('emote', 'sentar', '🪑 Sentarse', undefined, '', 'tea') + '</div><p class="m">Frases seguras para saludar y hacer amigos.</p><div class="row">'; C.CHAT.forEach(function (t, i) { h += bt('say', i, esc(t), undefined, '', 'pap'); }); return h + '</div>'; },
   menu: function () {
     var tabs = [['perfil', 'Perfil'], ['mis', 'Misiones'], ['amigos', 'Amigos'], ['clan', 'Clan'], ['logros', 'Logros'], ['codice', 'Códice'], ['brz', 'Brazaletes'], ['rank', 'Ranking'], ['shop', 'Tienda'], ['cfg', 'Ajustes'], ['guia', 'Guía']], t = PANEL.tab || 'perfil';
     var h = '<div class="tabs">' + tabs.map(function (x) { return '<button class="' + (x[0] === t ? 'on' : '') + '" data-a="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
@@ -298,7 +306,7 @@ var PANELS = {
       return h;
     }
     return h + '<h2 class="mega">Cómo jugar</h2><div class="film">MOVER: joystick (izquierda) o WASD · GOLPE: ⚔ o J/espacio · PODER: K · ESQUIVA: » o L/shift · INTERACTUAR: botón amarillo o E · MENÚ: M</div>' +
-      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
+      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Huertos del Valle</b> (al norte de la Forja): granja tycoon. Riega tocando, cosecha y contrata ayudantes.</p><p><b class="gold">Bosque de la Niebla</b> (al sur de las Tierras Rotas): zona de terror. Tu linterna se gasta; los cofres solo son tuyos si sales con vida.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
   }
 };
 var ACTS = {
@@ -319,6 +327,8 @@ var ACTS = {
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   clanJoin: function (v) { var r = C.clanJoin(S, v, Date.now()); if (r === true) { toast('¡Bienvenida, bienvenido al ' + C.CLANI[v].n + '! ' + C.CLANI[v].ic, 'gold'); sfx('win'); refreshCombat(); save(); if (mode === 'world') { ents = ents.filter(function (e) { return e.k !== 'bot'; }); spawnBots(MAP.id); } } else if (r === 'espera') toast('Solo puedes cambiar de clan una vez cada 24 h', 'bad'); renderPanel(); },
+  farm: function (v) { if (C.farmBuy(S, v)) { sfx('up'); toast(v === 'plot' ? '¡Nueva parcela! 🌱' : v === 'lv' ? '¡Abono mejorado! 🧪' : '¡Nuevo ayudante! 👩‍🌾', 'ok'); if (mode === 'world' && MAP.id === 'huertos' && v === 'auto') loadZone('huertos', 'huertos'); save(); } renderPanel(); },
+  emote: function (v) { closePanel(); emote(P, v); },
   cook: function () { closePanel(); mgStart('cocina'); },
   stratEq: function (v) { C.equip(S, +v); refreshCombat(); sfx('up'); renderPanel(); },
   pageOk: function () { var all = PANEL.a.all; closePanel(); if (all) { banner('¡GUARDIÁN DEL ORIGEN!', 'Completaste el Códice'); sfx('win'); } hudFull(); },

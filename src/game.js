@@ -47,8 +47,8 @@ var SFX = {
   step: function () { noise(.03, .03, 300); }
 };
 function sfx(n) { try { if (AC && SFX[n]) SFX[n](); } catch (e) { } }
-var SCALES = { plaza: [0, 2, 4, 7, 9], dojo: [0, 3, 5, 7, 10], forja: [0, 2, 4, 5, 7], tierras: [0, 1, 5, 7, 8], coliseo: [0, 3, 6, 7, 10], night: [0, 1, 6], duel: [0, 3, 5, 6, 7] };
-var ROOTS = { plaza: 220, dojo: 196, forja: 233, tierras: 174.6, coliseo: 164.8, night: 110, duel: 146.8 };
+var SCALES = { bosque: [0, 1, 6], huertos: [0, 2, 4, 7, 9, 11], plaza: [0, 2, 4, 7, 9], dojo: [0, 3, 5, 7, 10], forja: [0, 2, 4, 5, 7], tierras: [0, 1, 5, 7, 8], coliseo: [0, 3, 6, 7, 10], night: [0, 1, 6], duel: [0, 3, 5, 6, 7] };
+var ROOTS = { bosque: 98, huertos: 262, plaza: 220, dojo: 196, forja: 233, tierras: 174.6, coliseo: 164.8, night: 110, duel: 146.8 };
 function musicTick() {
   if (!AC || !S || !S.cfg.mus || !MAP) return;
   var z = MAP.id, sc = SCALES[z] || SCALES.plaza, rt = ROOTS[z] || 220, spb = z === 'duel' ? .14 : z === 'night' ? .5 : .2;
@@ -70,9 +70,11 @@ var TH = {
   tierras: { f: ['#c9ab72', '#c2a36b'], p: '#a8875a', w: ['#6b5a4a', '#43372c'], tr: ['#7a6a55', '#54473a'], wa: '#5aa0b0', bg: '#2a2018', rf: [['#c9ab72', '#c2a36b'], ['#b38457', '#a97c50'], ['#7d5444', '#734c3d']] },
   coliseo: { f: ['#2d3249', '#293044'], p: '#3c4466', w: ['#a42cff', '#4d1785'], tr: ['#2f6f5a', '#1d4a3b'], wa: '#39c8ff', bg: '#100a1c' },
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
+  bosque:  { f: ['#1f2a22', '#1b251e'], p: '#2a2f26', w: ['#3a3a46', '#1c1c24'], tr: ['#222', '#111'], wa: '#223', bg: '#050806' },
+  huertos: { f: ['#7fb24a', '#76a843'], p: '#b08a52', w: ['#8a5a2b', '#5a3825'], tr: ['#3f9a5a', '#25693b'], wa: '#39c8ff', alt: '#6b4423', bg: '#2f4a1f' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
-var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza', vant: 'coliseo' };
+var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza', vant: 'coliseo', elio: 'bosque', rosa: 'huertos' };
 var NPCL = {
   ren: { skin: '#f5d0a9', shirt: '#e0262f', pants: '#1b1b22', hair: '#1b1b22', bun: 1 },
   tobias: { skin: '#c68642', shirt: '#7a4a2a', pants: '#33333d', hair: '#d6dee9', beard: 1 },
@@ -83,6 +85,8 @@ var NPCL = {
   dax: { skin: '#8d5524', shirt: '#ff2fb3', pants: '#1b1b22', hair: '#1b1b22', scarf: '#1b1b22' },
   nima: { skin: '#c68642', shirt: '#fff1a8', pants: '#e8d98a', hair: '#f2e8d5', robe: 1, hood: '#0f5c66' },
   sol: { skin: '#e0ac69', shirt: '#f0b429', pants: '#0f5c66', hair: '#e0262f', cape: '#e0262f', scarf: '#0f5c66' },
+  elio: { skin: '#c68642', shirt: '#25693b', pants: '#43372c', hair: '#5a3825', cap: '#3f9a5a', scarf: '#f0b429' },
+  rosa: { skin: '#f5d0a9', shirt: '#ff8fb8', pants: '#7a4a2a', hair: '#f2e8d5', bun: 1, robe: 1 },
   nar: { skin: '#f2e8d5', shirt: '#0b0b0f', pants: '#0b0b0f', hair: '#0b0b0f' }
 };
 function playerLook() {
@@ -180,7 +184,7 @@ function buildDojo() {
 var PADS = [[3, 3], [9, 3], [21, 3], [3, 17], [9, 17], [21, 17]];
 function buildForja() {
   var m = newMap('forja', 33, 27), R = C.mulberry(33);
-  tRect(m, 1, 12, 31, 3, 1); tRect(m, 15, 1, 3, 25, 1); border(m, [[0, 13]]); fragsIn(m);
+  tRect(m, 1, 12, 31, 3, 1); tRect(m, 15, 1, 3, 25, 1); border(m, [[0, 13], [16, 0]]); fragsIn(m); portal(m, 16, 1, 'huertos', 'N');
   PADS.forEach(function (p) { tRect(m, p[0], p[1], 5, 5, 3); });
   block(m, 19, 9, 2, 1, 26, ['#f0b429', '#a8740c'], { sign: 'TYCOON' }); inter(m, 'mesa', 20 * T, 10.6 * T, 'MESA DEL TYCOON', function () { openPanel('tycoon'); });
   tSet(m, 28, 8, 8); deco(m, 'yunque', 28, 8); inter(m, 'yunque', 28.5 * T, 9.8 * T, 'YUNQUE · GANA ORO', function () { mgStart('yunque'); });
@@ -203,7 +207,7 @@ function refreshForja() {
 }
 function buildTierras() {
   var m = newMap('tierras', 45, 37), R = C.mulberry(44);
-  tRect(m, 1, 17, 7, 3, 1); border(m, [[0, 18]]); fragsIn(m);
+  tRect(m, 1, 17, 7, 3, 1); border(m, [[0, 18], [22, 36]]); fragsIn(m); portal(m, 22, 35, 'bosque', 'S');
   m.ringOf = function (x) { return x < 15 * T ? 0 : x < 30 * T ? 1 : 2; };
   for (var j = 2; j < 35; j += 2) { if (j % 8 !== 0) { rock(m, 15, j, .7); rock(m, 30, j, .7); } }
   [[35, 13], [41, 13], [35, 23], [41, 23]].forEach(function (p) { block(m, p[0], p[1], 2, 1, 34, ['#2a2433', '#15111f'], { ruin: 1 }); });
@@ -238,7 +242,7 @@ function buildArena(kind) {
 }
 function getMap(id) {
   if (MAPS[id]) return MAPS[id];
-  var b = { plaza: buildPlaza, dojo: buildDojo, forja: buildForja, tierras: buildTierras, coliseo: buildColiseo }[id];
+  var b = { plaza: buildPlaza, dojo: buildDojo, forja: buildForja, tierras: buildTierras, coliseo: buildColiseo, bosque: buildBosque, huertos: buildHuertos }[id];
   var m = b(); renderGround(m); return m;
 }
 
@@ -417,6 +421,13 @@ function drawObj(g, o) {
       g.fillStyle = 'rgba(255,255,255,.55)'; for (var k2 = 0; k2 < 6; k2++) { var yy = (time * 90 + k2 * 22) % 120; g.fillRect(X - 50 + k2 * 18, Y - 30 + yy * .5, 3, 10); }
     } else if (o.d === 'sign') {
       rr(g, X - 2, Y - 30, 4, 30, '#5a3825'); rr(g, X - 46, Y - 44, 92, 18, PAP); g.fillStyle = INK; g.font = '700 10px Cuerpo, sans-serif'; g.textAlign = 'center'; g.fillText(o.txt, X, Y - 31);
+    } else if (o.d === 'cofre') {
+      rr(g, X - 14, Y - 20, 28, 18, '#7a4a2a'); rr(g, X - 14, Y - 26, 28, 8, '#a8740c'); g.fillStyle = '#f0b429'; g.fillRect(X - 3, Y - 20, 6, 7); g.strokeRect(X - 3, Y - 20, 6, 7);
+    } else if (o.d === 'plot') {
+      var pp = o.pi < S.farm.p.length ? S.farm.p[o.pi] : -1;
+      if (pp < 0) { g.setLineDash([4, 4]); g.strokeStyle = 'rgba(0,0,0,.5)'; g.strokeRect(X - 18, Y - 26, 36, 36); g.setLineDash([]); ctext(g, '●', X, Y - 8, 14, '#f0b429'); }
+      else if (pp < 1) { var hh = 6 + pp * 22; g.strokeStyle = INK; g.lineWidth = 2; for (var q2 = -1; q2 <= 1; q2++) { g.fillStyle = pp < .5 ? '#7fd34a' : '#3f9a5a'; g.beginPath(); g.ellipse(X + q2 * 10, Y - hh / 2, 4 + pp * 3, hh / 2, 0, 0, TAU); g.fill(); g.stroke(); } }
+      else { for (var q3 = -1; q3 <= 1; q3++) { g.fillStyle = '#f0b429'; g.beginPath(); g.arc(X + q3 * 11, Y - 14, 8, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#3f9a5a'; g.fillRect(X + q3 * 11 - 2, Y - 26, 4, 6); } if (Math.sin(time * 6 + X) > .7) ctext(g, '✦', X + 14, Y - 30, 14, '#fff'); }
     } else if (o.d === 'frag') {
       var fy2 = Math.sin(time * 3 + X) * 4;
       g.globalAlpha = .18 + Math.sin(time * 2) * .06; g.fillStyle = '#39c8ff'; g.fillRect(X - 7, Y - 260, 14, 250); g.globalAlpha = 1;
@@ -615,7 +626,9 @@ function updPlayer(dt) {
 function playerDown() {
   P.dead = 1; P.hp = 0; sfx('ko'); vib([60, 40, 60]); txt(P.x, P.y - 70, '¡K.O.!', '#e0262f', 40, 1.6); shake(12);
   if (mode === 'world') {
-    S.cnt.deaths++; var lost = Math.floor(S.oro * .05); S.oro -= lost;
+    S.cnt.deaths++;
+    if (MAP.id === 'bosque') { var nb = BAG ? BAG.n : 0; BAG = null; setTimeout(function () { toast(nb ? 'La niebla se quedó con tu bolsa (' + nb + ' cofres). La próxima vez, sal antes.' : 'La niebla te expulsó. Respira y vuelve a intentarlo.', 'bad'); P.dead = 0; P.hp = P.cs.maxHp; go('tierras', 'respawn2'); }, 1400); return; }
+    var lost = Math.floor(S.oro * .05); S.oro -= lost;
     setTimeout(function () { toast('Te derrotaron. Perdiste ' + C.fmt(lost) + ' de oro. ¡Levántate!', 'bad'); P.dead = 0; P.hp = P.cs.maxHp; go(MAP.id === 'tierras' ? 'tierras' : MAP.id, 'respawn'); }, 1400);
   } else if (mode === 'night') setTimeout(function () { nightLose(); }, 1300);
   else if (mode === 'duel') setTimeout(function () { duelEnd(false); }, 1300);
@@ -691,7 +704,7 @@ function updProj(p, dt) {
 }
 
 /* ---------- bots sociales ---------- */
-var BOTN = { plaza: 7, dojo: 5, forja: 4, tierras: 5, coliseo: 5 };
+var BOTN = { plaza: 7, dojo: 5, forja: 4, tierras: 5, coliseo: 5, huertos: 3 };
 function spawnBots(id) {
   var n = BOTN[id] || 0, used = {};
   for (var i = 0; i < n; i++) {
@@ -711,6 +724,7 @@ function freeSpot(minD) {
 }
 function updBot(b, dt) {
   b.t -= dt; b.mv = 0; b.atkA -= dt; b.chatT -= dt;
+  if (b.chatT <= 0 && Math.random() < .25 && !b.mv) emote(b, ['saludo', 'baile', 'sentar'][Math.random() * 3 | 0]);
   if (b.chatT <= 0) { b.chatT = rnd(10, 26); var l = C.BOTCHAT[MAP.id], cl = C.CLANS[b.bi % 3]; if (S.clan.id === cl.id && Math.random() < .3) say(b, '¡Vamos ' + cl.n.replace('Clan ', '') + '! ' + cl.ic); else if (l) say(b, l[Math.random() * l.length | 0]); }
   if (MAP.id === 'tierras' && b.t > 0) { var f = null, bd = 230; foes().forEach(function (q) { var d = dist(b, q); if (d < bd) { bd = d; f = q; } }); if (f) { if (bd > 40) stepTo(b, f.x, f.y, 120, dt); else if (b.atkA <= 0) { b.atkA = .6; face(b, f.x, f.y); f.hp -= f.maxHp * .08; f.flash = .1; burst(f.x, f.y - 22, '#fff'); if (f.hp <= 0) { f.hp = 0; f.dead = 1; parts(f.x, f.y - 20, '#a42cff', 10); txt(f.x, f.y - 60, '¡K.O.!', '#fff', 18); if (f.type === 'golem') MAP.golemT = 60; } } return; } }
   if (b.t <= 0) { var p = freeSpot(0); if (p && Math.random() < .7) { b.tx = p.x; b.ty = p.y; } else b.tx = undefined; b.t = rnd(3, 8); }
@@ -718,6 +732,10 @@ function updBot(b, dt) {
   else if (MAP.id === 'dojo' && Math.sin(time * 3 + b.bi) > .6) b.atkA = .15;
 }
 function stepTo(e, tx, ty, sp, dt) { var dx = tx - e.x, dy = ty - e.y, l = Math.hypot(dx, dy) || 1; if (moveEnt(e, dx / l * sp * dt, dy / l * sp * dt)) { e.stuck += dt; if (e.stuck > 1) { e.tx = undefined; e.stuck = 0; } } e.mv = 1; e.walk += dt * 10; setDir(e, dx, dy); }
+/* gestos de roleplay: saludar, bailar, sentarse */
+function emoY(e) { if (!e.emo || e.mv) return 0; return e.emo.k === 'baile' ? Math.abs(Math.sin(time * 8)) * 6 : e.emo.k === 'sentar' ? -7 : 0; }
+function emoA(e) { if (!e.emo || e.mv) return 0; return (e.emo.k === 'saludo' || e.emo.k === 'baile') && Math.sin(time * (e.emo.k === 'baile' ? 9 : 14)) > 0 ? 1 : 0; }
+function emote(e, k) { e.emo = { k: k, t: k === 'sentar' ? 1e9 : 3.5 }; }
 function say(e, t) { e.bub = { t: t, life: 4 }; if (e.name) feed('<b>' + e.name + ':</b> ' + t); }
 function quickChat(t) {
   say(P, t); P.name = S.name;
@@ -785,17 +803,22 @@ function go(id, from) {
 }
 function loadZone(id, from) {
   var prev = MAP && MAP.id;
+  if (prev === 'bosque' && from !== 'respawn') bankForest();
+  if (id === 'bosque') delete MAPS.bosque;
   MAP = getMap(id); if (id === 'forja') refreshForja();
   mode = 'world'; S.zone = id; ents = []; fx = []; $('tbar').hidden = true; document.body.classList.remove('tour');
   if (!P) P = mkPlayer(); P.dead = 0; refreshCombat();
   var a = (from && MAP.arrive[from]) || (prev && MAP.arrive[prev]) || null;
   if (from === 'respawn' && MAP.portals[0]) a = MAP.arrive[MAP.portals[0].to];
+  if (from === 'respawn2') a = MAP.arrive.bosque || a;
   if (!a) { var n = MAP.npcs[0]; a = n ? { x: n.x, y: n.y + T * 1.4 } : MAP.spawn; }
   P.x = a.x; P.y = a.y; P.portCd = 1; cam.x = P.x; cam.y = P.y;
   ents.push(P); spawnParty(); spawnBots(id); spawnT = 0;
   if (id === 'tierras') { MAP.golemT = MAP.golemT || 0; for (var i = 0; i < 6; i++) spawnFoes(1); }
+  if (MAP.dark) { LAN.fuel = 100; LAN.t = 0; LAN.whT = 15; BAG = { o: 0, ch: 0, gem: 0, n: 0 }; for (i = 0; i < 6; i++) addLlama(); for (i = 0; i < 4; i++) addShadow(); $('tbar').hidden = false; document.body.classList.add('tour'); }
+  if (id === 'huertos') for (i = 0; i < S.farm.auto; i++) { var hp2 = freeSpot(0); if (hp2) ents.push({ k: 'cont', name: 'Ayudante ' + (i + 1), el: 'tierra', look: { skin: '#e0ac69', shirt: '#2dffb3', pants: '#5a3825', hair: '#5a3825', cap: '#f0b429' }, x: hp2.x, y: hp2.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); }
   C.ev(S, 'visit', { z: id });
-  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Mira el minimapa (arriba a la derecha).', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
+  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Al sur está el Bosque de la Niebla (zona de terror).', bosque: 'ZONA DE TERROR: tu linterna se gasta. Las sombras se congelan con tu luz. Los cofres solo son tuyos si SALES por el portal.', huertos: 'Toca una parcela para REGAR (+15%) o COSECHAR. Mejora la granja y contrata ayudantes en la mesa.', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
   if (ZT[id]) tip('z_' + id, ZT[id], 1);
   zoneTitle(); hudFull();
 }
@@ -844,10 +867,12 @@ function update(dt) {
     else if (e.k === 'proj') updProj(e, dt);
     else if (e.k === 'cont') updCont(e, dt);
     if (e.bub) { e.bub.life -= dt; if (e.bub.life <= 0) e.bub = null; }
+    if (e.emo) { e.emo.t -= dt; if (e.emo.t <= 0 || e.mv) e.emo = null; }
   }
   ents = ents.filter(function (e) { return !e.dead || e === P; });
   updFx(dt);
   if (mode === 'night') updNight(dt);
+  else if (mode === 'world' && MAP.dark && BAG) updForest(dt);
   else if (mode === 'duel') updDuel(dt);
 }
 function render() {
@@ -878,20 +903,20 @@ function render() {
   for (var i = 0; i < list.length; i++) {
     var e = list[i];
     if (typeof e.k === 'number') drawObj(ctx, e);
-    else if (e.k === 'pl') { if (!P.dead || Math.sin(time * 20) > 0) drawAvatar(ctx, e.x, e.y, playerLook(), { dir: e.dir, walk: e.walk, mv: e.mv, atk: e.atkA, flash: e.flash, el: brzColor(), aura: S.cos.aura ? brzColor() : 0 }); if (e.shieldT > 0) { ctx.strokeStyle = '#d08a3c'; ctx.lineWidth = 3; ctx.globalAlpha = .7; ctx.beginPath(); ctx.ellipse(e.x, e.y - 22, 22, 30, 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; } }
+    else if (e.k === 'pl') { if (!P.dead || Math.sin(time * 20) > 0) drawAvatar(ctx, e.x, e.y - emoY(e), playerLook(), { dir: e.emo && !e.mv ? 0 : e.dir, walk: e.walk, mv: e.mv, atk: emoA(e) || e.atkA, flash: e.flash, el: brzColor(), aura: S.cos.aura ? brzColor() : 0 }); if (e.shieldT > 0) { ctx.strokeStyle = '#d08a3c'; ctx.lineWidth = 3; ctx.globalAlpha = .7; ctx.beginPath(); ctx.ellipse(e.x, e.y - 22, 22, 30, 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; } }
     else if (e.k === 'npc') drawAvatar(ctx, e.x, e.y, e.look, { dir: Math.hypot(P.x - e.x, P.y - e.y) < 120 ? (P.y < e.y - 20 ? 1 : P.x < e.x - 30 ? 2 : P.x > e.x + 30 ? 3 : 0) : 0, el: C.NPC[e.key].c });
-    else if (e.k === 'bot' || e.k === 'cont' || e.k === 'ally') drawAvatar(ctx, e.x, e.y, e.look, { dir: e.dir, walk: e.walk, mv: e.mv, atk: e.atkA, el: C.EL[e.el].c });
+    else if (e.k === 'bot' || e.k === 'cont' || e.k === 'ally') drawAvatar(ctx, e.x, e.y - emoY(e), e.look, { dir: e.dir, walk: e.walk, mv: e.mv, atk: emoA(e) || e.atkA, el: C.EL[e.el].c });
     else if (e.k === 'foe') drawFoe(ctx, e);
     else if (e.k === 'proj') { ctx.fillStyle = e.c; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x - 3, e.y - 3, e.r * .35, 0, TAU); ctx.fill(); }
   }
   drawFx(ctx);
-  if (mode === 'night') drawDark();
+  if (mode === 'night' || MAP.dark) drawDark();
   /* etiquetas, barras y globos */
   var k2 = Z * DPR; ctx.setTransform(k2, 0, 0, k2, (W / 2 - (cam.x + sx) * Z) * DPR, (H / 2 - (cam.y + sy) * Z) * DPR);
   for (i = 0; i < list.length; i++) {
     e = list[i]; if (typeof e.k === 'number') continue;
     var sc = (e.look && e.look.sc) || 1, top = e.y - 54 * sc;
-    if (mode === 'night' && e !== P && dist(e, P) > lightR()) continue;
+    if ((mode === 'night' || MAP.dark) && e !== P && dist(e, P) > lightR()) continue;
     if (e.k === 'npc') { nameTag(e.x, top - 6, C.NPC[e.key].n, C.NPC[e.key].c); var ob = objTarget(); if (ob && !ob.por && Math.abs(ob.x - e.x) < 2 && Math.abs(ob.y + 40 - e.y) < 2) ctext(ctx, '!', e.x, top - 30 + Math.sin(time * 6) * 4, 30, '#f0b429'); else { var sq = C.sideFor(S, e.key); if (sq) { var rd = sq.st && (C.sideReady(S, sq.q.id) || (sq.q.o.k === 'giveCh' && S.chispas >= sq.q.o.n)); if (!sq.st || rd) ctext(ctx, rd ? '✓' : '?', e.x, top - 30 + Math.sin(time * 5) * 3, 26, rd ? '#2dffb3' : '#f2e8d5'); } } }
     else if (e.k === 'bot' || e.k === 'cont') { var cl = C.CLANS[e.bi % 3]; nameTag(e.x, top - 6, (e.k === 'bot' ? cl.ic + ' ' : '') + e.name, e.k === 'bot' && S.clan.id === cl.id ? cl.c : '#f2e8d5'); }
     else if (e.k === 'ally') nameTag(e.x, top - 6, '🤝 ' + e.name, '#2dffb3');
@@ -941,7 +966,65 @@ function loadNight() {
   var nv = S.cfg.q ? 16 : 9, vis = TR.order.slice(TR.order.length - nv); for (var i = 0; i < nv; i++) { var pos = freeSpot(120); if (!pos) continue; var b = TR.field[vis[i]]; ents.push({ k: 'cont', fi: vis[i], name: b.n, el: b.el, look: botLook(b.h), x: pos.x, y: pos.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); }
   for (i = 0; i < 6; i++) addLlama();
   for (i = 0; i < 3; i++) addShadow();
-  TR.shT = 0; zoneTitle(); hudFull(); $('tbar').hidden = false; document.body.classList.add('tour');
+  TR.shT = 0; LAN.fuel = 100; LAN.t = 0; zoneTitle(); hudFull(); $('tbar').hidden = false; document.body.classList.add('tour');
+}
+function lanternPick() {
+  MAP.objs = MAP.objs.filter(function (o) { if (o.ll && Math.hypot(o.x - P.x, o.y - P.y) < 30) { LAN.fuel = Math.min(100, LAN.fuel + 38); sfx('coin'); txt(P.x, P.y - 60, '+LUZ', '#ffb02e', 20); setTimeout(function () { if (MAP && (MAP.dark || mode === 'night')) addLlama(); }, 2500); return false; } return true; });
+}
+function heartbeat(dt) {
+  var near = 999; ents.forEach(function (e) { if (e.type === 'sombra') near = Math.min(near, dist(e, P)); });
+  LAN.beatT -= dt; if (near < 260 && LAN.beatT <= 0) { sfx('beat'); LAN.beatT = near < 130 ? .45 : .8; }
+}
+/* ---------- Bosque de la Niebla: exploración de terror con bolsa de supervivencia ---------- */
+var WHISP = ['…no mires atrás…', '…¿quién eras antes?…', '…la luz se acaba…', '…quédate con nosotros…', '…tenemos frío…'];
+function updForest(dt) {
+  LAN.t += dt; LAN.fuel = Math.max(0, LAN.fuel - .75 * dt); lanternPick(); heartbeat(dt);
+  var want = Math.min(8, 4 + Math.floor(LAN.t / 30)), have = ents.filter(function (e) { return e.type === 'sombra'; }).length; if (have < want) addShadow();
+  LAN.whT -= dt; if (LAN.whT <= 0) { LAN.whT = rnd(22, 36); whisper(WHISP[Math.random() * WHISP.length | 0]); }
+  tbar('BOSQUE · LUZ <b>' + Math.round(LAN.fuel) + '%</b> · BOLSA <b>' + C.fmt(BAG.o) + ' ● ' + BAG.ch + ' ✧' + (BAG.gem ? ' ' + BAG.gem + ' ◆' : '') + '</b> (' + BAG.n + ' cofres) · sal por el portal');
+}
+function openChest(o) {
+  if (o.open || !BAG) return; o.open = 1;
+  var depth = C.clamp(Math.floor(o.y / T / 13), 0, 2), L = C.chestLoot(S, Math.random, depth);
+  BAG.o += L.o; BAG.ch += L.ch; BAG.gem += L.gem; BAG.n++; LAN.t += 8;
+  sfx('coin'); parts(o.x, o.y - 20, '#f0b429', 16); txt(o.x, o.y - 60, '+' + C.fmt(L.o) + ' ●  +' + L.ch + ' ✧' + (L.gem ? '  +' + L.gem + ' ◆' : ''), '#f0b429', 16, 1.4);
+  tip('bolsa', 'Lo de los cofres va a tu BOLSA. Solo es tuyo si sales por el portal. Si las sombras te atrapan, la pierdes.');
+}
+function bankForest() { if (BAG && BAG.n && C.bankBag(S, BAG)) { banner('¡SALISTE CON VIDA!', BAG.n + ' cofres · +' + C.fmt(BAG.o) + ' ● · +' + BAG.ch + ' ✧'); sfx('win'); save(); } BAG = null; }
+function buildBosque() {
+  var m = newMap('bosque', 40, 40), R = C.mulberry((Math.random() * 1e9) >>> 0);
+  tRect(m, 18, 1, 4, 6, 1); border(m, [[20, 0]]); fragsIn(m);
+  portal(m, 20, 1, 'tierras', 'N'); npc(m, 'elio', 17, 4);
+  [[8, 14], [30, 12], [12, 30], [28, 32]].forEach(function (q) { block(m, q[0], q[1], 2, 1, 40, ['#3a3a46', '#1c1c24'], { ruin: 1 }); });
+  scatter(m, R, 8, function (mm, x, y) { var o = deco(mm, 'cofre', x, y, { when: function () { return !o.open; } }); inter(mm, 'cofre', (x + .5) * T, (y + 1.2) * T, 'ABRIR COFRE', function () { openChest(o); }, function () { return !o.open; }); }, 3, 9, 37, 38);
+  scatter(m, R, 70, function (mm, x, y) { tree(mm, x, y, rnd(.9, 1.3)); mm.objs[mm.objs.length - 1].dead = 1; }, 2, 2, 38, 38, function (x, y) { return y < 8 && Math.abs(x - 20) < 5; });
+  scatter(m, R, 24, rock, 2, 2, 38, 38, function (x, y) { return y < 8 && Math.abs(x - 20) < 5; });
+  m.dark = 1; MAPS.bosque = m; return m;
+}
+/* ---------- Huertos del Valle: tycoon de granja ---------- */
+var PLOTS = []; [4, 7, 20, 23].forEach(function (x) { [5, 8, 11, 14].forEach(function (y) { PLOTS.push([x, y]); }); });
+function plotAct(i) {
+  if (i >= S.farm.p.length) { openPanel('granja'); return; }
+  var x = (PLOTS[i][0] + .5) * T, y = (PLOTS[i][1] + .5) * T;
+  if (S.farm.p[i] >= 1) { var o = C.farmHarvest(S, i); txt(x, y - 40, '+' + C.fmt(o) + ' ●', '#f0b429', 18); orbs(x, y, '#f0b429', 5); sfx('coin'); tip('granja', 'Contrata AYUDANTES en la mesa de la Granja: cosechan solos aunque no juegues.'); }
+  else if (C.farmWater(S, i)) { parts(x, y - 10, '#39c8ff', 8, 120); txt(x, y - 40, '+15%', '#39c8ff', 14, .6); tone(880, .05, 'sine', .04); }
+  else toast('Sin energía para regar: medita o come pan', 'bad');
+}
+function buildHuertos() {
+  var m = newMap('huertos', 30, 24), R = C.mulberry(99);
+  tRect(m, 14, 1, 3, 22, 1); tRect(m, 1, 18, 29, 2, 1); border(m, [[15, 23]]); fragsIn(m);
+  PLOTS.forEach(function (q, i) {
+    tSet(m, q[0], q[1], 3); deco(m, 'plot', q[0], q[1], { pi: i });
+    var it = inter(m, 'plot' + i, (q[0] + .5) * T, (q[1] + 1.2) * T, '', function () { plotAct(i); });
+    Object.defineProperty(it, 'label', { get: function () { return i >= S.farm.p.length ? 'PARCELA EN VENTA' : S.farm.p[i] >= 1 ? 'COSECHAR' : 'REGAR · ' + Math.floor(S.farm.p[i] * 100) + '%'; } });
+  });
+  block(m, 17, 20, 2, 1, 28, ['#f0b429', '#a8740c'], { sign: 'GRANJA' }); inter(m, 'granja', 18 * T, 21.6 * T, 'MESA DE LA GRANJA', function () { openPanel('granja'); });
+  block(m, 2, 20, 4, 2, 50, ['#e0262f', '#8a1219'], { sign: 'GRANERO' });
+  npc(m, 'rosa', 11, 19);
+  portal(m, 15, 22, 'forja', 'S');
+  tRect(m, 25, 20, 3, 2, 2);
+  scatter(m, R, 12, tree, 1, 1, 29, 4); scatter(m, R, 6, tree, 26, 4, 29, 17);
+  MAPS.huertos = m; return m;
 }
 function addLlama() { var p = freeSpot(160); if (p) MAP.objs.push({ t: 'deco', d: 'llama', x: p.x, y: p.y, k: p.y, ll: 1 }); }
 function addShadow() {
@@ -951,10 +1034,11 @@ function updCont(c, dt) {
   c.t -= dt; if (c.t <= 0) { var p = freeSpot(0); if (p) { c.tx = p.x; c.ty = p.y; } c.t = rnd(2, 5); }
   if (c.tx !== undefined && Math.hypot(c.tx - c.x, c.ty - c.y) > 10) stepTo(c, c.tx, c.ty, 95, dt); else c.mv = 0;
 }
-function lightR() { return 60 + TR.fuel * 1.1; }
+var LAN = { fuel: 100, t: 0, beatT: 0, whT: 20 }, BAG = null;
+function lightR() { return 60 + LAN.fuel * 1.1; }
 function isLit(e) {
   var d = dist(P, e); if (d < lightR() * .85) return true;
-  if (TR.fuel <= 0 || d > 270) return false;
+  if (LAN.fuel <= 0 || d > 270) return false;
   return ((e.x - P.x) * P.fx + (e.y - P.y) * P.fy) / (d || 1) > Math.cos(.5);
 }
 function updShadow(e, dt) {
@@ -962,13 +1046,12 @@ function updShadow(e, dt) {
   if (e.kbT > 0) { e.kbT -= dt; moveEnt(e, e.kbx * dt, e.kby * dt); return; }
   if (e.lit) { e.burn += dt; if (e.burn > 1.3) { parts(e.x, e.y - 26, '#5c5470', 10); var p = freeSpot(380); if (p) { e.x = p.x; e.y = p.y; } e.burn = 0; } return; }
   e.burn = Math.max(0, e.burn - dt * .5);
-  var sp = 88 * (TR.fuel <= 0 ? 1.35 : 1) * (1 + TR.t / 150), dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1;
+  var sp = 88 * (LAN.fuel <= 0 ? 1.35 : 1) * (1 + LAN.t / 150), dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1;
   moveEnt(e, dx / d * sp * dt, dy / d * sp * dt);
   if (d < 24 && !P.dead) { sfx('scare'); hurtP(P.cs.maxHp * .21, e); flashScreen(); var q = freeSpot(380); if (q) { e.x = q.x; e.y = q.y; } }
 }
 function updNight(dt) {
-  TR.t += dt; TR.fuel = Math.max(0, TR.fuel - 1.45 * dt);
-  MAP.objs = MAP.objs.filter(function (o) { if (o.ll && Math.hypot(o.x - P.x, o.y - P.y) < 30) { TR.fuel = Math.min(100, TR.fuel + 38); sfx('coin'); txt(P.x, P.y - 60, '+LUZ', '#ffb02e', 20); setTimeout(addLlama, 2500); return false; } return true; });
+  TR.t += dt; LAN.t = TR.t; LAN.fuel = Math.max(0, LAN.fuel - 1.45 * dt); lanternPick();
   TR.shT += dt; var want = Math.min(9, 3 + Math.floor(TR.t / 11)), have = ents.filter(function (e) { return e.type === 'sombra'; }).length; if (have < want && TR.shT > 2) { TR.shT = 0; addShadow(); }
   var alive = C.aliveAt(TR.t);
   while (99 - TR.out > alive && TR.out < TR.order.length) {
@@ -976,18 +1059,17 @@ function updNight(dt) {
     ents.forEach(function (e) { if (e.k === 'cont' && e.fi === fi) { e.dead = 1; parts(e.x, e.y - 20, '#000', 12); txt(e.x, e.y - 60, '¡AAAH!', '#fff', 18); } });
   }
   TR.pendT -= dt; if (TR.pendT <= 0) { TR.pendT = 1; C.setPend(S, 99 - TR.out + 1); }
-  var near = 999; ents.forEach(function (e) { if (e.type === 'sombra') near = Math.min(near, dist(e, P)); });
-  TR.beatT -= dt; if (near < 260 && TR.beatT <= 0) { sfx('beat'); TR.beatT = near < 130 ? .45 : .8; }
+  heartbeat(dt);
   if (TR.t > 22 && TR.whisp === 0) { TR.whisp = 1; whisper('…tu poder… será mío…'); }
   if (TR.t > 50 && TR.whisp === 1) { TR.whisp = 2; whisper('…nadie vale nada sin poder…'); }
   var left = Math.max(0, C.TOUR.nightT - TR.t);
-  tbar('NOCHE · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · LUZ <b>' + Math.round(TR.fuel) + '%</b>');
+  tbar('NOCHE · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · LUZ <b>' + Math.round(LAN.fuel) + '%</b>');
   if (left <= 0 && !P.dead) nightWin();
 }
 /* Oscuridad de la Noche en UNA sola pasada: degradado de dos círculos con forma de linterna (el círculo exterior
    se adelanta hacia donde miras). Sin lienzo intermedio ni reescalado → ~20 fps más en celulares modestos. */
 function drawDark() {
-  var px = P.x, py = P.y - 20, r = lightR(), L = TR.fuel > 0 ? 270 : 0;
+  var px = P.x, py = P.y - 20, r = lightR(), L = LAN.fuel > 0 ? 270 : 0;
   var cx = px + P.fx * L * .42, cy = py + P.fy * L * .42, R2 = Math.max(r, L * .62);
   var gr = ctx.createRadialGradient(px, py, r * .22, cx, cy, R2);
   gr.addColorStop(0, 'rgba(3,1,8,0)'); gr.addColorStop(.6, 'rgba(3,1,8,.6)'); gr.addColorStop(1, 'rgb(3,1,8)');
@@ -999,7 +1081,8 @@ function drawDark() {
   else { ctx.fillRect(x0, y0, x1 - x0, by0 - y0); ctx.fillRect(x0, by1, x1 - x0, y1 - by1); ctx.fillRect(x0, by0, bx0 - x0, by1 - by0); ctx.fillRect(bx1, by0, x1 - bx1, by1 - by0); ctx.fillStyle = gr; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0); }
   ctx.globalCompositeOperation = 'lighter';
   ents.forEach(function (e) { if (e.k === 'cont') { ctx.fillStyle = 'rgba(255,176,46,.16)'; ctx.beginPath(); ctx.arc(e.x, e.y - 20, 18, 0, TAU); ctx.fill(); } });
-  MAP.objs.forEach(function (o) { if (o.ll) { ctx.fillStyle = 'rgba(255,176,46,.3)'; ctx.beginPath(); ctx.arc(o.x, o.y - 14, 26, 0, TAU); ctx.fill(); } });
+  MAP.objs.forEach(function (o) { if (o.ll) { ctx.fillStyle = 'rgba(255,176,46,.3)'; ctx.beginPath(); ctx.arc(o.x, o.y - 14, 26, 0, TAU); ctx.fill(); } else if (o.d === 'cofre' && !o.open) { ctx.fillStyle = 'rgba(240,180,41,' + (.12 + Math.sin(time * 4 + o.x) * .08) + ')'; ctx.beginPath(); ctx.arc(o.x, o.y - 14, 16, 0, TAU); ctx.fill(); } });
+  MAP.portals.forEach(function (o) { ctx.fillStyle = 'rgba(164,44,255,.35)'; ctx.beginPath(); ctx.arc(o.x, o.y - 10, 46, 0, TAU); ctx.fill(); });
   ctx.globalCompositeOperation = 'source-over';
   ents.forEach(function (e) { if (e.type === 'sombra' && !e.lit && dist(e, P) < 420) { ctx.fillStyle = '#fff'; ctx.globalAlpha = .6 + Math.sin(time * 9 + e.ph) * .3; ctx.fillRect(e.x - 5, e.y - 46, 3, 3); ctx.fillRect(e.x + 2, e.y - 46, 3, 3); ctx.globalAlpha = 1; } });
 }
