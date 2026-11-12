@@ -57,6 +57,7 @@ return function(Reglas, G)
 			if f == "setStory" then s.story.i = a[1]; s.ending = a[2]; r = Reglas.stepDialog(s, "d")
 			elseif f == "setCnt" then for k2, v2 in pairs(a[1]) do s.cnt[k2] = v2 end
 			elseif f == "cheat" then local c = a[1]; s.oro += c.oro; s.gemas += c.gemas; s.chispas += c.chispas; s.stats.fue += c.fue
+			elseif f == "makeFieldLg" then local fld = Reglas.makeField(s, Reglas.mulberry(a[1]), a[2]); r = { fld[1], fld[2], fld[3] }
 			elseif f == "chestLoot" then r = Reglas.chestLoot(s, Reglas.mulberry(a[1]), a[2])
 			elseif f == "fishRoll" then r = Reglas.fishRoll(Reglas.mulberry(a[1]), a[2])
 			elseif f == "killReward" then r = Reglas.killReward(s, a[1], a[2], Reglas.mulberry(a[3]))

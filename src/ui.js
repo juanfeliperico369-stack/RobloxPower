@@ -23,6 +23,7 @@ function zoneTitle() {
   var z = C.ZONES[MAP.id];
   if (z) { $('zK').textContent = z.k; $('zN').textContent = z.n; }
   else if (mode === 'night') { $('zK').textContent = 'TORNEO · FASE 1'; $('zN').textContent = 'La Noche'; }
+  else if (mode === 'cerco') { $('zK').textContent = 'TORNEO · FASE 2'; $('zN').textContent = 'El Cerco'; }
   else { $('zK').textContent = 'TORNEO · DUELO'; $('zN').textContent = TR && TR.boss ? 'Palco de Vant' : 'Arena'; }
 }
 function hudFull() { lastRank = lastRank < 0 ? C.rankOf(C.poder(S)) : lastRank; hud(); questBox(); }
@@ -154,6 +155,8 @@ var PANELS = {
   gear: function () {
     var h = head('DOJO · MAESTRA REN', 'Equipo', 'Multiplica todo lo que entrenas.') + '<div class="list">';
     ['fue', 'tec', 'esp'].forEach(function (k) { var lv = S.gear[k], c = C.gearCost(lv); h += item({ fue: '🥊', tec: '🥋', esp: '🧘' }[k], C.GEAR[k] + ' · NV ' + lv, 'Entrenamiento de ' + k.toUpperCase() + ' ×' + C.gearMul(lv).toFixed(1) + (lv < 20 ? ' → ×' + C.gearMul(lv + 1).toFixed(1) : ' (máximo)'), lv < 20 ? bt('gear', k, C.fmt(c) + ' ●', c) : ''); });
+    h += '</div><div class="spaced gold" style="margin:14px 0 6px">Artes marciales · estilos de combate</div><div class="list">';
+    Object.keys(C.STYLES).forEach(function (k) { var t = C.STYLES[k], own = S.styles[k], on = S.style === k; h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + t.ic + '</div><div class="tx"><div class="nm">' + t.n + '</div><div class="ds">' + t.d + '</div></div>' + (on ? '<span class="tag gold">Activo</span>' : own ? bt('style', k, 'Usar') : bt('styleBuy', k, C.fmt(t.c) + ' ●', t.c, 'oro', 'red')) + '</div>'; });
     return h + '</div>';
   },
   alq: function () {
@@ -171,7 +174,7 @@ var PANELS = {
     h += '<p class="m">Chispas: <b class="ok">' + S.chispas + ' ✧</b> · Oro: <b class="gold" data-live="oro"></b></p><div class="list">';
     S.brz.forEach(function (b) {
       var E = C.EL[b.el], Tr = C.TIERS[b.t], nx = C.FORGE[b.t + 1], on = b.id === S.eq;
-      h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + E.ic + '</div><div class="tx"><div class="nm" style="color:' + Tr.c + '">' + E.n + ' · ' + Tr.n + ' ×' + Tr.m + '</div><div class="ds">' + E.sk + ': ' + E.d + afTxt(b.el) + '</div></div><div style="display:grid;gap:4px">' + (on ? '<span class="tag gold">Equipado</span>' : bt('equip', b.id, 'Equipar')) + (b.t < 3 ? bt('up', b.id, '↑ ' + C.fmt(nx.o) + '● ' + nx.ch + '✧', nx.o, 'oro', 'red', S.chispas < nx.ch) : '') + '</div></div>';
+      h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + E.ic + '</div><div class="tx"><div class="nm" style="color:' + Tr.c + '">' + E.n + ' · ' + Tr.n + ' ×' + Tr.m + '</div><div class="ds">' + E.sk + ': ' + E.d + afTxt(b.el) + '<br><span class="gold">Maestría ' + C.mastLv(b.m) + '/10</span> · poder especial +' + C.mastLv(b.m) * 4 + '% (sube al derrotar enemigos con él)</div></div><div style="display:grid;gap:4px">' + (on ? '<span class="tag gold">Equipado</span>' : bt('equip', b.id, 'Equipar')) + (b.t < 3 ? bt('up', b.id, '↑ ' + C.fmt(nx.o) + '● ' + nx.ch + '✧', nx.o, 'oro', 'red', S.chispas < nx.ch) : '') + '</div></div>';
     });
     h += '</div><div class="spaced gold" style="margin:14px 0 6px">Forjar nuevo elemento · ' + C.NEWB.o + ' ● + ' + C.NEWB.ch + ' ✧</div><div class="row">';
     Object.keys(C.EL).forEach(function (k) { if (C.brzOf(S, k)) return; var lk = C.elLocked(S, k); h += bt('newb', k, C.EL[k].ic + ' ' + C.EL[k].n + (lk ? ' 🔒' : ''), C.NEWB.o, 'oro', 'pap', lk || S.chispas < C.NEWB.ch); });
@@ -199,12 +202,13 @@ var PANELS = {
     return h + '</table>';
   },
   tour: function () {
-    var p = C.poder(S), ok = p >= C.TOUR.req, first = S.cnt.tours === 0;
+    var p = C.poder(S), first = S.cnt.tours === 0;
     var h = '<div class="band"><span class="spaced">COLISEO DEL ECLIPSE</span><span class="spaced">100 JUGADORES</span></div><h2 class="mega">Torneo Mundial</h2><p class="kick">Cien entran. Uno gana. Todos aprenden lo que valen.</p>';
-    h += '<div class="film">FASE 1 · LA NOCHE: sobrevive 75 s. Tu luz congela a las sombras. Recoge llamas.<br>FASE 2 · DUELOS: top 32 → final. Entre duelos eliges una estrategia.<br>REGLA: pierdes el % de tu poder igual a tu puesto. Puesto 50 = −50%. Puesto 2 = −2%. Campeón = 0%.</div>';
-    h += '<p>El <b class="gold">25%</b> de lo que pierdas vuelve a ti como <b class="ok">Legado</b> (multiplicador permanente). Tus brazaletes, equipo y negocio <b>nunca</b> se pierden.' + (first ? ' <b class="ok">Primer torneo: el amuleto de Pip limita la pérdida al 25%.</b>' : '') + '</p>';
-    h += '<p class="m">Tu poder: <b class="w">' + C.fmt(p) + '</b> · Requisito: ' + C.TOUR.req + ' · Mejor puesto: ' + (S.cnt.best ? '#' + S.cnt.best : '—') + '</p>';
-    return h + '<div class="row">' + (ok ? '<button class="btn red" data-a="tourGo">Inscribirme</button>' : '<span class="bad">Te faltan ' + (C.TOUR.req - p) + ' de Poder.</span>') + '<button class="btn pap" data-a="close">Ahora no</button></div>';
+    h += '<div class="film">FASE 1 · LA NOCHE: sobrevive a las sombras con tu luz (100 → 32).<br>FASE 2 · EL CERCO: la niebla se cierra; quédate dentro (32 → 16).<br>FASE 3 · DUELOS: octavos → final. Antes de cada duelo eliges estrategia y brazalete.<br>REGLA: pierdes el % de tu poder igual a tu puesto. Puesto 50 = −50%. Puesto 2 = −2%. Campeón = 0%.</div>';
+    h += '<p>El <b class="gold">25%</b> de lo que pierdas vuelve a ti como <b class="ok">Legado</b>. Tus brazaletes, equipo, casa y negocios <b>nunca</b> se pierden.' + (first ? ' <b class="ok">Primer torneo: el amuleto de Pip limita la pérdida al 25%.</b>' : '') + '</p>';
+    h += '<p class="m">Tu poder: <b class="w">' + C.fmt(p) + '</b> · Elige liga (más alta = rivales más fuertes, Noche más larga y más premio):</p><div class="list">';
+    C.LEAGUES.forEach(function (L) { var ok = p >= L.req, tr = S.trof[L.id]; h += '<div class="it' + (ok ? '' : ' lock') + '"><div class="ic">' + L.ic + '</div><div class="tx"><div class="nm">' + L.n + '</div><div class="ds">Requiere ' + C.fmt(L.req) + ' ⚡ · premios ×' + L.rw + ' · rivales ×' + L.pw + ' · Noche ' + L.night + ' s' + (tr ? ' · tu mejor puesto: #' + tr : '') + '</div></div>' + (ok ? '<button class="btn sm red" data-a="tourGo" data-v="' + L.id + '">Inscribirme</button>' : '<span class="tag">🔒</span>') + '</div>'; });
+    return h + '</div><div class="row" style="margin-top:10px"><button class="btn pap" data-a="close">Ahora no</button></div>';
   },
   strat: function (a) {
     var b = a.b, h = '<div class="band"><span class="spaced">TORNEO · ' + a.name + '</span><span class="spaced">PAUSA ESTRATÉGICA</span></div>';
@@ -219,7 +223,7 @@ var PANELS = {
     return h + '</div>';
   },
   res: function (r) {
-    var h = '<div class="band"><span class="spaced">TORNEO MUNDIAL · RESULTADO</span><span class="spaced">PAG ' + S.cnt.tours + '</span></div>';
+    var h = '<div class="band"><span class="spaced">' + C.league(r.liga).n.toUpperCase() + ' · RESULTADO</span><span class="spaced">PAG ' + S.cnt.tours + '</span></div>';
     h += '<div class="spaced" style="color:#8a1219">Tu puesto</div><div class="res-big">#' + r.rank + '</div>';
     h += r.rank === 1 ? '<p class="loss" style="color:#0f5c66">¡Campeón! No pierdes nada.</p>' : '<p class="loss">−' + r.pct + '% de tu poder' + (r.capped ? ' <small style="font-size:.45em">(amuleto de Pip)</small>' : '') + '</p>';
     h += '<div class="kv"><b>Poder antes</b><span>' + C.fmt(r.p0) + '</span><b>Poder ahora</b><span>' + C.fmt(r.p1) + '</span><b>Legado ganado</b><span>+' + r.lg.toFixed(1) + ' (×' + C.mLeg(S).toFixed(3) + ' permanente)</span><b>Premio</b><span>+' + C.fmt(r.oro) + ' ● · +' + r.gem + ' ◆</span></div>';
@@ -248,6 +252,15 @@ var PANELS = {
     h += '<div class="spaced gold" style="margin:10px 0 4px">Miembros destacados</div><table class="tb">' + mem.map(function (o) { return '<tr><td>' + C.EL[o.b.el].ic + ' ' + esc(o.b.n) + '</td><td style="text-align:right">' + C.fmt(o.b.p) + ' ⚡</td></tr>'; }).join('') + '</table>';
     h += '<div class="row" style="margin-top:10px">' + C.CLANS.filter(function (k) { return k.id !== c.id; }).map(function (k) { return bt('clanJoin', k.id, 'Cambiar a ' + k.ic, undefined, '', 'pap'); }).join('') + '</div>';
     return h;
+  },
+  casa: function () {
+    var cf = C.comfort(S), h = head('VILLA SERENA', 'Mi casa', 'Confort ' + cf + ' → tu energía se recupera +' + cf * 2 + '% más rápido.') + '<div class="spaced gold" style="margin:4px 0 6px">Muebles</div><div class="list">';
+    C.FURN.forEach(function (f) { h += item(f.ic, f.n, 'Confort +' + f.cf, S.house.f[f.id] ? '<span class="tag ok">En casa</span>' : bt('furn', f.id, C.fmt(f.c) + ' ●', f.c)); });
+    h += '</div><div class="spaced gold" style="margin:14px 0 6px">Armario</div><div class="row" style="align-items:flex-start"><canvas data-av width="150" height="170" style="width:88px;height:100px;border:3px solid #f2e8d5;background:#0f5c66"></canvas><div style="flex:1;min-width:180px">';
+    [['skin', 'Piel'], ['shirt', 'Ropa'], ['hair', 'Cabello']].forEach(function (k) { h += '<div class="m">' + k[1] + '</div><div class="sw" style="margin-bottom:6px">' + C.LOOK[k[0]].map(function (col, i) { return '<button style="background:' + col + '" class="' + (S.look[k[0]] === i ? 'on' : '') + '" data-a="look" data-v="' + k[0] + ':' + i + '" aria-label="color"></button>'; }).join('') + '</div>'; });
+    h += '</div></div><div class="spaced gold" style="margin:14px 0 6px">Mascotas · se ganan ayudando, nunca se compran</div><div class="list">';
+    C.PETS.forEach(function (q) { var own = C.petOwned(S, q.id), on = S.pet === q.id; h += item(q.ic, q.n, own ? 'Te acompaña por todo Ánima.' : '🔒 ' + q.how, own ? (on ? bt('pet', '', 'Dejar en casa', undefined, '', 'pap') : bt('pet', q.id, 'Llevar', undefined, '', 'tea')) : ''); });
+    return h + '</div><p class="m">Tus amigos te visitan en casa. Puedes descansar en la cama para recuperar toda la energía.</p>';
   },
   granja: function () {
     var f = S.farm, h = head('HUERTOS DEL VALLE', 'Granja', 'Tu Espíritu es magia tangible: crece más rápido y vale más.');
@@ -306,7 +319,7 @@ var PANELS = {
       return h;
     }
     return h + '<h2 class="mega">Cómo jugar</h2><div class="film">MOVER: joystick (izquierda) o WASD · GOLPE: ⚔ o J/espacio · PODER: K · ESQUIVA: » o L/shift · INTERACTUAR: botón amarillo o E · MENÚ: M</div>' +
-      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Huertos del Valle</b> (al norte de la Forja): granja tycoon. Riega tocando, cosecha y contrata ayudantes.</p><p><b class="gold">Bosque de la Niebla</b> (al sur de las Tierras Rotas): zona de terror. Tu linterna se gasta; los cofres solo son tuyos si sales con vida.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
+      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Villa Serena</b> (noroeste de la Plaza): tu casa. Muebles = confort (energía más rápida), armario, mascotas y visitas de amigos.</p><p><b class="gold">Ligas</b>: Bronce, Plata, Oro y Leyendas. Más alta = rivales más fuertes y más premio. El torneo tiene 3 fases: la Noche, el Cerco y los duelos.</p><p><b class="gold">Artes marciales</b>: aprende estilos con la Maestra Ren (Tigre, Grulla, Dragón). Cada brazalete gana maestría al usarlo.</p><p><b class="gold">Huertos del Valle</b> (al norte de la Forja): granja tycoon. Riega tocando, cosecha y contrata ayudantes.</p><p><b class="gold">Bosque de la Niebla</b> (al sur de las Tierras Rotas): zona de terror. Tu linterna se gasta; los cofres solo son tuyos si sales con vida.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
   }
 };
 var ACTS = {
@@ -322,7 +335,12 @@ var ACTS = {
   newb: function (v) { var r = C.forgeNew(S, v); toast(r === 'ok' ? '¡Nuevo brazalete de ' + C.EL[v].n + '!' : r === 'bloqueado' ? 'Se desbloquea con la historia' : 'Te faltan recursos', r === 'ok' ? 'gold' : 'bad'); if (r === 'ok') sfx('win'); renderPanel(); },
   shop: function (v) { var p = v.split(':'), r = C.shopBuy(S, p[0], p[1]); toast(r === 'ok' ? '¡Comprado!' : r === 'falta' ? 'Gemas insuficientes' : r === 'tienes' ? 'Ya lo tienes' : 'No disponible', r === 'ok' ? 'gold' : 'bad'); if (r === 'ok') { sfx('win'); refreshCombat(); save(); } renderPanel(); },
   claim: function (v) { if (C.dailyClaim(S, +v)) { sfx('win'); toast('+3 ◆ y oro', 'gold'); } renderPanel(); },
-  tourGo: function () { closePanel(); tourStart(); },
+  tourGo: function (v) { closePanel(); tourStart(v); },
+  style: function (v) { C.styleSet(S, v); refreshCombat(); sfx('up'); save(); renderPanel(); },
+  styleBuy: function (v) { if (C.styleBuy(S, v)) { sfx('win'); toast('¡Aprendiste el ' + C.STYLES[v].n + '! ' + C.STYLES[v].ic, 'gold'); refreshCombat(); save(); } renderPanel(); },
+  furn: function (v) { if (C.furnBuy(S, v)) { sfx('up'); toast(C.FURNI[v].ic + ' ' + C.FURNI[v].n + ' ya está en tu casa', 'ok'); save(); } renderPanel(); },
+  look: function (v) { var q = v.split(':'); if (C.setLook(S, q[0], +q[1])) { sfx('ui'); save(); } renderPanel(); },
+  pet: function (v) { if (C.setPet(S, v)) { ents = ents.filter(function (e) { return e.k !== 'pet'; }); if (mode === 'world') spawnPet(); sfx('up'); save(); } renderPanel(); },
   strat: function (v) { if (v === 'atk') TR.buf.atk *= 1.12; else if (v === 'hp') TR.buf.hp *= 1.15; else TR.buf.au *= 1.3; var cb = PANEL.a.cb; closePanel(); cb(); },
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
@@ -670,6 +688,6 @@ window.__bdp = {
   loadDuelTest: function (pw) { TR = { buf: { atk: 1, hp: 1, au: 1 }, br: [] }; loadDuel({ type: 'duelo', eP: pw, name: 'Prueba', el: 'rayo', look: botLook(120) }); TR.cd = 0; TR.opp.frozen = 0; TR.duelTest = 1; },
   set rscale(v) { RSCALE = v; resize(); }, set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
   draw: { avatar: drawAvatar, star: star, ctext: ctext, NPCL: NPCL },
-  nightSkip: function () { if (mode === 'night') TR.t = C.TOUR.nightT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
+  nightSkip: function () { if (mode === 'night') TR.t = TR.L.night - .1; }, cercoSkip: function () { if (mode === 'cerco') TR.ct = C.TOUR.cercoT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
 };
 resize(); boot2(); requestAnimationFrame(frame);

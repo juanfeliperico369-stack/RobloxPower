@@ -60,6 +60,22 @@ eq(C.cleanName('  Nova<script>  '), 'Novascript', 'cleanName limpia'); eq(C.clea
   s.story.i = C.STI.d1; s.ending = 'compartir'; const dA = C.stepDialog(s, 'd'); s.ending = 'corona'; const dB = C.stepDialog(s, 'd');
   ok(dA && dB && dA[0][1] !== dB[0][1], 'el Acto IV cambia según el final'); s.ending = ''; ok(C.stepDialog(s, 'd').length > 0, 'diálogo con respaldo sin final');
 }
+{ // ligas, cerco, casa, mascotas, maestría y estilos
+  const s = C.newState({ name: 'L', seed: 9 }); s.oro = 1e6;
+  ok(C.leagueOpen(s, 'bronce') === false && !C.leagueOpen(s, 'plata'), 'ligas cerradas al inicio'); s.stats.fue = 9000; ok(C.leagueOpen(s, 'oro') && !C.leagueOpen(s, 'leyenda'), 'liga según poder');
+  eq(C.aliveAt(85, 85), 31, 'Noche de Plata termina con 31'); eq(C.aliveAt2(0), 31, 'Cerco empieza con 31'); eq(C.aliveAt2(C.TOUR.cercoT), 15, 'Cerco termina con 15 (+ jugador = 16)');
+  const a = C.newState({ name: 'A', seed: 9 }), b = C.newState({ name: 'A', seed: 9 }); a.stats.fue = b.stats.fue = 9000; a.cnt.tours = b.cnt.tours = 1;
+  const ra = C.applyTour(a, 5, 'bronce'), rb = C.applyTour(b, 5, 'oro'); ok(rb.oro > ra.oro * 5 && rb.gem === ra.gem * 2 && ra.pct === rb.pct, 'la liga multiplica premios, no la pérdida'); eq(b.trof.oro, 5, 'trofeo por liga');
+  C.applyTour(b, 1, 'oro'); eq(b.title, 'Campeón de Oro', 'título de liga'); C.applyTour(b, 1, 'bronce'); eq(b.title, 'Campeón de Oro', 'un título menor no pisa al mayor');
+  const f1 = C.makeField(s, C.mulberry(5), 'bronce'), f2 = C.makeField(s, C.mulberry(5), 'leyenda'); ok(Math.abs(f2[0].p / f1[0].p - 1.3) < 1e-9, 'rivales más fuertes en ligas altas');
+  const e0 = (() => { const q = C.newState({ name: 'E', seed: 1 }); q.en = 0; C.tick(q, 5); return q.en; })(), e1 = (() => { const q = C.newState({ name: 'E', seed: 1 }); q.oro = 1e5; C.furnBuy(q, 'cama'); C.furnBuy(q, 'sofa'); q.en = 0; C.tick(q, 5); return q.en; })();
+  ok(Math.abs(e1 / e0 - 1.16) < 1e-9, 'el confort acelera la energía'); ok(!C.furnBuy(s, 'nada') && C.furnBuy(s, 'cama') && !C.furnBuy(s, 'cama'), 'muebles sin duplicar');
+  eq(C.setPet(s, 'gato'), false, 'mascota bloqueada sin misión'); s.side.gato = { s: 2, n: 1 }; ok(C.setPet(s, 'gato') && s.pet === 'gato' && C.setPet(s, '') && s.pet === '', 'mascota ganada ayudando');
+  const c0 = C.combat(s); ok(C.styleBuy(s, 'grulla') && C.combat(s).cd < c0.cd && !C.styleSet(s, 'dragon') && C.styleSet(s, ''), 'estilos'); C.styleBuy(s, 'tigre'); eq(C.combat(s).combo3, 2.2, 'Tigre ×2.2');
+  const k0 = C.combat(s).skm; for (let i = 0; i < 15; i++) C.killReward(s, 'eco', 50, C.mulberry(i)); eq(C.mastLv(C.eqB(s).m), 1, 'maestría sube con derrotas'); ok(C.combat(s).skm > k0, 'la maestría mejora el poder especial');
+  ok(C.setLook(s, 'shirt', 4) && s.look.shirt === 4 && !C.setLook(s, 'shirt', 1.5) && !C.setLook(s, 'zz', 0), 'armario valida');
+  const m = C.migrate(JSON.parse(JSON.stringify(Object.assign({}, s, { pet: 'zorro', style: 'dragon', trof: { oro: 3, x: 1 }, house: { f: { cama: 1, zz: 1 } } })))); ok(m.pet === '' && m.style === '' && Object.keys(m.trof).join() === 'oro' && Object.keys(m.house.f).join() === 'cama', 'migrate limpia v0.8');
+}
 { // granja (tycoon) y bosque (supervivencia)
   const s = C.newState({ name: 'G', seed: 7 }); s.oro = 1e6;
   ok(C.farmBuy(s, 'plot') && s.farm.p.length === 2, 'comprar parcela'); ok(C.farmBuy(s, 'auto') && s.farm.auto === 1, 'contratar ayudante');
@@ -124,17 +140,18 @@ function fight(s, ring, R, sk) {
   const taken = e.dmg / (F.cd + F.wind) * (0.75 - sk * .5) * ttk * C.afin(fe, me);
   return { type, eP, ttk, taken: taken * (1 - cs.def), max: cs.maxHp };
 }
-function tourney(s, R, sk) {
-  const P = C.poder(s), field = C.makeField(s, R), order = C.nightOrder(field, P, R);
-  if (R() > 0.3 + sk * .6) { const t = 3 + R() * (C.TOUR.nightT - 3); return 99 - (99 - C.aliveAt(t)) + 1; }
-  let pool = order.slice(order.length - 31).map(i => field[i].p); pool.sort((a, b) => b - a);
-  for (let round = 0; round < 5; round++) {
+function tourney(s, R, sk, lg) {
+  const L = C.league(lg), P = C.poder(s), field = C.makeField(s, R, L.id), order = C.nightOrder(field, P * L.pw, R);
+  if (R() > 0.3 + sk * .6) { const t = 3 + R() * (L.night - 3); return C.aliveAt(t, L.night) + 1; }          // cae en la Noche
+  if (R() > 0.45 + sk * .5) { const t = R() * C.TOUR.cercoT; return C.aliveAt2(t) + 1; }                      // cae en el Cerco
+  let pool = order.slice(order.length - 15).map(i => field[i].p); pool.sort((a, b) => b - a);
+  for (let round = 1; round < 5; round++) {                                                                   // octavos → final
     const opp = pool[Math.floor(R() * pool.length)] * (1 + round * .08), me = P * (0.7 + sk * .6);
     if (R() > C.duelP(me, opp)) return C.rankLoss(round, R());
   }
   return 1;
 }
-const stats = { ach: 0, side: 0, friends: 0, p120: [], p600: [], act2: [], act3: [], fin: [], story: [], tours: 0, deaths: 0, minRank: 100, ending: 0, maxP: 0 };
+const stats = { lg: {}, ach: 0, side: 0, friends: 0, p120: [], p600: [], act2: [], act3: [], fin: [], story: [], tours: 0, deaths: 0, minRank: 100, ending: 0, maxP: 0 };
 const t0 = Date.now();
 for (let g = 0; g < N; g++) {
   const R = C.mulberry(1000 + g), origin = Object.keys(C.ORIG)[g % 3], el = C.ELK5[g % 5];
@@ -163,7 +180,8 @@ for (let g = 0; g < N; g++) {
       if (!s.clan.id && R() < .3) C.clanJoin(s, pk3(R), 1e12 + sec * 1000); C.eventSync(s, 1e12 + sec * 1000 * 300); C.achCheck(s); if (sec % 3600 < 60) C.clanWeek(s, 1e12 + sec * 1000 * 400);
       if (R() < .1) { const bi = Math.floor(R() * 99); if (C.addFriend(s, bi) && s.party.length < 2) C.setParty(s, bi, true); }
       if (C.poder(s) >= C.TOUR.req && (ob.k === 'tourney' || R() < .08)) {
-        const rk = tourney(s, R, sk), res = C.applyTour(s, rk); stats.tours++; stats.minRank = Math.min(stats.minRank, rk);
+        const open = C.LEAGUES.filter(L => C.leagueOpen(s, L.id)), lg = open[Math.floor(R() * open.length)].id;
+        const rk = tourney(s, R, sk, lg), res = C.applyTour(s, rk, lg); stats.tours++; stats.minRank = Math.min(stats.minRank, rk); stats.lg[lg] = (stats.lg[lg] || 0) + 1;
         ok(res.pct === (res.first ? Math.min(25, C.lossPct(rk)) : C.lossPct(rk)), 'pérdida inconsistente en torneo');
         if (rk === 1 && C.stepObj(s).k === 'boss' && R() < .5 + sk * .4) C.ev(s, 'boss', { who: 'vant' });
         sec += 420; C.tick(s, 1); continue;
@@ -184,6 +202,7 @@ for (let g = 0; g < N; g++) {
       hp = Math.min(f.max, hp + f.max * .012 * 3 * f.ttk);
       sec += Math.max(0, f.ttk - dt);
     } else { for (let i = 0; i < 12; i++) { C.tapOro(s); C.ev(s, 'anvil', {}); } if (s.story.i >= C.STI.a1 && R() < .05) C.ev(s, 'find', { id: 'gato' }); if (R() < .3) C.fishCatch(s, C.fishRoll(R, sk)); if (R() < .2) C.cookRound(s, 1 + Math.floor(R() * 5));
+      if (R() < .08) C.furnBuy(s, C.FURN[Math.floor(R() * C.FURN.length)].id); if (R() < .05) C.styleBuy(s, ['tigre', 'grulla', 'dragon'][Math.floor(R() * 3)]); if (R() < .02) C.setPet(s, C.PETS[Math.floor(R() * 3)].id);
       for (const k of ['plot', 'lv', 'auto']) if (R() < .1) C.farmBuy(s, k); s.farm.p.forEach((x, i) => { if (x >= 1) C.farmHarvest(s, i); else if (R() < .3) C.farmWater(s, i); });
       if (R() < .05) { const bag = { o: 0, ch: 0, gem: 0, n: 0 }; const n = 1 + Math.floor(R() * 4); for (let i = 0; i < n; i++) { const L = C.chestLoot(s, R, Math.min(2, i)); bag.o += L.o; bag.ch += L.ch; bag.gem += L.gem; bag.n++; } if (R() < .4 + sk * .5) C.bankBag(s, bag); } }
     C.tick(s, dt); sec += dt;
@@ -206,6 +225,7 @@ console.log('Mediana hasta Poder 120 (torneo):', med(stats.p120));
 console.log('Mediana hasta Poder 600 (Guerrero):', med(stats.p600));
 console.log('Mediana hasta Acto II:', med(stats.act2), '· Acto III:', med(stats.act3), '· Epílogo:', med(stats.fin));
 console.log('Torneos jugados:', stats.tours, '· mejor puesto:', stats.minRank, '· KOs en Tierras:', stats.deaths, '· finales elegidos:', stats.ending, '· poder máx:', C.fmt(stats.maxP));
+console.log('Torneos por liga:', JSON.stringify(stats.lg));
 console.log('Logros (media):', (stats.ach / N).toFixed(1), 'de', C.ACH.length);
 console.log('Secundarias completadas (media):', (stats.side / N).toFixed(1), 'de', C.SIDE.length, '· amigos (media):', (stats.friends / N).toFixed(1));
 console.log('Misión media alcanzada:', (stats.story.reduce((a, b) => a + b, 0) / N).toFixed(1), 'de', C.STORY.length);

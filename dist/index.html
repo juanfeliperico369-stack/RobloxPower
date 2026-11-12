@@ -227,7 +227,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px}
    Lo usan el juego (navegador) y tools/sim.js (Node). Todas las fórmulas viven aquí. */
 (function (root) {
 'use strict';
-var VERSION = '0.7.0';
+var VERSION = '0.8.0';
 var SAVE_KEY = 'bdp.save.v1';
 
 /* ---------- utilidades ---------- */
@@ -286,7 +286,8 @@ var ZONES = {
   tierras: { n: 'Tierras Rotas',      k: 'Farmeo · Peligro' },
   coliseo: { n: 'Coliseo del Eclipse', k: 'Torneo Mundial' },
   bosque:  { n: 'Bosque de la Niebla', k: 'Terror · Supervivencia' },
-  huertos: { n: 'Huertos del Valle',  k: 'Tycoon · Granja' }
+  huertos: { n: 'Huertos del Valle',  k: 'Tycoon · Granja' },
+  villa:   { n: 'Villa Serena',       k: 'Roleplay · Hogar' }
 };
 /* hp/dm = multiplicadores sobre un luchador de poder eP; x = poder ganado; o = oro; ch = prob. de chispa */
 var FOES = {
@@ -321,7 +322,17 @@ var SHOP = [
   { id: 'capa',  n: 'Capa del Eclipse',   g: 60,  d: 'Cosmético: capa ondeante.' },
   { id: 'caja',  n: 'Caja fuerte +1 h',   g: 30,  d: 'Tu negocio guarda 1 hora más de ganancias mientras no juegas.' }
 ];
-var TOUR = { req: 120, nightT: 75, cut: 32, firstCap: 25, legado: 0.25, duelHp: 3 };
+var TOUR = { req: 120, nightT: 75, cut: 32, firstCap: 25, legado: 0.25, duelHp: 3, cercoT: 60, cut2: 16 };
+/* ligas: “los torneos de los mejores”. pw = fuerza de los rivales, rw = multiplicador de premios, night = duración de la Noche */
+var LEAGUES = [
+  { id: 'bronce',  n: 'Liga de Bronce',   ic: '🥉', req: 120,   pw: 1,   rw: 1,   gm: 1,   night: 75,  title: 'Campeón del Eclipse' },
+  { id: 'plata',   n: 'Liga de Plata',    ic: '🥈', req: 1500,  pw: 1.1, rw: 2.5, gm: 1.5, night: 85,  title: 'Campeón de Plata' },
+  { id: 'oro',     n: 'Liga de Oro',      ic: '🥇', req: 8000,  pw: 1.2, rw: 6,   gm: 2,   night: 95,  title: 'Campeón de Oro' },
+  { id: 'leyenda', n: 'Liga de Leyendas', ic: '👑', req: 40000, pw: 1.3, rw: 15,  gm: 3,   night: 105, title: 'Leyenda del Eclipse' }
+];
+var LEAGUEI = {}; LEAGUES.forEach(function (l, i) { LEAGUEI[l.id] = l; l.i = i; });
+function league(id) { return LEAGUEI[id] || LEAGUES[0]; }
+function leagueOpen(s, id) { return !!LEAGUEI[id] && poder(s) >= LEAGUEI[id].req; }
 var LOOK = {
   skin: ['#f5d0a9', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0e0ff'],
   shirt: ['#e0262f', '#f0b429', '#0f5c66', '#39c8ff', '#a42cff', '#2dffb3', '#f2e8d5', '#1b1b22'],
@@ -444,8 +455,8 @@ function newState(o) {
     look: { skin: clamp(o.skin | 0, 0, LOOK.skin.length - 1), shirt: clamp(o.shirt | 0, 0, LOOK.shirt.length - 1), hair: clamp(o.hair | 0, 0, LOOK.hair.length - 1) },
     stats: { fue: O.st.fue, tec: O.st.tec, esp: O.st.esp }, legado: 0, en: 100, hp: -1,
     oro: O.oro, gemas: 10, chispas: 0,
-    brz: [{ id: 1, el: el, t: 0 }], eq: 1, nid: 2,
-    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {}, fish: {}, farm: { p: [0], lv: 0, auto: 0 },
+    brz: [{ id: 1, el: el, t: 0, m: 0 }], eq: 1, nid: 2,
+    gear: { fue: 0, tec: 0, esp: 0 }, elix: 0, tyc: {}, caja: 0, cos: { aura: 0, capa: 0 }, friends: [], party: [], side: {}, tips: {}, compras: {}, frag: {}, clan: { id: '', since: 0, week: 0, pts: 0, last: {} }, evt: '', ach: {}, fish: {}, farm: { p: [0], lv: 0, auto: 0 }, trof: {}, house: { f: {} }, pet: '', style: '', styles: {},
     zone: O.z, story: { i: 0, n: 0, seen: '' }, unlock: {}, ending: '',
     daily: { day: '', q: [] },
     cnt: { taps: 0, kills: 0, deaths: 0, oroTot: 0, play: 0, tours: 0, wins: 0, best: 0, cook: 0, harvest: 0, chest: 0 },
@@ -473,8 +484,8 @@ function migrate(o) {
     }
   })(d, o);
   ['tyc', 'cos'].forEach(function (k) { for (var q in d[k]) if (!isNum(d[k][q]) || d[k][q] < 0) d[k][q] = 0; });
-  d.brz = (d.brz || []).filter(function (b) { return b && EL[b.el] && isNum(b.t) && isNum(b.id); }).map(function (b) { return { id: b.id | 0, el: b.el, t: clamp(b.t | 0, 0, 4) }; });
-  if (!d.brz.length) d.brz = [{ id: 1, el: 'fuego', t: 0 }];
+  d.brz = (d.brz || []).filter(function (b) { return b && EL[b.el] && isNum(b.t) && isNum(b.id); }).map(function (b) { return { id: b.id | 0, el: b.el, t: clamp(b.t | 0, 0, 4), m: isNum(b.m) && b.m > 0 ? b.m : 0 }; });
+  if (!d.brz.length) d.brz = [{ id: 1, el: 'fuego', t: 0, m: 0 }];
   if (!d.brz.some(function (b) { return b.id === d.eq; })) d.eq = d.brz[0].id;
   d.nid = Math.max(d.nid, d.brz.reduce(function (m, b) { return Math.max(m, b.id); }, 0) + 1);
   if (!Array.isArray(d.bots) || d.bots.length !== 99) d.bots = makeBots(d.seed);
@@ -488,6 +499,11 @@ function migrate(o) {
   for (var fid2 in d.fish) if (!FISHI[fid2] || !isNum(d.fish[fid2])) delete d.fish[fid2];
   d.farm.p = d.farm.p.filter(isNum).map(function (x) { return clamp(x, 0, 1); }).slice(0, 16); if (!d.farm.p.length) d.farm.p = [0];
   d.farm.lv = clamp(d.farm.lv | 0, 0, 15); d.farm.auto = clamp(d.farm.auto | 0, 0, 4);
+  for (var tk in d.trof) if (!LEAGUEI[tk] || !isNum(d.trof[tk])) delete d.trof[tk];
+  for (var hk in d.house.f) if (!FURNI[hk]) delete d.house.f[hk];
+  for (var sk2 in d.styles) if (!STYLES[sk2]) delete d.styles[sk2];
+  if (d.style && !d.styles[d.style]) d.style = '';
+  if (d.pet && !petOwned(d, d.pet)) d.pet = '';
   d.story.i = clamp(d.story.i | 0, 0, STORY.length - 1);
   if (!ZONES[d.zone]) d.zone = 'plaza';
   d.name = cleanName(d.name) || 'Heroe'; d.v = 1; d.ver = VERSION;
@@ -534,7 +550,15 @@ function fighter(st, m, el) {
     def: el === 'tierra' ? 0.12 : 0, steal: el === 'sombra' ? 0.05 : 0, regen: el === 'agua' ? 0.025 : 0.012
   };
 }
-function combat(s) { return fighter(s.stats, mBr(s) * mLeg(s), eqB(s).el); }
+function mastLv(m) { return Math.min(10, Math.floor(Math.sqrt((m || 0) / 15))); } /* maestría del brazalete: 15, 60, 135… derrotas */
+function combat(s) {
+  var b = eqB(s), c = fighter(s.stats, mBr(s) * mLeg(s), b.el);
+  c.skm *= 1 + 0.04 * mastLv(b.m); c.combo3 = 1.7; c.auraHit = 1;
+  if (s.style === 'tigre') c.combo3 = 2.2;
+  else if (s.style === 'grulla') { c.cd *= 0.88; c.crit = Math.min(0.55, c.crit + 0.05); }
+  else if (s.style === 'dragon') { c.skm *= 1.1; c.auraHit = 1.5; }
+  return c;
+}
 function statsOfPower(p) { var b = Math.max(1, p) / 3; return { fue: b, tec: b, esp: b }; }
 function foeStats(type, eP, el) {
   var F = FOES[type], f = fighter(statsOfPower(eP), 1, el || 'fuego');
@@ -570,6 +594,7 @@ function killReward(s, type, eP, R) {
   var o = Math.round(F.o * (1 + Math.sqrt(eP) / 3)); addOro(s, o);
   var ch = R() < F.ch ? (F.chn || 1) * evMul(s, 'ch') : 0; s.chispas += ch;
   var gem = F.pvp && R() < 0.05 ? 1 : 0; s.gemas += gem;
+  var eb = eqB(s); eb.m = (eb.m || 0) + (F.boss ? 5 : 1);
   s.cnt.kills++; ev(s, 'kill', { type: type });
   return { g: g, o: o, ch: ch, gem: gem };
 }
@@ -595,7 +620,7 @@ function brzOf(s, el) { for (var i = 0; i < s.brz.length; i++) if (s.brz[i].el =
 function forgeNew(s, el) {
   if (!EL[el]) return 'x'; if (elLocked(s, el)) return 'bloqueado'; if (brzOf(s, el)) return 'tienes';
   if (s.oro < NEWB.o || s.chispas < NEWB.ch) return 'falta';
-  s.oro -= NEWB.o; s.chispas -= NEWB.ch; s.brz.push({ id: s.nid++, el: el, t: 0 }); return 'ok';
+  s.oro -= NEWB.o; s.chispas -= NEWB.ch; s.brz.push({ id: s.nid++, el: el, t: 0, m: 0 }); return 'ok';
 }
 function forgeUp(s, id) {
   var b = null; s.brz.forEach(function (x) { if (x.id === id) b = x; }); if (!b) return 'x';
@@ -610,7 +635,7 @@ function shopBuy(s, id, el) {
   if (id === 'plata' || id === 'oro') {
     var t = id === 'plata' ? 1 : 2; if (!EL[el] || elLocked(s, el)) return 'bloqueado';
     var b = brzOf(s, el); if (b && b.t >= t) return 'tienes';
-    s.gemas -= it.g; if (b) b.t = t; else s.brz.push({ id: s.nid++, el: el, t: t });
+    s.gemas -= it.g; if (b) b.t = t; else s.brz.push({ id: s.nid++, el: el, t: t, m: 0 });
     ev(s, 'forge', { t: t }); return 'ok';
   }
   if (id === 'caja') { if (s.caja >= 8) return 'max'; s.gemas -= it.g; s.caja++; return 'ok'; }
@@ -630,34 +655,37 @@ function board(s) {
 
 /* ---------- torneo mundial ---------- */
 function lossPct(r) { return r <= 1 ? 0 : Math.min(100, r); }
-function makeField(s, R) {
-  var P = Math.max(poder(s), TOUR.req), f = [], used = {}; used[s.name] = 1;
+function makeField(s, R, lg) {
+  var P = Math.max(poder(s), TOUR.req) * league(lg).pw, f = [], used = {}; used[s.name] = 1;
   for (var i = 0; i < 99; i++) f.push({ n: botName(R, used), p: clamp(P * Math.exp(gauss(R) * 0.42), P * 0.35, P * 3), el: pick(R, ELK5), h: Math.floor(R() * 360) });
   return f;
 }
 function nightOrder(f, P, R) {
   return f.map(function (b, i) { return { i: i, sc: Math.log(b.p / P) * 0.9 + gauss(R) * 0.7 }; }).sort(function (a, b) { return a.sc - b.sc; }).map(function (o) { return o.i; });
 }
-function aliveAt(t) { return 99 - Math.round((99 - (TOUR.cut - 1)) * Math.pow(clamp(t / TOUR.nightT, 0, 1), 1.15)); }
+function aliveAt(t, T) { return 99 - Math.round((99 - (TOUR.cut - 1)) * Math.pow(clamp(t / (T || TOUR.nightT), 0, 1), 1.15)); }
+function aliveAt2(t) { return (TOUR.cut - 1) - Math.round((TOUR.cut - TOUR.cut2) * clamp(t / TOUR.cercoT, 0, 1)); } /* fase 2 «El Cerco»: de 31 a 15 rivales */
 function duelP(a, b) { var x = Math.pow(a, 1.6), y = Math.pow(b, 1.6); return x / (x + y); }
 function rankLoss(round, frac) { var R = [[17, 32], [9, 16], [5, 8], [3, 4], [2, 2]][clamp(round, 0, 4)]; return R[1] - Math.floor(clamp(frac, 0, 0.999) * (R[1] - R[0] + 1)); }
 function setPend(s, rk) { s.pend = { r: clamp(Math.round(rk), 1, 100), t: Date.now() }; }
-function applyTour(s, rk) {
+function applyTour(s, rk, lg) {
+  var L = league(lg);
   rk = clamp(Math.round(rk), 1, 100);
   var pct = lossPct(rk), first = s.cnt.tours === 0, capped = false;
   if (first && pct > TOUR.firstCap) { pct = TOUR.firstCap; capped = true; }
   var b0 = base(s), p0 = poder(s), k = 1 - pct / 100;
   s.stats.fue *= k; s.stats.tec *= k; s.stats.esp *= k;
   var lost = b0 - base(s), lg = lost * TOUR.legado; s.legado += lg;
-  var oro = Math.round(150 + 3000 * Math.pow((101 - rk) / 100, 2) * (1 + Math.sqrt(p0) / 20));
-  var gem = rk === 1 ? 50 : rk <= 3 ? 25 : rk <= 10 ? 10 : rk <= 32 ? 3 : 1;
+  var oro = Math.round((150 + 3000 * Math.pow((101 - rk) / 100, 2) * (1 + Math.sqrt(p0) / 20)) * L.rw);
+  var gem = Math.round((rk === 1 ? 50 : rk <= 3 ? 25 : rk <= 10 ? 10 : rk <= 32 ? 3 : 1) * L.gm);
   addOro(s, oro); s.gemas += gem;
   s.cnt.tours++; if (rk === 1) s.cnt.wins++; s.cnt.best = s.cnt.best ? Math.min(s.cnt.best, rk) : rk;
-  if (rk === 1 && !s.title) s.title = 'Campeón del Eclipse';
-  s.tours.unshift({ d: Date.now(), r: rk, pct: pct, lost: Math.round(lost), p0: p0 }); if (s.tours.length > 20) s.tours.length = 20;
+  if (rk === 1) { var ti = -1; LEAGUES.forEach(function (x) { if (x.title === s.title) ti = x.i; }); if (!s.title || (ti >= 0 && ti < L.i)) s.title = L.title; }
+  s.trof[L.id] = s.trof[L.id] ? Math.min(s.trof[L.id], rk) : rk;
+  s.tours.unshift({ d: Date.now(), r: rk, pct: pct, lost: Math.round(lost), p0: p0, lg: L.id }); if (s.tours.length > 20) s.tours.length = 20;
   s.pend = null;
   ev(s, 'tourney', { rank: rk });
-  return { rank: rk, pct: pct, capped: capped, lost: lost, lg: lg, oro: oro, gem: gem, p0: p0, p1: poder(s), first: first };
+  return { rank: rk, pct: pct, capped: capped, lost: lost, lg: lg, oro: oro, gem: gem, p0: p0, p1: poder(s), first: first, liga: L.id };
 }
 
 /* ---------- historia y misiones ---------- */
@@ -718,7 +746,7 @@ function choose(s, c) {
   if (STORY[s.story.i].id !== 'c6') return false;
   s.ending = c === 'compartir' ? 'compartir' : 'corona';
   if (s.ending === 'compartir') { s.legado += base(s) * 0.5; s.title = 'Corazón de Ánima'; s.bots.forEach(function (b) { b.p *= 1.15; }); }
-  else { var b = eqB(s); s.brz.push({ id: s.nid++, el: b.el, t: 4 }); s.title = 'Nuevo Anfitrión'; }
+  else { var b = eqB(s); s.brz.push({ id: s.nid++, el: b.el, t: 4, m: 0 }); s.title = 'Nuevo Anfitrión'; }
   s.story.n = 1; advance(s); return true;
 }
 /* ---------- misiones secundarias (pequeñas historias de los NPC) ---------- */
@@ -830,7 +858,11 @@ var ACH = [
   { id: 'pesca', t: 'Paciencia de agua', d: 'Pesca las 8 especies', v: 'fish', n: 8, g: 20 },
   { id: 'chef', t: 'Manos de panadero', d: 'Completa 50 rondas de cocina', v: 'cook', n: 50, g: 10 },
   { id: 'granjero', t: 'Manos de tierra', d: 'Cosecha 200 veces', v: 'harvest', n: 200, g: 15 },
-  { id: 'valiente', t: 'El miedo avisa', d: 'Saca 25 cofres del Bosque de la Niebla', v: 'chest', n: 25, g: 20 }
+  { id: 'valiente', t: 'El miedo avisa', d: 'Saca 25 cofres del Bosque de la Niebla', v: 'chest', n: 25, g: 20 },
+  { id: 'hogar', t: 'Hogar, dulce hogar', d: 'Compra 5 muebles para tu casa', v: 'furn', n: 5, g: 10 },
+  { id: 'maestria', t: 'Uno con el brazalete', d: 'Llega a maestría 5 con un brazalete', v: 'mast', n: 5, g: 10 },
+  { id: 'mejores', t: 'Entre los mejores', d: 'Compite en la Liga de Oro', v: 'lgoro', n: 1, g: 15 },
+  { id: 'artes', t: 'Artista marcial', d: 'Aprende los 3 estilos de combate', v: 'styles', n: 3, g: 15 }
 ];
 var ACHI = {}; ACH.forEach(function (a) { ACHI[a.id] = a; });
 function achVal(s, a) {
@@ -842,6 +874,10 @@ function achVal(s, a) {
   if (v === 'poder') return poder(s);
   if (v === 'clan') return s.clan.pts;
   if (v === 'ending') return s.ending ? 1 : 0;
+  if (v === 'furn') { var nf = 0; for (var hk in s.house.f) if (FURNI[hk]) nf++; return nf; }
+  if (v === 'mast') { var mx = 0; s.brz.forEach(function (b) { mx = Math.max(mx, mastLv(b.m)); }); return mx; }
+  if (v === 'lgoro') return s.trof.oro || s.trof.leyenda ? 1 : 0;
+  if (v === 'styles') { var ns = 0; for (var sk in s.styles) if (STYLES[sk]) ns++; return ns; }
   if (v === 'fish') { var f = 0; for (var q in s.fish) if (FISHI[q] && s.fish[q] > 0) f++; return f; }
   return s.cnt[v] || 0;
 }
@@ -870,6 +906,35 @@ function fishCatch(s, id) {
   if (!FISHI[id]) return 0; s.fish[id] = (s.fish[id] || 0) + 1; var o = fishValue(s, id); addOro(s, o); ev(s, 'fish', { n: 1 }); return o;
 }
 /* ---------- Huertos del Valle: tycoon de granja (el Espíritu acelera y mejora las cosechas) ---------- */
+/* ---------- Villa Serena: casa propia (roleplay). El confort acelera la recuperación de energía ---------- */
+var FURN = [
+  { id: 'planta', n: 'Planta feliz', ic: '🪴', c: 150, cf: 1 }, { id: 'cama', n: 'Cama mullida', ic: '🛏️', c: 300, cf: 3 },
+  { id: 'lampara', n: 'Lámpara cálida', ic: '💡', c: 400, cf: 2 }, { id: 'mesa', n: 'Mesa de té', ic: '🍵', c: 600, cf: 2 },
+  { id: 'alfombra', n: 'Alfombra de cómic', ic: '🟥', c: 900, cf: 2 }, { id: 'estante', n: 'Estante de trofeos', ic: '🏆', c: 2500, cf: 4 },
+  { id: 'sofa', n: 'Sofá para amigos', ic: '🛋️', c: 5000, cf: 5 }, { id: 'acuario', n: 'Acuario', ic: '🐠', c: 12000, cf: 6 }
+];
+var FURNI = {}; FURN.forEach(function (f, i) { FURNI[f.id] = f; f.i = i; });
+function comfort(s) { var c = 0; for (var k in s.house.f) if (FURNI[k]) c += FURNI[k].cf; return c; }
+function furnBuy(s, id) { var f = FURNI[id]; if (!f || s.house.f[id] || s.oro < f.c) return false; s.oro -= f.c; s.house.f[id] = 1; return true; }
+function setLook(s, k, i) { if (!LOOK[k] || !(i >= 0 && i < LOOK[k].length) || i !== Math.floor(i)) return false; s.look[k] = i; return true; }
+/* mascotas: se ganan ayudando (nunca se compran). Solo compañía. */
+var PETS = [
+  { id: 'gato', n: 'Bigotes Jr.', ic: '🐱', q: 'gato', how: 'Completa «El gato de Pip»' },
+  { id: 'zorro', n: 'Zorrito del Valle', ic: '🦊', q: 'cosecha', how: 'Completa «La primera cosecha»' },
+  { id: 'luci', n: 'Luciérnaga', ic: '✨', q: 'niebla', how: 'Completa «Lo que guarda la niebla»' }
+];
+var PETI = {}; PETS.forEach(function (p) { PETI[p.id] = p; });
+function petOwned(s, id) { var p = PETI[id]; return !!(p && s.side[p.q] && s.side[p.q].s === 2); }
+function setPet(s, id) { if (id === '') { s.pet = ''; return true; } if (!petOwned(s, id)) return false; s.pet = id; return true; }
+/* ---------- artes marciales: estilos que se aprenden en el Dojo ---------- */
+var STYLES = {
+  tigre:  { n: 'Estilo Tigre',  ic: '🐯', c: 500,  d: 'Golpes pesados: el tercer golpe del combo hace ×2.2 (normal ×1.7).' },
+  grulla: { n: 'Estilo Grulla', ic: '🕊️', c: 2500, d: 'Golpes veloces: 12% menos de espera entre golpes y +5% de crítico.' },
+  dragon: { n: 'Estilo Dragón', ic: '🐉', c: 9000, d: 'El aura fluye: +50% de aura por golpe y poder especial +10%.' }
+};
+function styleBuy(s, id) { var t = STYLES[id]; if (!t || s.styles[id] || s.oro < t.c) return false; s.oro -= t.c; s.styles[id] = 1; s.style = id; return true; }
+function styleSet(s, id) { if (id !== '' && !s.styles[id]) return false; s.style = id; return true; }
+
 function farmG(s) { return 30 * Math.pow(0.85, s.farm.lv) / Math.sqrt(magia(s)); } /* segundos por cosecha */
 function farmVal(s) { return Math.round(20 * (1 + s.farm.p.length * 0.05) * magia(s) * (1 + s.farm.lv * 0.1) * evMul(s, 'oro')); }
 function farmCost(s, k) {
@@ -961,7 +1026,7 @@ function dailyClaim(s, i) { var q = s.daily.q[i]; if (!q || q.done || q.p < q.n)
 function tick(s, dt) {
   if (!(dt > 0)) return; dt = Math.min(dt, 5);
   var p = prod(s); if (p > 0) addOro(s, p * dt);
-  s.en = Math.min(enMax(s), s.en + 0.6 * dt);
+  s.en = Math.min(enMax(s), s.en + 0.6 * (1 + comfort(s) * 0.02) * dt);
   botsTick(s, dt); s.cnt.play += dt; farmTick(s, dt);
 }
 function offline(s, now) {
@@ -993,7 +1058,9 @@ var API = {
   CLANS: CLANS, CLANI: CLANI, CLANPTS: CLANPTS, weekKey: weekKey, clanMul: clanMul, clanBase: clanBase, clanStand: clanStand, clanJoin: clanJoin, clanWeek: clanWeek,
   EVENTS: EVENTS, EVENTI: EVENTI, eventOf: eventOf, eventSync: eventSync, evMul: evMul, ACH: ACH, ACHI: ACHI, achVal: achVal, achCheck: achCheck,
   FISH: FISH, FISHI: FISHI, fishRoll: fishRoll, fishValue: fishValue, fishCatch: fishCatch, cookRound: cookRound,
-  farmG: farmG, farmVal: farmVal, farmCost: farmCost, farmBuy: farmBuy, farmTick: farmTick, farmHarvest: farmHarvest, farmWater: farmWater, chestLoot: chestLoot, bankBag: bankBag
+  farmG: farmG, farmVal: farmVal, farmCost: farmCost, farmBuy: farmBuy, farmTick: farmTick, farmHarvest: farmHarvest, farmWater: farmWater, chestLoot: chestLoot, bankBag: bankBag,
+  LEAGUES: LEAGUES, LEAGUEI: LEAGUEI, league: league, leagueOpen: leagueOpen, aliveAt2: aliveAt2, mastLv: mastLv,
+  FURN: FURN, FURNI: FURNI, comfort: comfort, furnBuy: furnBuy, setLook: setLook, PETS: PETS, PETI: PETI, petOwned: petOwned, setPet: setPet, STYLES: STYLES, styleBuy: styleBuy, styleSet: styleSet
 };
 root.BDP = API;
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -1051,8 +1118,8 @@ var SFX = {
   step: function () { noise(.03, .03, 300); }
 };
 function sfx(n) { try { if (AC && SFX[n]) SFX[n](); } catch (e) { } }
-var SCALES = { bosque: [0, 1, 6], huertos: [0, 2, 4, 7, 9, 11], plaza: [0, 2, 4, 7, 9], dojo: [0, 3, 5, 7, 10], forja: [0, 2, 4, 5, 7], tierras: [0, 1, 5, 7, 8], coliseo: [0, 3, 6, 7, 10], night: [0, 1, 6], duel: [0, 3, 5, 6, 7] };
-var ROOTS = { bosque: 98, huertos: 262, plaza: 220, dojo: 196, forja: 233, tierras: 174.6, coliseo: 164.8, night: 110, duel: 146.8 };
+var SCALES = { bosque: [0, 1, 6], huertos: [0, 2, 4, 7, 9, 11], plaza: [0, 2, 4, 7, 9], dojo: [0, 3, 5, 7, 10], forja: [0, 2, 4, 5, 7], tierras: [0, 1, 5, 7, 8], coliseo: [0, 3, 6, 7, 10], night: [0, 1, 6], cerco: [0, 1, 5, 6, 8], villa: [0, 4, 7, 9, 11], duel: [0, 3, 5, 6, 7] };
+var ROOTS = { bosque: 98, huertos: 262, plaza: 220, dojo: 196, forja: 233, tierras: 174.6, coliseo: 164.8, night: 110, cerco: 130.8, villa: 246.9, duel: 146.8 };
 function musicTick() {
   if (!AC || !S || !S.cfg.mus || !MAP) return;
   var z = MAP.id, sc = SCALES[z] || SCALES.plaza, rt = ROOTS[z] || 220, spb = z === 'duel' ? .14 : z === 'night' ? .5 : .2;
@@ -1076,6 +1143,8 @@ var TH = {
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
   bosque:  { f: ['#1f2a22', '#1b251e'], p: '#2a2f26', w: ['#3a3a46', '#1c1c24'], tr: ['#222', '#111'], wa: '#223', bg: '#050806' },
   huertos: { f: ['#7fb24a', '#76a843'], p: '#b08a52', w: ['#8a5a2b', '#5a3825'], tr: ['#3f9a5a', '#25693b'], wa: '#39c8ff', alt: '#6b4423', bg: '#2f4a1f' },
+  cerco:   { f: ['#3a2a44', '#352640'], p: '#463352', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0612' },
+  villa:   { f: ['#a8d67a', '#9fce72'], p: '#e3d3b0', w: ['#f2e8d5', '#b8a583'], tr: ['#3f9a5a', '#25693b'], wa: '#39c8ff', alt: '#d9b98a', bg: '#2f4a1f' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
 var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza', vant: 'coliseo', elio: 'bosque', rosa: 'huertos' };
@@ -1157,7 +1226,7 @@ var MAPS = {};
 function buildPlaza() {
   var m = newMap('plaza', 35, 29), R = C.mulberry(11);
   tRect(m, 1, 13, 33, 3, 1); tRect(m, 16, 1, 3, 27, 1); tRect(m, 12, 9, 11, 11, 1);
-  border(m, [[17, 0], [17, 28], [0, 14], [34, 14]]); fragsIn(m);
+  border(m, [[17, 0], [17, 28], [0, 14], [34, 14], [6, 0]]); fragsIn(m); tRect(m, 5, 1, 3, 12, 1); portal(m, 6, 1, 'villa', 'N');
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
   npc(m, 'pip', 13, 10); npc(m, 'sol', 24, 11);
@@ -1236,7 +1305,7 @@ function buildColiseo() {
   MAPS.coliseo = m; return m;
 }
 function buildArena(kind) {
-  var big = kind === 'night', n = big ? 30 : 18, rad = big ? 13.6 : 7.6, m = newMap(kind, n, n), c = n / 2, R = C.mulberry(big ? 66 : 77);
+  var big = kind !== 'duel', n = big ? 30 : 18, rad = big ? 13.6 : 7.6, m = newMap(kind, n, n), c = n / 2, R = C.mulberry(big ? 66 : 77);
   for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) if (Math.hypot(i + .5 - c, j + .5 - c) > rad) tSet(m, i, j, 9);
   wallRuns(m, function (i, j) { return tAt(m, i, j) === 9 && (tAt(m, i + 1, j) !== 9 || tAt(m, i - 1, j) !== 9 || tAt(m, i, j + 1) !== 9 || tAt(m, i, j - 1) !== 9); }, big ? 40 : 30);
   if (big) scatter(m, R, 16, function (mm, x, y) { block(mm, x, y, 1, 1, 70, mm.th.w, { pillar: 1 }); }, 3, 3, 27, 27, function (x, y) { return Math.hypot(x - c, y - c) < 4; });
@@ -1246,7 +1315,7 @@ function buildArena(kind) {
 }
 function getMap(id) {
   if (MAPS[id]) return MAPS[id];
-  var b = { plaza: buildPlaza, dojo: buildDojo, forja: buildForja, tierras: buildTierras, coliseo: buildColiseo, bosque: buildBosque, huertos: buildHuertos }[id];
+  var b = { plaza: buildPlaza, dojo: buildDojo, forja: buildForja, tierras: buildTierras, coliseo: buildColiseo, bosque: buildBosque, huertos: buildHuertos, villa: buildVilla }[id];
   var m = b(); renderGround(m); return m;
 }
 
@@ -1425,6 +1494,8 @@ function drawObj(g, o) {
       g.fillStyle = 'rgba(255,255,255,.55)'; for (var k2 = 0; k2 < 6; k2++) { var yy = (time * 90 + k2 * 22) % 120; g.fillRect(X - 50 + k2 * 18, Y - 30 + yy * .5, 3, 10); }
     } else if (o.d === 'sign') {
       rr(g, X - 2, Y - 30, 4, 30, '#5a3825'); rr(g, X - 46, Y - 44, 92, 18, PAP); g.fillStyle = INK; g.font = '700 10px Cuerpo, sans-serif'; g.textAlign = 'center'; g.fillText(o.txt, X, Y - 31);
+    } else if (o.d === 'furn') {
+      rr(g, X - 15, Y - 22, 30, 22, PAP); ctext(g, o.ic, X, Y - 11, 20, '#fff', 0, 'sans-serif');
     } else if (o.d === 'cofre') {
       rr(g, X - 14, Y - 20, 28, 18, '#7a4a2a'); rr(g, X - 14, Y - 26, 28, 8, '#a8740c'); g.fillStyle = '#f0b429'; g.fillRect(X - 3, Y - 20, 6, 7); g.strokeRect(X - 3, Y - 20, 6, 7);
     } else if (o.d === 'plot') {
@@ -1526,12 +1597,12 @@ function attack() {
   if (P.dead || P.atkCd > 0) return;
   var cs = P.cs, tg = nearestFoe(P, 130); if (tg) face(P, tg.x, tg.y);
   P.combo = time - P.lastAtk < .75 ? (P.combo + 1) % 3 : 0; P.lastAtk = time;
-  var mul = [1, 1.1, 1.7][P.combo]; P.atkCd = cs.cd * (P.combo === 2 ? 1.35 : 1); P.atkA = .16;
+  var mul = [1, 1.1, cs.combo3 || 1.7][P.combo]; P.atkCd = cs.cd * (P.combo === 2 ? 1.35 : 1); P.atkA = .16;
   addFx({ k: 'slash', x: P.x + P.fx * 10, y: P.y - 20 + P.fy * 10, a: Math.atan2(P.fy, P.fx), r: 34, c: brzColor(), life: .16 });
   sfx('swing');
   var hit = 0;
   foes().forEach(function (f) { if (inArc(P, f, 60 + f.r, 1.15)) { var cr = Math.random() < cs.crit; dmgFoe(f, cs.atk * mul * (cr ? 1.8 : 1), cr || P.combo === 2, P.fx, P.fy, P.combo === 2 ? 300 : 150); hit++; } });
-  if (hit) { P.aura = Math.min(100, P.aura + 7 * hit); hitstop = P.combo === 2 ? .07 : .04; shake(P.combo === 2 ? 7 : 3); vib(12); }
+  if (hit) { P.aura = Math.min(100, P.aura + 7 * (cs.auraHit || 1) * hit); hitstop = P.combo === 2 ? .07 : .04; shake(P.combo === 2 ? 7 : 3); vib(12); }
 }
 function dmgFoe(f, d, big, kx, ky, kb) {
   if (f.hp <= 0) return;
@@ -1634,7 +1705,7 @@ function playerDown() {
     if (MAP.id === 'bosque') { var nb = BAG ? BAG.n : 0; BAG = null; setTimeout(function () { toast(nb ? 'La niebla se quedó con tu bolsa (' + nb + ' cofres). La próxima vez, sal antes.' : 'La niebla te expulsó. Respira y vuelve a intentarlo.', 'bad'); P.dead = 0; P.hp = P.cs.maxHp; go('tierras', 'respawn2'); }, 1400); return; }
     var lost = Math.floor(S.oro * .05); S.oro -= lost;
     setTimeout(function () { toast('Te derrotaron. Perdiste ' + C.fmt(lost) + ' de oro. ¡Levántate!', 'bad'); P.dead = 0; P.hp = P.cs.maxHp; go(MAP.id === 'tierras' ? 'tierras' : MAP.id, 'respawn'); }, 1400);
-  } else if (mode === 'night') setTimeout(function () { nightLose(); }, 1300);
+  } else if (mode === 'night' || mode === 'cerco') setTimeout(function () { nightLose(); }, 1300);
   else if (mode === 'duel') setTimeout(function () { duelEnd(false); }, 1300);
 }
 
@@ -1708,7 +1779,7 @@ function updProj(p, dt) {
 }
 
 /* ---------- bots sociales ---------- */
-var BOTN = { plaza: 7, dojo: 5, forja: 4, tierras: 5, coliseo: 5, huertos: 3 };
+var BOTN = { plaza: 7, dojo: 5, forja: 4, tierras: 5, coliseo: 5, huertos: 3, villa: 3 };
 function spawnBots(id) {
   var n = BOTN[id] || 0, used = {};
   for (var i = 0; i < n; i++) {
@@ -1754,6 +1825,39 @@ function quickChat(t) {
 }
 
 /* ---------- grupo de amigos (aliados que te siguen y pelean contigo) ---------- */
+/* mascota: te sigue a todas partes (solo compañía) */
+function spawnPet() { if (S.pet && C.petOwned(S, S.pet)) ents.push({ k: 'pet', id: S.pet, x: P.x + 24, y: P.y + 10, r: 6, walk: 0, mv: 0, dir: 3 }); }
+function updPet(e, dt) {
+  var tx = P.x - P.fx * 30 + 14, ty = P.y - P.fy * 30 + 8, dx = tx - e.x, dy = ty - e.y, l = Math.hypot(dx, dy); e.mv = 0;
+  if (l > 400) { e.x = tx; e.y = ty; } else if (l > 14) { var sp = Math.min(l * 4, 300); e.x += dx / l * sp * dt; e.y += dy / l * sp * dt; e.mv = 1; e.walk += dt * 12; e.dir = dx < 0 ? 2 : 3; }
+}
+function drawPet(g, e) {
+  var x = e.x, y = e.y, b = e.mv ? Math.abs(Math.sin(e.walk)) * 3 : 0; g.save(); g.translate(x, y - b); if (e.dir === 2) g.scale(-1, 1); g.lineWidth = 2; g.strokeStyle = INK;
+  if (e.id === 'luci') { var fy = -26 + Math.sin(time * 4) * 5; g.fillStyle = 'rgba(255,241,168,.35)'; g.beginPath(); g.arc(0, fy, 10, 0, TAU); g.fill(); g.fillStyle = '#fff1a8'; g.beginPath(); g.arc(0, fy, 4, 0, TAU); g.fill(); g.stroke(); g.restore(); return; }
+  var c = e.id === 'zorro' ? '#ff7a2e' : '#f0b429';
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, 0, 9, 3, 0, 0, TAU); g.fill();
+  g.fillStyle = c; g.beginPath(); g.ellipse(0, -7, 9, 6, 0, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(8, -13, 6, 0, TAU); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(4, -17); g.lineTo(5, -24); g.lineTo(9, -18); g.moveTo(9, -18); g.lineTo(12, -24); g.lineTo(13, -16); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-8, -8); g.quadraticCurveTo(-17, -16 + Math.sin(time * 6) * 3, -12, -20); g.stroke();
+  if (e.id === 'zorro') { g.fillStyle = '#fff'; g.beginPath(); g.arc(11, -11, 2.5, 0, TAU); g.fill(); }
+  g.fillStyle = INK; g.fillRect(9, -15, 2, 2); g.restore();
+}
+/* ---------- Villa Serena: tu casa (roleplay) ---------- */
+var FSLOT = { cama: [10, 7], planta: [17, 7], lampara: [14, 7], mesa: [13, 10], alfombra: [15, 10], estante: [11, 9], sofa: [16, 9], acuario: [10, 11] };
+function buildVilla() {
+  var m = newMap('villa', 28, 24), R = C.mulberry(77);
+  tRect(m, 12, 13, 3, 10, 1); tRect(m, 1, 18, 26, 2, 1); border(m, [[13, 23]]); fragsIn(m);
+  tRect(m, 9, 6, 10, 7, 3);
+  wallRuns(m, function (i, j) { return ((j === 5 && i >= 8 && i <= 19) || ((i === 8 || i === 19) && j >= 5 && j <= 12) || (j === 13 && i >= 8 && i <= 19 && Math.abs(i - 13) > 1)); }, 22, ['#e0262f', '#8a1219']);
+  C.FURN.forEach(function (f) { var q = FSLOT[f.id]; deco(m, 'furn', q[0], q[1], { fid: f.id, ic: f.ic, when: function () { return !!S.house.f[f.id]; } }); });
+  inter(m, 'cama', 10.5 * T, 8.2 * T, 'DESCANSAR', function () { emote(P, 'sentar'); S.en = C.enMax(S); toast('Descansaste en tu cama: energía completa 😴', 'ok'); sfx('up'); }, function () { return !!S.house.f.cama; });
+  block(m, 15, 14, 2, 1, 22, ['#f0b429', '#a8740c'], { sign: 'MI CASA' }); inter(m, 'casa', 16 * T, 15.6 * T, 'MI CASA · MUEBLES Y ARMARIO', function () { openPanel('casa'); });
+  [[2, 4, '#39c8ff'], [22, 4, '#a42cff'], [2, 12, '#2dffb3'], [22, 12, '#ff8fb8']].forEach(function (h, k) { block(m, h[0], h[1], 4, 3, 46, [h[2], shade(h[2], .6)], { sign: 'CASA DE ' + S.bots[(k * 7 + 3) % 99].n.slice(0, 9).toUpperCase() }); });
+  tRect(m, 21, 20, 4, 2, 2); deco(m, 'lamp', 10, 15); deco(m, 'lamp', 17, 15);
+  portal(m, 13, 22, 'plaza', 'S');
+  scatter(m, R, 14, tree, 1, 1, 27, 22);
+  MAPS.villa = m; return m;
+}
 function spawnParty() {
   S.party.forEach(function (bi, k) { var b = S.bots[bi]; if (!b) return; ents.push({ k: 'ally', bi: bi, name: b.n, el: b.el, look: botLook(b.h), x: P.x - 40 + k * 80, y: P.y + 30, r: 12, dir: 0, walk: 0, mv: 0, atkA: 0, cd: 0, slot: k, stuck: 0 }); });
 }
@@ -1817,12 +1921,13 @@ function loadZone(id, from) {
   if (from === 'respawn2') a = MAP.arrive.bosque || a;
   if (!a) { var n = MAP.npcs[0]; a = n ? { x: n.x, y: n.y + T * 1.4 } : MAP.spawn; }
   P.x = a.x; P.y = a.y; P.portCd = 1; cam.x = P.x; cam.y = P.y;
-  ents.push(P); spawnParty(); spawnBots(id); spawnT = 0;
+  ents.push(P); spawnParty(); spawnPet(); spawnBots(id); spawnT = 0;
+  if (id === 'villa') S.friends.slice(0, 4).forEach(function (f, k) { var b = S.bots[f.bi]; if (b) ents.push({ k: 'bot', bi: f.bi, name: b.n, el: b.el, x: (11 + k * 2) * T, y: 10.5 * T, r: 12, dir: 0, walk: 0, mv: 0, look: botLook(b.h), t: rnd(2, 6), chatT: rnd(3, 9), atkA: 0, stuck: 0 }); });
   if (id === 'tierras') { MAP.golemT = MAP.golemT || 0; for (var i = 0; i < 6; i++) spawnFoes(1); }
   if (MAP.dark) { LAN.fuel = 100; LAN.t = 0; LAN.whT = 15; BAG = { o: 0, ch: 0, gem: 0, n: 0 }; for (i = 0; i < 6; i++) addLlama(); for (i = 0; i < 4; i++) addShadow(); $('tbar').hidden = false; document.body.classList.add('tour'); }
   if (id === 'huertos') for (i = 0; i < S.farm.auto; i++) { var hp2 = freeSpot(0); if (hp2) ents.push({ k: 'cont', name: 'Ayudante ' + (i + 1), el: 'tierra', look: { skin: '#e0ac69', shirt: '#2dffb3', pants: '#5a3825', hair: '#5a3825', cap: '#f0b429' }, x: hp2.x, y: hp2.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); }
   C.ev(S, 'visit', { z: id });
-  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Al sur está el Bosque de la Niebla (zona de terror).', bosque: 'ZONA DE TERROR: tu linterna se gasta. Las sombras se congelan con tu luz. Los cofres solo son tuyos si SALES por el portal.', huertos: 'Toca una parcela para REGAR (+15%) o COSECHAR. Mejora la granja y contrata ayudantes en la mesa.', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
+  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Al sur está el Bosque de la Niebla (zona de terror).', villa: 'Esta es tu casa. Compra muebles (dan confort: tu energía se recupera más rápido), cambia tu ropa y recibe a tus amigos.', bosque: 'ZONA DE TERROR: tu linterna se gasta. Las sombras se congelan con tu luz. Los cofres solo son tuyos si SALES por el portal.', huertos: 'Toca una parcela para REGAR (+15%) o COSECHAR. Mejora la granja y contrata ayudantes en la mesa.', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
   if (ZT[id]) tip('z_' + id, ZT[id], 1);
   zoneTitle(); hudFull();
 }
@@ -1836,6 +1941,12 @@ function findInter() {
 function interact() { if (curInter && !P.dead && mode === 'world') { sfx('ui'); curInter.act(); } }
 
 /* ---------- objetivo (flecha guía) ---------- */
+var ZG = { plaza: ['coliseo', 'tierras', 'dojo', 'forja', 'villa'], dojo: ['plaza'], forja: ['plaza', 'huertos'], tierras: ['plaza', 'bosque'], coliseo: ['plaza'], huertos: ['forja'], bosque: ['tierras'], villa: ['plaza'] };
+function hop(a, z) { /* siguiente zona en el camino más corto de a → z */
+  var prev = {}, q = [a]; prev[a] = a;
+  while (q.length) { var c = q.shift(); if (c === z) break; (ZG[c] || []).forEach(function (n) { if (!(n in prev)) { prev[n] = c; q.push(n); } }); }
+  if (!(z in prev)) return 'plaza'; var x = z; while (prev[x] !== a) x = prev[x]; return x;
+}
 function objTarget() {
   var o = C.stepObj(S); if (!o) return null;
   var z = null, id = null;
@@ -1847,7 +1958,7 @@ function objTarget() {
   else if (o.k === 'tourney' || o.k === 'boss') { z = 'coliseo'; id = 'npc:heraldo'; }
   else if (o.k === 'fish') { z = 'plaza'; id = 'pesca'; }
   if (!z || mode !== 'world') return null;
-  if (MAP.id !== z) { var to = MAP.id === 'plaza' ? z : 'plaza'; for (var i = 0; i < MAP.portals.length; i++) if (MAP.portals[i].to === to) return { x: MAP.portals[i].x, y: MAP.portals[i].y, por: 1 }; return null; }
+  if (MAP.id !== z) { var to = hop(MAP.id, z); for (var i = 0; i < MAP.portals.length; i++) if (MAP.portals[i].to === to) return { x: MAP.portals[i].x, y: MAP.portals[i].y, por: 1 }; return null; }
   if (id === 'golem') { var g = null; ents.forEach(function (e) { if (e.type === 'golem' && !e.dead) g = e; }); return g ? { x: g.x, y: g.y - 40 } : { x: 39.5 * T, y: 18 * T }; }
   if (!id) return null;
   for (var k = 0; k < MAP.inter.length; k++) { var it = MAP.inter[k]; if (it.id === id && (!it.when || it.when())) return { x: it.x, y: it.y - 40 }; }
@@ -1868,6 +1979,7 @@ function update(dt) {
     if (e.k === 'foe' && !e.dead) { if (e.type === 'sombra') updShadow(e, dt); else updFoe(e, dt); }
     else if (e.k === 'bot') updBot(e, dt);
     else if (e.k === 'ally') updAlly(e, dt);
+    else if (e.k === 'pet') updPet(e, dt);
     else if (e.k === 'proj') updProj(e, dt);
     else if (e.k === 'cont') updCont(e, dt);
     if (e.bub) { e.bub.life -= dt; if (e.bub.life <= 0) e.bub = null; }
@@ -1877,6 +1989,7 @@ function update(dt) {
   updFx(dt);
   if (mode === 'night') updNight(dt);
   else if (mode === 'world' && MAP.dark && BAG) updForest(dt);
+  else if (mode === 'cerco') updCerco(dt);
   else if (mode === 'duel') updDuel(dt);
 }
 function render() {
@@ -1911,10 +2024,12 @@ function render() {
     else if (e.k === 'npc') drawAvatar(ctx, e.x, e.y, e.look, { dir: Math.hypot(P.x - e.x, P.y - e.y) < 120 ? (P.y < e.y - 20 ? 1 : P.x < e.x - 30 ? 2 : P.x > e.x + 30 ? 3 : 0) : 0, el: C.NPC[e.key].c });
     else if (e.k === 'bot' || e.k === 'cont' || e.k === 'ally') drawAvatar(ctx, e.x, e.y - emoY(e), e.look, { dir: e.dir, walk: e.walk, mv: e.mv, atk: emoA(e) || e.atkA, el: C.EL[e.el].c });
     else if (e.k === 'foe') drawFoe(ctx, e);
+    else if (e.k === 'pet') drawPet(ctx, e);
     else if (e.k === 'proj') { ctx.fillStyle = e.c; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x - 3, e.y - 3, e.r * .35, 0, TAU); ctx.fill(); }
   }
   drawFx(ctx);
   if (mode === 'night' || MAP.dark) drawDark();
+  if (mode === 'cerco') drawCerco();
   /* etiquetas, barras y globos */
   var k2 = Z * DPR; ctx.setTransform(k2, 0, 0, k2, (W / 2 - (cam.x + sx) * Z) * DPR, (H / 2 - (cam.y + sy) * Z) * DPR);
   for (i = 0; i < list.length; i++) {
@@ -1957,12 +2072,13 @@ function arrow(o) {
 
 /* ---------- torneo: la Noche ---------- */
 
-function tourStart() {
-  if (C.poder(S) < C.TOUR.req) { toast('Necesitas ' + C.TOUR.req + ' de Poder para inscribirte.', 'bad'); return; }
-  TR = { field: C.makeField(S, Math.random), P: Math.max(C.poder(S), C.TOUR.req), t: 0, out: 0, round: 0, buf: { atk: 1, hp: 1, au: 1 }, fuel: 100, whisp: 0, beatT: 0, pendT: 0 };
+function tourStart(lg) {
+  var L = C.league(lg);
+  if (C.poder(S) < L.req) { toast('Necesitas ' + C.fmt(L.req) + ' de Poder para la ' + L.n + '.', 'bad'); return; }
+  TR = { L: L, field: C.makeField(S, Math.random, L.id), P: Math.max(C.poder(S), C.TOUR.req) * L.pw, t: 0, out: 0, round: 0, buf: { atk: 1, hp: 1, au: 1 }, fuel: 100, whisp: 0, beatT: 0, pendT: 0 };
   TR.order = C.nightOrder(TR.field, TR.P, Math.random);
   C.setPend(S, 100); save();
-  cinematic('LA NOCHE DEL ECLIPSE', 'Fase 1 · Sobrevive 75 segundos. Las sombras se congelan con tu luz.', function () { loadNight(); });
+  cinematic('LA NOCHE DEL ECLIPSE', L.ic + ' ' + L.n + ' · Fase 1 de 3 · Sobrevive ' + L.night + ' segundos. Las sombras se congelan con tu luz.', function () { loadNight(); });
 }
 function loadNight() {
   MAP = buildArena('night'); renderGround(MAP); mode = 'night'; ents = []; fx = [];
@@ -2056,8 +2172,8 @@ function updShadow(e, dt) {
 }
 function updNight(dt) {
   TR.t += dt; LAN.t = TR.t; LAN.fuel = Math.max(0, LAN.fuel - 1.45 * dt); lanternPick();
-  TR.shT += dt; var want = Math.min(9, 3 + Math.floor(TR.t / 11)), have = ents.filter(function (e) { return e.type === 'sombra'; }).length; if (have < want && TR.shT > 2) { TR.shT = 0; addShadow(); }
-  var alive = C.aliveAt(TR.t);
+  TR.shT += dt; var want = Math.min(9 + TR.L.i, 3 + TR.L.i + Math.floor(TR.t / 11)), have = ents.filter(function (e) { return e.type === 'sombra'; }).length; if (have < want && TR.shT > 2) { TR.shT = 0; addShadow(); }
+  var alive = C.aliveAt(TR.t, TR.L.night);
   while (99 - TR.out > alive && TR.out < TR.order.length) {
     var fi = TR.order[TR.out++], b = TR.field[fi]; feed('✖ <b>' + b.n + '</b> cayó en la oscuridad');
     ents.forEach(function (e) { if (e.k === 'cont' && e.fi === fi) { e.dead = 1; parts(e.x, e.y - 20, '#000', 12); txt(e.x, e.y - 60, '¡AAAH!', '#fff', 18); } });
@@ -2066,7 +2182,7 @@ function updNight(dt) {
   heartbeat(dt);
   if (TR.t > 22 && TR.whisp === 0) { TR.whisp = 1; whisper('…tu poder… será mío…'); }
   if (TR.t > 50 && TR.whisp === 1) { TR.whisp = 2; whisper('…nadie vale nada sin poder…'); }
-  var left = Math.max(0, C.TOUR.nightT - TR.t);
+  var left = Math.max(0, TR.L.night - TR.t);
   tbar('NOCHE · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · LUZ <b>' + Math.round(LAN.fuel) + '%</b>');
   if (left <= 0 && !P.dead) nightWin();
 }
@@ -2093,11 +2209,45 @@ function drawDark() {
 function nightLose() { var rk = 99 - TR.out + 1; finishTour(rk); }
 function nightWin() {
   mode = 'pause'; sfx('win');
+  C.setPend(S, 32); save(); $('tbar').hidden = true;
+  banner('¡SOBREVIVISTE!', 'Top 32 · Fase 2: El Cerco');
+  setTimeout(function () { cinematic('EL CERCO', 'Fase 2 de 3 · La niebla se cierra durante 60 s. Quédate dentro del círculo, esquiva a los Ecos y usa las llamas para curarte. Pasan 16.', loadCerco); }, 1600);
+}
+/* ---------- torneo fase 2: El Cerco (supervivencia estratégica, de 32 a 16) ---------- */
+function loadCerco() {
+  MAP = buildArena('cerco'); renderGround(MAP); mode = 'cerco'; ents = []; fx = [];
+  P.buf = TR.buf; refreshCombat(); P.dead = 0; P.hp = Math.max(P.hp, P.cs.maxHp * .6); P.x = MAP.spawn.x; P.y = MAP.spawn.y; cam.x = P.x; cam.y = P.y; ents.push(P);
+  var vis = TR.order.slice(TR.order.length - (S.cfg.q ? 10 : 6)); vis.forEach(function (fi) { var pos = freeSpot(100), b = TR.field[fi]; if (pos) ents.push({ k: 'cont', fi: fi, name: b.n, el: b.el, look: botLook(b.h), x: pos.x, y: pos.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); });
+  for (var i = 0; i < 4; i++) addLlama();
+  TR.ct = 0; TR.cs = 0; TR.cd2 = 0; TR.pendT = 0; zoneTitle(); hudFull(); $('tbar').hidden = false; document.body.classList.add('tour');
+}
+function cercoR() { return (13.2 - 8.4 * C.clamp(TR.ct / C.TOUR.cercoT, 0, 1)) * T; }
+function updCerco(dt) {
+  TR.ct += dt; var cx = MAP.spawn.x, cy = MAP.spawn.y, r = cercoR();
+  MAP.objs = MAP.objs.filter(function (o) { if (o.ll && Math.hypot(o.x - P.x, o.y - P.y) < 30) { heal(P.cs.maxHp * .15); sfx('coin'); txt(P.x, P.y - 60, '+15% VIDA', '#2dffb3', 18); setTimeout(function () { if (mode === 'cerco') { var a = rnd(0, TAU), d = rnd(0, cercoR() * .8); MAP.objs.push({ t: 'deco', d: 'llama', x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, k: cy + Math.sin(a) * d, ll: 1 }); } }, 4000); return false; } return true; });
+  TR.cd2 -= dt; if (Math.hypot(P.x - cx, P.y - cy) > r && TR.cd2 <= 0 && !P.dead) { TR.cd2 = .5; P.iT = 0; hurtP(P.cs.maxHp * .07); txt(P.x, P.y - 80, '¡VUELVE AL CÍRCULO!', '#c77dff', 15, .6); }
+  TR.cs -= dt; var nf = foes().length;
+  if (TR.cs <= 0 && nf < 5 + TR.L.i) { TR.cs = 3.2; var a2 = rnd(0, TAU), d2 = Math.min(r * .9, 260), fx2 = P.x + Math.cos(a2) * d2, fy2 = P.y + Math.sin(a2) * d2; if (!hitT(fx2, fy2, 12)) { var f = mkFoe(Math.random() < .6 ? 'eco' : 'lobo', fx2, fy2, TR.P * .5); f.st = 'chase'; f.aggro = 2000; ents.push(f); parts(fx2, fy2 - 10, '#a42cff', 8); } }
+  ents.forEach(function (e) { if (e.k === 'cont') { var d3 = Math.hypot(e.x - cx, e.y - cy); if (d3 > r - 30) { e.tx = cx + (e.x - cx) / d3 * (r - 80) * Math.random(); e.ty = cy + (e.y - cy) / d3 * (r - 80) * Math.random(); } } });
+  var alive = C.aliveAt2(TR.ct);
+  while (99 - TR.out > alive && TR.out < TR.order.length) { var fi = TR.order[TR.out++], b = TR.field[fi]; feed('✖ <b>' + b.n + '</b> quedó fuera del cerco'); ents.forEach(function (e) { if (e.k === 'cont' && e.fi === fi) { e.dead = 1; parts(e.x, e.y - 20, '#a42cff', 12); } }); }
+  TR.pendT -= dt; if (TR.pendT <= 0) { TR.pendT = 1; C.setPend(S, 99 - TR.out + 1); }
+  var left = Math.max(0, C.TOUR.cercoT - TR.ct);
+  tbar('CERCO · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · PASAN 16');
+  if (left <= 0 && !P.dead) cercoWin();
+}
+function drawCerco() {
+  var cx = MAP.spawn.x, cy = MAP.spawn.y, r = cercoR();
+  ctx.fillStyle = 'rgba(120,40,200,' + (.3 + Math.sin(time * 3) * .06) + ')'; ctx.beginPath(); ctx.rect(cam.x - W / Z, cam.y - H / Z, W / Z * 2, H / Z * 2); ctx.arc(cx, cy, r, 0, TAU, true); ctx.fill('evenodd');
+  ctx.strokeStyle = '#c77dff'; ctx.lineWidth = 4; ctx.setLineDash([14, 8]); ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+}
+function cercoWin() {
+  mode = 'pause'; sfx('win'); ents.forEach(function (e) { if (e.k === 'foe') e.dead = 1; });
   var surv = TR.order.slice(TR.out).map(function (i) { return { i: i, p: TR.field[i].p }; });
   surv.push({ i: -1, p: C.poder(S) }); surv.sort(function (a, b) { return b.p - a.p; });
   var br = []; for (var k = 0; k < surv.length / 2; k++) { br.push(surv[k]); br.push(surv[surv.length - 1 - k]); }
-  TR.br = br; TR.round = 0; C.setPend(S, 32); save(); $('tbar').hidden = true;
-  banner('¡SOBREVIVISTE!', 'Top 32 · Ahora, los duelos');
+  TR.br = br; TR.round = 1; C.setPend(S, 16); save(); $('tbar').hidden = true;
+  banner('¡PASASTE EL CERCO!', 'Top 16 · Fase 3: los duelos');
   setTimeout(nextDuel, 1800);
 }
 function nextDuel() {
@@ -2139,7 +2289,7 @@ function duelEnd(won) {
 }
 function finishTour(rk) {
   mode = 'pause'; $('tbar').hidden = true;
-  var res = C.applyTour(S, rk); save(); refreshCombat();
+  var res = C.applyTour(S, rk, TR && TR.L ? TR.L.id : ''); save(); refreshCombat();
   S.bots.forEach(function (b) { if (Math.random() < .3) b.p *= 1 - Math.random() * .3; });
   showResults(res, function () {
     var go2 = function () { TR = null; P.buf = { atk: 1, hp: 1, au: 1 }; refreshCombat(); P.hp = P.cs.maxHp; loadZone('coliseo', 'arena'); storyCheck(true); };
@@ -2181,6 +2331,7 @@ function zoneTitle() {
   var z = C.ZONES[MAP.id];
   if (z) { $('zK').textContent = z.k; $('zN').textContent = z.n; }
   else if (mode === 'night') { $('zK').textContent = 'TORNEO · FASE 1'; $('zN').textContent = 'La Noche'; }
+  else if (mode === 'cerco') { $('zK').textContent = 'TORNEO · FASE 2'; $('zN').textContent = 'El Cerco'; }
   else { $('zK').textContent = 'TORNEO · DUELO'; $('zN').textContent = TR && TR.boss ? 'Palco de Vant' : 'Arena'; }
 }
 function hudFull() { lastRank = lastRank < 0 ? C.rankOf(C.poder(S)) : lastRank; hud(); questBox(); }
@@ -2312,6 +2463,8 @@ var PANELS = {
   gear: function () {
     var h = head('DOJO · MAESTRA REN', 'Equipo', 'Multiplica todo lo que entrenas.') + '<div class="list">';
     ['fue', 'tec', 'esp'].forEach(function (k) { var lv = S.gear[k], c = C.gearCost(lv); h += item({ fue: '🥊', tec: '🥋', esp: '🧘' }[k], C.GEAR[k] + ' · NV ' + lv, 'Entrenamiento de ' + k.toUpperCase() + ' ×' + C.gearMul(lv).toFixed(1) + (lv < 20 ? ' → ×' + C.gearMul(lv + 1).toFixed(1) : ' (máximo)'), lv < 20 ? bt('gear', k, C.fmt(c) + ' ●', c) : ''); });
+    h += '</div><div class="spaced gold" style="margin:14px 0 6px">Artes marciales · estilos de combate</div><div class="list">';
+    Object.keys(C.STYLES).forEach(function (k) { var t = C.STYLES[k], own = S.styles[k], on = S.style === k; h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + t.ic + '</div><div class="tx"><div class="nm">' + t.n + '</div><div class="ds">' + t.d + '</div></div>' + (on ? '<span class="tag gold">Activo</span>' : own ? bt('style', k, 'Usar') : bt('styleBuy', k, C.fmt(t.c) + ' ●', t.c, 'oro', 'red')) + '</div>'; });
     return h + '</div>';
   },
   alq: function () {
@@ -2329,7 +2482,7 @@ var PANELS = {
     h += '<p class="m">Chispas: <b class="ok">' + S.chispas + ' ✧</b> · Oro: <b class="gold" data-live="oro"></b></p><div class="list">';
     S.brz.forEach(function (b) {
       var E = C.EL[b.el], Tr = C.TIERS[b.t], nx = C.FORGE[b.t + 1], on = b.id === S.eq;
-      h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + E.ic + '</div><div class="tx"><div class="nm" style="color:' + Tr.c + '">' + E.n + ' · ' + Tr.n + ' ×' + Tr.m + '</div><div class="ds">' + E.sk + ': ' + E.d + afTxt(b.el) + '</div></div><div style="display:grid;gap:4px">' + (on ? '<span class="tag gold">Equipado</span>' : bt('equip', b.id, 'Equipar')) + (b.t < 3 ? bt('up', b.id, '↑ ' + C.fmt(nx.o) + '● ' + nx.ch + '✧', nx.o, 'oro', 'red', S.chispas < nx.ch) : '') + '</div></div>';
+      h += '<div class="it' + (on ? ' on' : '') + '"><div class="ic">' + E.ic + '</div><div class="tx"><div class="nm" style="color:' + Tr.c + '">' + E.n + ' · ' + Tr.n + ' ×' + Tr.m + '</div><div class="ds">' + E.sk + ': ' + E.d + afTxt(b.el) + '<br><span class="gold">Maestría ' + C.mastLv(b.m) + '/10</span> · poder especial +' + C.mastLv(b.m) * 4 + '% (sube al derrotar enemigos con él)</div></div><div style="display:grid;gap:4px">' + (on ? '<span class="tag gold">Equipado</span>' : bt('equip', b.id, 'Equipar')) + (b.t < 3 ? bt('up', b.id, '↑ ' + C.fmt(nx.o) + '● ' + nx.ch + '✧', nx.o, 'oro', 'red', S.chispas < nx.ch) : '') + '</div></div>';
     });
     h += '</div><div class="spaced gold" style="margin:14px 0 6px">Forjar nuevo elemento · ' + C.NEWB.o + ' ● + ' + C.NEWB.ch + ' ✧</div><div class="row">';
     Object.keys(C.EL).forEach(function (k) { if (C.brzOf(S, k)) return; var lk = C.elLocked(S, k); h += bt('newb', k, C.EL[k].ic + ' ' + C.EL[k].n + (lk ? ' 🔒' : ''), C.NEWB.o, 'oro', 'pap', lk || S.chispas < C.NEWB.ch); });
@@ -2357,12 +2510,13 @@ var PANELS = {
     return h + '</table>';
   },
   tour: function () {
-    var p = C.poder(S), ok = p >= C.TOUR.req, first = S.cnt.tours === 0;
+    var p = C.poder(S), first = S.cnt.tours === 0;
     var h = '<div class="band"><span class="spaced">COLISEO DEL ECLIPSE</span><span class="spaced">100 JUGADORES</span></div><h2 class="mega">Torneo Mundial</h2><p class="kick">Cien entran. Uno gana. Todos aprenden lo que valen.</p>';
-    h += '<div class="film">FASE 1 · LA NOCHE: sobrevive 75 s. Tu luz congela a las sombras. Recoge llamas.<br>FASE 2 · DUELOS: top 32 → final. Entre duelos eliges una estrategia.<br>REGLA: pierdes el % de tu poder igual a tu puesto. Puesto 50 = −50%. Puesto 2 = −2%. Campeón = 0%.</div>';
-    h += '<p>El <b class="gold">25%</b> de lo que pierdas vuelve a ti como <b class="ok">Legado</b> (multiplicador permanente). Tus brazaletes, equipo y negocio <b>nunca</b> se pierden.' + (first ? ' <b class="ok">Primer torneo: el amuleto de Pip limita la pérdida al 25%.</b>' : '') + '</p>';
-    h += '<p class="m">Tu poder: <b class="w">' + C.fmt(p) + '</b> · Requisito: ' + C.TOUR.req + ' · Mejor puesto: ' + (S.cnt.best ? '#' + S.cnt.best : '—') + '</p>';
-    return h + '<div class="row">' + (ok ? '<button class="btn red" data-a="tourGo">Inscribirme</button>' : '<span class="bad">Te faltan ' + (C.TOUR.req - p) + ' de Poder.</span>') + '<button class="btn pap" data-a="close">Ahora no</button></div>';
+    h += '<div class="film">FASE 1 · LA NOCHE: sobrevive a las sombras con tu luz (100 → 32).<br>FASE 2 · EL CERCO: la niebla se cierra; quédate dentro (32 → 16).<br>FASE 3 · DUELOS: octavos → final. Antes de cada duelo eliges estrategia y brazalete.<br>REGLA: pierdes el % de tu poder igual a tu puesto. Puesto 50 = −50%. Puesto 2 = −2%. Campeón = 0%.</div>';
+    h += '<p>El <b class="gold">25%</b> de lo que pierdas vuelve a ti como <b class="ok">Legado</b>. Tus brazaletes, equipo, casa y negocios <b>nunca</b> se pierden.' + (first ? ' <b class="ok">Primer torneo: el amuleto de Pip limita la pérdida al 25%.</b>' : '') + '</p>';
+    h += '<p class="m">Tu poder: <b class="w">' + C.fmt(p) + '</b> · Elige liga (más alta = rivales más fuertes, Noche más larga y más premio):</p><div class="list">';
+    C.LEAGUES.forEach(function (L) { var ok = p >= L.req, tr = S.trof[L.id]; h += '<div class="it' + (ok ? '' : ' lock') + '"><div class="ic">' + L.ic + '</div><div class="tx"><div class="nm">' + L.n + '</div><div class="ds">Requiere ' + C.fmt(L.req) + ' ⚡ · premios ×' + L.rw + ' · rivales ×' + L.pw + ' · Noche ' + L.night + ' s' + (tr ? ' · tu mejor puesto: #' + tr : '') + '</div></div>' + (ok ? '<button class="btn sm red" data-a="tourGo" data-v="' + L.id + '">Inscribirme</button>' : '<span class="tag">🔒</span>') + '</div>'; });
+    return h + '</div><div class="row" style="margin-top:10px"><button class="btn pap" data-a="close">Ahora no</button></div>';
   },
   strat: function (a) {
     var b = a.b, h = '<div class="band"><span class="spaced">TORNEO · ' + a.name + '</span><span class="spaced">PAUSA ESTRATÉGICA</span></div>';
@@ -2377,7 +2531,7 @@ var PANELS = {
     return h + '</div>';
   },
   res: function (r) {
-    var h = '<div class="band"><span class="spaced">TORNEO MUNDIAL · RESULTADO</span><span class="spaced">PAG ' + S.cnt.tours + '</span></div>';
+    var h = '<div class="band"><span class="spaced">' + C.league(r.liga).n.toUpperCase() + ' · RESULTADO</span><span class="spaced">PAG ' + S.cnt.tours + '</span></div>';
     h += '<div class="spaced" style="color:#8a1219">Tu puesto</div><div class="res-big">#' + r.rank + '</div>';
     h += r.rank === 1 ? '<p class="loss" style="color:#0f5c66">¡Campeón! No pierdes nada.</p>' : '<p class="loss">−' + r.pct + '% de tu poder' + (r.capped ? ' <small style="font-size:.45em">(amuleto de Pip)</small>' : '') + '</p>';
     h += '<div class="kv"><b>Poder antes</b><span>' + C.fmt(r.p0) + '</span><b>Poder ahora</b><span>' + C.fmt(r.p1) + '</span><b>Legado ganado</b><span>+' + r.lg.toFixed(1) + ' (×' + C.mLeg(S).toFixed(3) + ' permanente)</span><b>Premio</b><span>+' + C.fmt(r.oro) + ' ● · +' + r.gem + ' ◆</span></div>';
@@ -2406,6 +2560,15 @@ var PANELS = {
     h += '<div class="spaced gold" style="margin:10px 0 4px">Miembros destacados</div><table class="tb">' + mem.map(function (o) { return '<tr><td>' + C.EL[o.b.el].ic + ' ' + esc(o.b.n) + '</td><td style="text-align:right">' + C.fmt(o.b.p) + ' ⚡</td></tr>'; }).join('') + '</table>';
     h += '<div class="row" style="margin-top:10px">' + C.CLANS.filter(function (k) { return k.id !== c.id; }).map(function (k) { return bt('clanJoin', k.id, 'Cambiar a ' + k.ic, undefined, '', 'pap'); }).join('') + '</div>';
     return h;
+  },
+  casa: function () {
+    var cf = C.comfort(S), h = head('VILLA SERENA', 'Mi casa', 'Confort ' + cf + ' → tu energía se recupera +' + cf * 2 + '% más rápido.') + '<div class="spaced gold" style="margin:4px 0 6px">Muebles</div><div class="list">';
+    C.FURN.forEach(function (f) { h += item(f.ic, f.n, 'Confort +' + f.cf, S.house.f[f.id] ? '<span class="tag ok">En casa</span>' : bt('furn', f.id, C.fmt(f.c) + ' ●', f.c)); });
+    h += '</div><div class="spaced gold" style="margin:14px 0 6px">Armario</div><div class="row" style="align-items:flex-start"><canvas data-av width="150" height="170" style="width:88px;height:100px;border:3px solid #f2e8d5;background:#0f5c66"></canvas><div style="flex:1;min-width:180px">';
+    [['skin', 'Piel'], ['shirt', 'Ropa'], ['hair', 'Cabello']].forEach(function (k) { h += '<div class="m">' + k[1] + '</div><div class="sw" style="margin-bottom:6px">' + C.LOOK[k[0]].map(function (col, i) { return '<button style="background:' + col + '" class="' + (S.look[k[0]] === i ? 'on' : '') + '" data-a="look" data-v="' + k[0] + ':' + i + '" aria-label="color"></button>'; }).join('') + '</div>'; });
+    h += '</div></div><div class="spaced gold" style="margin:14px 0 6px">Mascotas · se ganan ayudando, nunca se compran</div><div class="list">';
+    C.PETS.forEach(function (q) { var own = C.petOwned(S, q.id), on = S.pet === q.id; h += item(q.ic, q.n, own ? 'Te acompaña por todo Ánima.' : '🔒 ' + q.how, own ? (on ? bt('pet', '', 'Dejar en casa', undefined, '', 'pap') : bt('pet', q.id, 'Llevar', undefined, '', 'tea')) : ''); });
+    return h + '</div><p class="m">Tus amigos te visitan en casa. Puedes descansar en la cama para recuperar toda la energía.</p>';
   },
   granja: function () {
     var f = S.farm, h = head('HUERTOS DEL VALLE', 'Granja', 'Tu Espíritu es magia tangible: crece más rápido y vale más.');
@@ -2464,7 +2627,7 @@ var PANELS = {
       return h;
     }
     return h + '<h2 class="mega">Cómo jugar</h2><div class="film">MOVER: joystick (izquierda) o WASD · GOLPE: ⚔ o J/espacio · PODER: K · ESQUIVA: » o L/shift · INTERACTUAR: botón amarillo o E · MENÚ: M</div>' +
-      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Huertos del Valle</b> (al norte de la Forja): granja tycoon. Riega tocando, cosecha y contrata ayudantes.</p><p><b class="gold">Bosque de la Niebla</b> (al sur de las Tierras Rotas): zona de terror. Tu linterna se gasta; los cofres solo son tuyos si sales con vida.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
+      '<p><b class="gold">Poder</b> = (Fuerza + Técnica + Espíritu) × brazalete × legado.</p><p><b class="gold">Dojo</b>: entrena con ritmo (saco), precisión (katas) y calma (respiración 4-4).</p><p><b class="gold">Forja</b>: tu negocio produce oro. El Espíritu multiplica la producción. El oro compra elixires, equipo y brazaletes.</p><p><b class="gold">Tierras Rotas</b>: 3 anillos de dificultad. Derrotar enemigos da poder, oro y chispas. Esquiva los círculos rojos.</p><p><b class="gold">Villa Serena</b> (noroeste de la Plaza): tu casa. Muebles = confort (energía más rápida), armario, mascotas y visitas de amigos.</p><p><b class="gold">Ligas</b>: Bronce, Plata, Oro y Leyendas. Más alta = rivales más fuertes y más premio. El torneo tiene 3 fases: la Noche, el Cerco y los duelos.</p><p><b class="gold">Artes marciales</b>: aprende estilos con la Maestra Ren (Tigre, Grulla, Dragón). Cada brazalete gana maestría al usarlo.</p><p><b class="gold">Huertos del Valle</b> (al norte de la Forja): granja tycoon. Riega tocando, cosecha y contrata ayudantes.</p><p><b class="gold">Bosque de la Niebla</b> (al sur de las Tierras Rotas): zona de terror. Tu linterna se gasta; los cofres solo son tuyos si sales con vida.</p><p><b class="gold">Elementos</b>: 🔥 Fuego > 🌀 Viento > ⛰️ Tierra > ⚡ Rayo > 💧 Agua > 🔥 Fuego (×1.25 de daño al que vences, ×0.8 al que te vence). 🌑 Sombra y ✨ Luz se dañan ×1.25 entre sí. Antes de cada duelo puedes cambiar de brazalete.</p><p><b class="gold">Códice</b>: 7 fragmentos del Origen escondidos (haces de luz azul). Cada uno cuenta parte de la historia de Ánima.</p><p><b class="gold">Torneo</b>: pierdes el % de poder igual a tu puesto. El 25% vuelve como Legado. Brazaletes, equipo y negocio nunca se pierden.</p><p class="kick">Juega con calma, toma descansos y trata bien a los demás. El poder no define tu valor.</p>';
   }
 };
 var ACTS = {
@@ -2480,7 +2643,12 @@ var ACTS = {
   newb: function (v) { var r = C.forgeNew(S, v); toast(r === 'ok' ? '¡Nuevo brazalete de ' + C.EL[v].n + '!' : r === 'bloqueado' ? 'Se desbloquea con la historia' : 'Te faltan recursos', r === 'ok' ? 'gold' : 'bad'); if (r === 'ok') sfx('win'); renderPanel(); },
   shop: function (v) { var p = v.split(':'), r = C.shopBuy(S, p[0], p[1]); toast(r === 'ok' ? '¡Comprado!' : r === 'falta' ? 'Gemas insuficientes' : r === 'tienes' ? 'Ya lo tienes' : 'No disponible', r === 'ok' ? 'gold' : 'bad'); if (r === 'ok') { sfx('win'); refreshCombat(); save(); } renderPanel(); },
   claim: function (v) { if (C.dailyClaim(S, +v)) { sfx('win'); toast('+3 ◆ y oro', 'gold'); } renderPanel(); },
-  tourGo: function () { closePanel(); tourStart(); },
+  tourGo: function (v) { closePanel(); tourStart(v); },
+  style: function (v) { C.styleSet(S, v); refreshCombat(); sfx('up'); save(); renderPanel(); },
+  styleBuy: function (v) { if (C.styleBuy(S, v)) { sfx('win'); toast('¡Aprendiste el ' + C.STYLES[v].n + '! ' + C.STYLES[v].ic, 'gold'); refreshCombat(); save(); } renderPanel(); },
+  furn: function (v) { if (C.furnBuy(S, v)) { sfx('up'); toast(C.FURNI[v].ic + ' ' + C.FURNI[v].n + ' ya está en tu casa', 'ok'); save(); } renderPanel(); },
+  look: function (v) { var q = v.split(':'); if (C.setLook(S, q[0], +q[1])) { sfx('ui'); save(); } renderPanel(); },
+  pet: function (v) { if (C.setPet(S, v)) { ents = ents.filter(function (e) { return e.k !== 'pet'; }); if (mode === 'world') spawnPet(); sfx('up'); save(); } renderPanel(); },
   strat: function (v) { if (v === 'atk') TR.buf.atk *= 1.12; else if (v === 'hp') TR.buf.hp *= 1.15; else TR.buf.au *= 1.3; var cb = PANEL.a.cb; closePanel(); cb(); },
   resOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
   cineOk: function () { var cb = PANEL.a.cb; closePanel(); cb(); },
@@ -2828,7 +2996,7 @@ window.__bdp = {
   loadDuelTest: function (pw) { TR = { buf: { atk: 1, hp: 1, au: 1 }, br: [] }; loadDuel({ type: 'duelo', eP: pw, name: 'Prueba', el: 'rayo', look: botLook(120) }); TR.cd = 0; TR.opp.frozen = 0; TR.duelTest = 1; },
   set rscale(v) { RSCALE = v; resize(); }, set ts(v) { TSCALE = Math.max(1, Math.min(8, v | 0)); }, chat: function (t) { quickChat(t); }, dlgNext: dlgNext, get dlg() { return !!DLG.q; }, interact: interact, storyCheck: storyCheck, start: startGame, inp: inp, keys: keys, save: save,
   draw: { avatar: drawAvatar, star: star, ctext: ctext, NPCL: NPCL },
-  nightSkip: function () { if (mode === 'night') TR.t = C.TOUR.nightT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
+  nightSkip: function () { if (mode === 'night') TR.t = TR.L.night - .1; }, cercoSkip: function () { if (mode === 'cerco') TR.ct = C.TOUR.cercoT - .1; }, killOpp: function () { if (mode === 'duel' && TR.opp) { TR.opp.hp = 0; TR.cd = 0; } }, hurtMe: function () { if (P) { P.iT = 0; hurtP(1e9); } }
 };
 resize(); boot2(); requestAnimationFrame(frame);
 

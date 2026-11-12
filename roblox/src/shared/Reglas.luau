@@ -153,8 +153,8 @@ function Reglas.newState(o)
 		look = { skin = clamp(trunc(o.skin or 0), 0, #D.LOOK.skin - 1), shirt = clamp(trunc(o.shirt or 0), 0, #D.LOOK.shirt - 1), hair = clamp(trunc(o.hair or 0), 0, #D.LOOK.hair - 1) },
 		stats = { fue = O.st.fue, tec = O.st.tec, esp = O.st.esp }, legado = 0, en = 100, hp = -1,
 		oro = O.oro, gemas = 10, chispas = 0,
-		brz = { { id = 1, el = el, t = 0 } }, eq = 1, nid = 2,
-		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {}, fish = {}, farm = { p = { 0 }, lv = 0, auto = 0 },
+		brz = { { id = 1, el = el, t = 0, m = 0 } }, eq = 1, nid = 2,
+		gear = { fue = 0, tec = 0, esp = 0 }, elix = 0, tyc = {}, caja = 0, cos = { aura = 0, capa = 0 }, friends = {}, party = {}, side = {}, tips = {}, compras = {}, frag = {}, clan = { id = "", since = 0, week = 0, pts = 0, last = {} }, evt = "", ach = {}, fish = {}, farm = { p = { 0 }, lv = 0, auto = 0 }, trof = {}, house = { f = {} }, pet = "", style = "", styles = {},
 		zone = O.z, story = { i = 0, n = 0, seen = "" }, unlock = {}, ending = "",
 		daily = { day = "", q = {} },
 		cnt = { taps = 0, kills = 0, deaths = 0, oroTot = 0, play = 0, tours = 0, wins = 0, best = 0, cook = 0, harvest = 0, chest = 0 },
@@ -188,9 +188,9 @@ function Reglas.migrate(o)
 	for _, k in ipairs({ "tyc", "cos" }) do for q, v in pairs(d[k]) do if not isNum(v) or v < 0 then d[k][q] = 0 end end end
 	local brz = {}
 	for _, b in ipairs(d.brz or {}) do
-		if type(b) == "table" and D.EL[b.el] and isNum(b.t) and isNum(b.id) then table.insert(brz, { id = trunc(b.id), el = b.el, t = clamp(trunc(b.t), 0, 4) }) end
+		if type(b) == "table" and D.EL[b.el] and isNum(b.t) and isNum(b.id) then table.insert(brz, { id = trunc(b.id), el = b.el, t = clamp(trunc(b.t), 0, 4), m = (isNum(b.m) and b.m > 0) and b.m or 0 }) end
 	end
-	if #brz == 0 then brz = { { id = 1, el = "fuego", t = 0 } } end
+	if #brz == 0 then brz = { { id = 1, el = "fuego", t = 0, m = 0 } } end
 	d.brz = brz
 	local hasEq, maxId = false, 0
 	for _, b in ipairs(d.brz) do if b.id == d.eq then hasEq = true end; maxId = math.max(maxId, b.id) end
@@ -217,6 +217,11 @@ function Reglas.migrate(o)
 	for _, x in ipairs(d.farm.p) do if isNum(x) and #fp < 16 then table.insert(fp, clamp(x, 0, 1)) end end
 	if #fp == 0 then fp = { 0 } end
 	d.farm.p = fp; d.farm.lv = clamp(trunc(isNum(d.farm.lv) and d.farm.lv or 0), 0, 15); d.farm.auto = clamp(trunc(isNum(d.farm.auto) and d.farm.auto or 0), 0, 4)
+	for tk, v in pairs(d.trof) do if not Reglas.LEAGUEI[tk] or not isNum(v) then d.trof[tk] = nil end end
+	for hk in pairs(d.house.f) do if not Reglas.FURNI[hk] then d.house.f[hk] = nil end end
+	for sk in pairs(d.styles) do if not D.STYLES[sk] then d.styles[sk] = nil end end
+	if T(d.style) and not T(d.styles[d.style]) then d.style = "" end
+	if T(d.pet) and not Reglas.petOwned(d, d.pet) then d.pet = "" end
 	d.story.i = clamp(trunc(isNum(d.story.i) and d.story.i or 0), 0, #D.STORY - 1)
 	if not D.ZONES[d.zone] then d.zone = "plaza" end
 	local nm = Reglas.cleanName(d.name); d.name = nm ~= "" and nm or "Heroe"; d.v = 1; d.ver = D.VERSION
@@ -267,7 +272,16 @@ function Reglas.fighter(st, m, el)
 		def = el == "tierra" and 0.12 or 0, steal = el == "sombra" and 0.05 or 0, regen = el == "agua" and 0.025 or 0.012,
 	}
 end
-function Reglas.combat(s) return Reglas.fighter(s.stats, Reglas.mBr(s) * Reglas.mLeg(s), Reglas.eqB(s).el) end
+function Reglas.mastLv(m) return math.min(10, math.floor(math.sqrt((m or 0) / 15))) end -- maestría del brazalete
+function Reglas.combat(s)
+	local b = Reglas.eqB(s)
+	local c = Reglas.fighter(s.stats, Reglas.mBr(s) * Reglas.mLeg(s), b.el)
+	c.skm = c.skm * (1 + 0.04 * Reglas.mastLv(b.m)); c.combo3 = 1.7; c.auraHit = 1
+	if s.style == "tigre" then c.combo3 = 2.2
+	elseif s.style == "grulla" then c.cd = c.cd * 0.88; c.crit = math.min(0.55, c.crit + 0.05)
+	elseif s.style == "dragon" then c.skm = c.skm * 1.1; c.auraHit = 1.5 end
+	return c
+end
 function Reglas.statsOfPower(p) local b = math.max(1, p) / 3; return { fue = b, tec = b, esp = b } end
 function Reglas.foeStats(t, eP, el)
 	local F = D.FOES[t]
@@ -375,6 +389,7 @@ function Reglas.killReward(s, t, eP, R)
 	local o = round(F.o * (1 + math.sqrt(eP) / 3)); Reglas.addOro(s, o)
 	local ch = 0; if R() < F.ch then ch = (T(F.chn) and F.chn or 1) * Reglas.evMul(s, "ch") end; s.chispas = s.chispas + ch
 	local gem = 0; if T(F.pvp) and R() < 0.05 then gem = 1 end; s.gemas = s.gemas + gem
+	local eb = Reglas.eqB(s); eb.m = (eb.m or 0) + (T(F.boss) and 5 or 1)
 	s.cnt.kills = s.cnt.kills + 1; ev(s, "kill", { type = t })
 	return { g = g, o = o, ch = ch, gem = gem }
 end
@@ -388,7 +403,7 @@ function Reglas.forgeNew(s, el)
 	if Reglas.brzOf(s, el) then return "tienes" end
 	if s.oro < D.NEWB.o or s.chispas < D.NEWB.ch then return "falta" end
 	s.oro = s.oro - D.NEWB.o; s.chispas = s.chispas - D.NEWB.ch
-	local id = s.nid; s.nid = s.nid + 1; table.insert(s.brz, { id = id, el = el, t = 0 }); return "ok"
+	local id = s.nid; s.nid = s.nid + 1; table.insert(s.brz, { id = id, el = el, t = 0, m = 0 }); return "ok"
 end
 function Reglas.forgeUp(s, id)
 	local b = nil; for _, x in ipairs(s.brz) do if x.id == id then b = x end end
@@ -412,7 +427,7 @@ function Reglas.shopBuy(s, id, el)
 		local b = Reglas.brzOf(s, el)
 		if b and b.t >= t then return "tienes" end
 		s.gemas = s.gemas - it.g
-		if b then b.t = t else local nid = s.nid; s.nid = s.nid + 1; table.insert(s.brz, { id = nid, el = el, t = t }) end
+		if b then b.t = t else local nid = s.nid; s.nid = s.nid + 1; table.insert(s.brz, { id = nid, el = el, t = t, m = 0 }) end
 		ev(s, "forge", { t = t }); return "ok"
 	end
 	if id == "caja" then if s.caja >= 8 then return "max" end s.gemas = s.gemas - it.g; s.caja = s.caja + 1; return "ok" end
@@ -432,8 +447,8 @@ end
 
 ---------------------------------------------------------------- torneo mundial
 function Reglas.lossPct(r) if r <= 1 then return 0 end return math.min(100, r) end
-function Reglas.makeField(s, R)
-	local P = math.max(Reglas.poder(s), D.TOUR.req)
+function Reglas.makeField(s, R, lg)
+	local P = math.max(Reglas.poder(s), D.TOUR.req) * Reglas.league(lg).pw
 	local f, used = {}, {}
 	used[s.name] = true
 	for i = 1, 99 do
@@ -453,29 +468,36 @@ function Reglas.nightOrder(f, P, R) -- devuelve índices base 0 (como JS), del p
 	for k, o in ipairs(a) do out[k] = o.i end
 	return out
 end
-function Reglas.aliveAt(t) return 99 - round((99 - (D.TOUR.cut - 1)) * clamp(t / D.TOUR.nightT, 0, 1) ^ 1.15) end
+function Reglas.aliveAt(t, Tn) return 99 - round((99 - (D.TOUR.cut - 1)) * clamp(t / (T(Tn) and Tn or D.TOUR.nightT), 0, 1) ^ 1.15) end
+function Reglas.aliveAt2(t) return (D.TOUR.cut - 1) - round((D.TOUR.cut - D.TOUR.cut2) * clamp(t / D.TOUR.cercoT, 0, 1)) end -- fase 2 «El Cerco»
 function Reglas.duelP(a, b) local x, y = a ^ 1.6, b ^ 1.6; return x / (x + y) end
 local RL = { { 17, 32 }, { 9, 16 }, { 5, 8 }, { 3, 4 }, { 2, 2 } }
 function Reglas.rankLoss(round_, frac) local r = RL[clamp(round_, 0, 4) + 1]; return r[2] - math.floor(clamp(frac, 0, 0.999) * (r[2] - r[1] + 1)) end
 function Reglas.setPend(s, rk) s.pend = { r = clamp(round(rk), 1, 100), t = nowMs() } end
-function Reglas.applyTour(s, rk)
+function Reglas.applyTour(s, rk, lgId)
+	local L = Reglas.league(lgId)
 	rk = clamp(round(rk), 1, 100)
 	local pct, first, capped = Reglas.lossPct(rk), s.cnt.tours == 0, false
 	if first and pct > D.TOUR.firstCap then pct = D.TOUR.firstCap; capped = true end
 	local b0, p0, k = Reglas.base(s), Reglas.poder(s), 1 - pct / 100
 	s.stats.fue = s.stats.fue * k; s.stats.tec = s.stats.tec * k; s.stats.esp = s.stats.esp * k
 	local lost = b0 - Reglas.base(s); local lg = lost * D.TOUR.legado; s.legado = s.legado + lg
-	local oro = round(150 + 3000 * ((101 - rk) / 100) ^ 2 * (1 + math.sqrt(p0) / 20))
-	local gem = (rk == 1 and 50) or (rk <= 3 and 25) or (rk <= 10 and 10) or (rk <= 32 and 3) or 1
+	local oro = round((150 + 3000 * ((101 - rk) / 100) ^ 2 * (1 + math.sqrt(p0) / 20)) * L.rw)
+	local gem = round(((rk == 1 and 50) or (rk <= 3 and 25) or (rk <= 10 and 10) or (rk <= 32 and 3) or 1) * L.gm)
 	Reglas.addOro(s, oro); s.gemas = s.gemas + gem
 	s.cnt.tours = s.cnt.tours + 1; if rk == 1 then s.cnt.wins = s.cnt.wins + 1 end
 	s.cnt.best = T(s.cnt.best) and math.min(s.cnt.best, rk) or rk
-	if rk == 1 and not T(s.title) then s.title = "Campeón del Eclipse" end
-	table.insert(s.tours, 1, { d = nowMs(), r = rk, pct = pct, lost = round(lost), p0 = p0 })
+	if rk == 1 then
+		local ti = -1
+		for _, x in ipairs(D.LEAGUES) do if x.title == s.title then ti = x.i end end
+		if not T(s.title) or (ti >= 0 and ti < L.i) then s.title = L.title end
+	end
+	s.trof[L.id] = T(s.trof[L.id]) and math.min(s.trof[L.id], rk) or rk
+	table.insert(s.tours, 1, { d = nowMs(), r = rk, pct = pct, lost = round(lost), p0 = p0, lg = L.id })
 	while #s.tours > 20 do table.remove(s.tours) end
 	s.pend = nil
 	ev(s, "tourney", { rank = rk })
-	return { rank = rk, pct = pct, capped = capped, lost = lost, lg = lg, oro = oro, gem = gem, p0 = p0, p1 = Reglas.poder(s), first = first }
+	return { rank = rk, pct = pct, capped = capped, lost = lost, lg = lg, oro = oro, gem = gem, p0 = p0, p1 = Reglas.poder(s), first = first, liga = L.id }
 end
 
 ---------------------------------------------------------------- historia
@@ -532,7 +554,7 @@ function Reglas.choose(s, c)
 		for _, b in ipairs(s.bots) do b.p = b.p * 1.15 end
 	else
 		local b = Reglas.eqB(s); local id = s.nid; s.nid = s.nid + 1
-		table.insert(s.brz, { id = id, el = b.el, t = 4 }); s.title = "Nuevo Anfitrión"
+		table.insert(s.brz, { id = id, el = b.el, t = 4, m = 0 }); s.title = "Nuevo Anfitrión"
 	end
 	s.story.n = 1; Reglas.advance(s); return true
 end
@@ -655,6 +677,10 @@ function Reglas.achVal(s, a)
 	if v == "poder" then return Reglas.poder(s) end
 	if v == "clan" then return s.clan.pts end
 	if v == "ending" then return T(s.ending) and 1 or 0 end
+	if v == "furn" then local nf = 0 for hk in pairs(s.house.f) do if Reglas.FURNI[hk] then nf += 1 end end return nf end
+	if v == "mast" then local mx = 0 for _, b in ipairs(s.brz) do mx = math.max(mx, Reglas.mastLv(b.m)) end return mx end
+	if v == "lgoro" then return (T(s.trof.oro) or T(s.trof.leyenda)) and 1 or 0 end
+	if v == "styles" then local ns = 0 for sk in pairs(s.styles) do if D.STYLES[sk] then ns += 1 end end return ns end
 	if v == "fish" then local f = 0 for q, c in pairs(s.fish) do if Reglas.FISHI[q] and c > 0 then f += 1 end end return f end
 	return s.cnt[v] or 0
 end
@@ -687,6 +713,42 @@ function Reglas.cookRound(s, r)
 	if not (r and r >= 1) then return 0 end
 	local o = math.ceil((10 + Reglas.prod(s) * 2) * (1 + r * 0.15))
 	s.en = math.min(Reglas.enMax(s), s.en + 8); Reglas.addOro(s, o); s.cnt.cook = (s.cnt.cook or 0) + 1; ev(s, "cook", { n = 1 }); return o
+end
+
+---------------------------------------------------------------- ligas, casa (Villa Serena), mascotas y estilos de artes marciales
+local LEAGUEI, FURNI, PETI = {}, {}, {}
+for _, l in ipairs(D.LEAGUES) do LEAGUEI[l.id] = l end
+for _, f in ipairs(D.FURN) do FURNI[f.id] = f end
+for _, q in ipairs(D.PETS) do PETI[q.id] = q end
+Reglas.LEAGUEI = LEAGUEI
+Reglas.FURNI = FURNI
+Reglas.PETI = PETI
+function Reglas.league(id) return LEAGUEI[id] or D.LEAGUES[1] end
+function Reglas.leagueOpen(s, id) return LEAGUEI[id] ~= nil and Reglas.poder(s) >= LEAGUEI[id].req end
+function Reglas.comfort(s) local c = 0 for k in pairs(s.house.f) do if FURNI[k] then c += FURNI[k].cf end end return c end
+function Reglas.furnBuy(s, id)
+	local f = FURNI[id]
+	if not f or T(s.house.f[id]) or s.oro < f.c then return false end
+	s.oro -= f.c; s.house.f[id] = 1; return true
+end
+function Reglas.setLook(s, k, i) -- i base 0
+	if not D.LOOK[k] or type(i) ~= "number" or not (i >= 0 and i < #D.LOOK[k]) or i ~= math.floor(i) then return false end
+	s.look[k] = i; return true
+end
+function Reglas.petOwned(s, id) local q = PETI[id]; return (q ~= nil and s.side[q.q] ~= nil and s.side[q.q].s == 2) and true or false end
+function Reglas.setPet(s, id)
+	if id == "" then s.pet = ""; return true end
+	if not Reglas.petOwned(s, id) then return false end
+	s.pet = id; return true
+end
+function Reglas.styleBuy(s, id)
+	local t = D.STYLES[id]
+	if not t or T(s.styles[id]) or s.oro < t.c then return false end
+	s.oro -= t.c; s.styles[id] = 1; s.style = id; return true
+end
+function Reglas.styleSet(s, id)
+	if id ~= "" and not T(s.styles[id]) then return false end
+	s.style = id; return true
 end
 
 ---------------------------------------------------------------- Huertos del Valle (tycoon de granja) y Bosque de la Niebla (cofres)
@@ -786,7 +848,7 @@ function Reglas.tick(s, dt)
 	if not (dt and dt > 0) then return end
 	dt = math.min(dt, 5)
 	local p = Reglas.prod(s); if p > 0 then Reglas.addOro(s, p * dt) end
-	s.en = math.min(Reglas.enMax(s), s.en + 0.6 * dt)
+	s.en = math.min(Reglas.enMax(s), s.en + 0.6 * (1 + Reglas.comfort(s) * 0.02) * dt)
 	Reglas.botsTick(s, dt); s.cnt.play = s.cnt.play + dt; Reglas.farmTick(s, dt)
 end
 function Reglas.offline(s, now)

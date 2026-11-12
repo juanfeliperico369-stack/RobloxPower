@@ -50,7 +50,7 @@ const norm = v => JSON.parse(JSON.stringify(v, (k, x) => (x && typeof x === 'obj
 /* ---------- 1. Datos.luau ---------- */
 const DATA = { VERSION: C.VERSION, SAVE_KEY: C.SAVE_KEY, M: C.M, EL: C.EL, ELK5: C.ELK5, TIERS: C.TIERS, RANKS: C.RANKS, ORIG: C.ORIG, NPC: C.NPC, ZONES: C.ZONES, FOES: C.FOES, RINGS: C.RINGS,
   BLD: C.BLD, ACT: C.ACT, GEAR: C.GEAR, SHOP: C.SHOPL, TOUR: C.TOUR, LOOK: C.LOOK, CHAT: C.CHAT, BOTCHAT: C.BOTCHAT, REPLY: C.REPLY, STORY: C.STORY, SIDE: C.SIDE, DQ: C.DQ,
-  FORGE: C.FORGE.slice(1), NEWB: C.NEWB, NA: C.NA, NB: C.NB, BAD: C.BAD, CYCLE: C.CYCLE, FOE_EL: C.FOE_EL, FRAG: C.FRAG, CLANS: C.CLANS, CLANPTS: C.CLANPTS, EVENTS: C.EVENTS, ACH: C.ACH, FISH: C.FISH };
+  FORGE: C.FORGE.slice(1), NEWB: C.NEWB, NA: C.NA, NB: C.NB, BAD: C.BAD, CYCLE: C.CYCLE, FOE_EL: C.FOE_EL, FRAG: C.FRAG, CLANS: C.CLANS, CLANPTS: C.CLANPTS, EVENTS: C.EVENTS, ACH: C.ACH, FISH: C.FISH, LEAGUES: C.LEAGUES, FURN: C.FURN, PETS: C.PETS, STYLES: C.STYLES };
 const datosSrc = '--!nonstrict\n-- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.\n-- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.\nreturn ' + lua(DATA) + '\n';
 const back = parseLua(datosSrc.slice(datosSrc.indexOf('return ') + 7));
 if (JSON.stringify(norm(back)) !== JSON.stringify(norm(DATA))) { console.error('✖ Datos.luau no coincide al releerlo'); process.exit(1); }
@@ -70,6 +70,8 @@ const fn = (f, a, r) => cases.fn.push({ f, a, r: r === undefined ? null : r });
 [0, 9999, 10000, 12345, 99999, 123456, 1250000, 999999, 1e6, 15e6, 2.5e9, 7.77e12].forEach(n => fn('fmt', [n], C.fmt(n)));
 [1, 2, 7, 50, 99, 100].forEach(r => fn('lossPct', [r], C.lossPct(r)));
 [0, 10, 37.5, 75, 80].forEach(t => fn('aliveAt', [t], C.aliveAt(t)));
+[[40, 85], [105, 105], [50, 95]].forEach(a => fn('aliveAt', a, C.aliveAt(...a))); [0, 15, 30, 45, 60, 99].forEach(t => fn('aliveAt2', [t], C.aliveAt2(t)));
+[0, 14, 15, 60, 500, 1500, 9999].forEach(m => fn('mastLv', [m], C.mastLv(m)));
 [[100, 100], [150, 100], [10, 3000]].forEach(a => fn('duelP', a, C.duelP(...a)));
 for (let r = 0; r < 5; r++) [0, .3, .999, 1].forEach(f => fn('rankLoss', [r, f], C.rankLoss(r, f)));
 [0, 1, 7, 25, 60].forEach(n => { fn('bMile', [n], C.bMile(n)); fn('gearCost', [n % 21], C.gearCost(n % 21)); fn('gearMul', [n % 21], C.gearMul(n % 21)); fn('elixCost', [n], C.elixCost(n)); fn('cajaCost', [n % 9], C.cajaCost(n % 9)); });
@@ -116,11 +118,11 @@ function scenario(origin, seed, el, nops) {
       const d = { st: pk(STS), type: pk(TYPES), n: pk([undefined, 1, 3, 250]), who: R() < .6 ? C.who(s, o.who || 'pip') : 'pip', t: Math.floor(R() * 4), rank: Math.floor(R() * 100) + 1, z: pk(['plaza', 'coliseo']), id: 'gato' };
       if (t === 'oro' && d.n === undefined) d.n = 100;
       a = [t, JSON.parse(JSON.stringify(d))]; r = C.ev(s, t, d); }
-    else if (x < .68) { const y = R(); now += Math.round(R() * 2e8); if (y < .04) { f = 'farmBuy'; a = [pk(['plot', 'lv', 'auto', 'nada'])]; r = C.farmBuy(s, a[0]); } else if (y < .07) { f = 'farmTick'; a = [Math.round(R() * 9000) / 100]; r = C.farmTick(s, a[0]); } else if (y < .09) { f = 'farmHarvest'; a = [Math.floor(R() * 5)]; r = C.farmHarvest(s, a[0]); } else if (y < .1) { f = 'farmWater'; a = [Math.floor(R() * 5)]; r = C.farmWater(s, a[0]); } else if (y < .12) { f = 'chestLoot'; a = [Math.floor(R() * 1e6), Math.floor(R() * 3)]; r = C.chestLoot(s, C.mulberry(a[0]), a[1]); } else if (y < .13) { f = 'bankBag'; a = [{ o: Math.round(R() * 900), ch: Math.floor(R() * 9), gem: Math.floor(R() * 3), n: Math.floor(R() * 4) }]; r = C.bankBag(s, a[0]); } else if (y < .16) { f = 'fishRoll'; a = [Math.floor(R() * 1e6), Math.round(R() * 100) / 100]; r = C.fishRoll(C.mulberry(a[0]), a[1]); } else if (y < .12) { f = 'fishCatch'; a = [R() < .9 ? pk(C.FISH).id : 'nada']; r = C.fishCatch(s, a[0]); } else if (y < .15) { f = 'cookRound'; a = [Math.floor(R() * 6)]; r = C.cookRound(s, a[0]); } else if (y < .2) { f = 'eventSync'; a = [now]; r = C.eventSync(s, now); } else if (y < .3) { f = 'achCheck'; r = C.achCheck(s); } else if (y < .5) { f = 'clanJoin'; a = [pk(['llama', 'viento', 'marea', 'nada']), now]; r = C.clanJoin(s, a[0], now); } else if (y < .8) { f = 'clanWeek'; a = [now]; r = C.clanWeek(s, now); } else { f = 'clanStand'; a = [now]; r = C.clanStand(s, now); } }
+    else if (x < .68) { const y = R(); now += Math.round(R() * 2e8); if (y < .02) { f = 'furnBuy'; a = [pk(C.FURN.map(q => q.id).concat('nada'))]; r = C.furnBuy(s, a[0]); } else if (y < .03) { f = 'styleBuy'; a = [pk(['tigre', 'grulla', 'dragon', 'nada'])]; r = C.styleBuy(s, a[0]); } else if (y < .035) { f = 'styleSet'; a = [pk(['tigre', 'grulla', 'dragon', ''])]; r = C.styleSet(s, a[0]); } else if (y < .04) { f = 'setLook'; a = [pk(['skin', 'shirt', 'hair', 'x']), Math.floor(R() * 9)]; r = C.setLook(s, a[0], a[1]); } else if (y < .045) { f = 'setPet'; a = [pk(['gato', 'zorro', 'luci', ''])]; r = C.setPet(s, a[0]); } else if (y < .06) { f = 'farmBuy'; a = [pk(['plot', 'lv', 'auto', 'nada'])]; r = C.farmBuy(s, a[0]); } else if (y < .07) { f = 'farmTick'; a = [Math.round(R() * 9000) / 100]; r = C.farmTick(s, a[0]); } else if (y < .09) { f = 'farmHarvest'; a = [Math.floor(R() * 5)]; r = C.farmHarvest(s, a[0]); } else if (y < .1) { f = 'farmWater'; a = [Math.floor(R() * 5)]; r = C.farmWater(s, a[0]); } else if (y < .12) { f = 'chestLoot'; a = [Math.floor(R() * 1e6), Math.floor(R() * 3)]; r = C.chestLoot(s, C.mulberry(a[0]), a[1]); } else if (y < .13) { f = 'bankBag'; a = [{ o: Math.round(R() * 900), ch: Math.floor(R() * 9), gem: Math.floor(R() * 3), n: Math.floor(R() * 4) }]; r = C.bankBag(s, a[0]); } else if (y < .16) { f = 'fishRoll'; a = [Math.floor(R() * 1e6), Math.round(R() * 100) / 100]; r = C.fishRoll(C.mulberry(a[0]), a[1]); } else if (y < .12) { f = 'fishCatch'; a = [R() < .9 ? pk(C.FISH).id : 'nada']; r = C.fishCatch(s, a[0]); } else if (y < .15) { f = 'cookRound'; a = [Math.floor(R() * 6)]; r = C.cookRound(s, a[0]); } else if (y < .2) { f = 'eventSync'; a = [now]; r = C.eventSync(s, now); } else if (y < .3) { f = 'achCheck'; r = C.achCheck(s); } else if (y < .5) { f = 'clanJoin'; a = [pk(['llama', 'viento', 'marea', 'nada']), now]; r = C.clanJoin(s, a[0], now); } else if (y < .8) { f = 'clanWeek'; a = [now]; r = C.clanWeek(s, now); } else { f = 'clanStand'; a = [now]; r = C.clanStand(s, now); } }
     else if (x < .70) { f = 'fragTake'; a = [R() < .9 ? pk(C.FRAG).id : 'zz']; r = C.fragTake(s, a[0]); }
     else if (x < .74) { f = 'advance'; r = C.stepDone(s) || R() < .5 ? C.advance(s).id : (f = 'stepDone', C.stepDone(s)); }
     else if (x < .75) { f = 'choose'; a = [pk(['compartir', 'corona'])]; r = C.choose(s, a[0]); }
-    else if (x < .78) { f = 'applyTour'; a = [Math.floor(R() * 100) + 1]; r = C.applyTour(s, a[0]); }
+    else if (x < .78) { f = 'applyTour'; a = [Math.floor(R() * 100) + 1, pk(['', 'bronce', 'plata', 'oro', 'leyenda'])]; r = C.applyTour(s, a[0], a[1]); }
     else if (x < .80) { f = 'sideAccept'; a = [pk(C.SIDE).id]; r = C.sideAccept(s, a[0]); }
     else if (x < .82) { f = 'sideFinish'; a = [pk(C.SIDE).id]; r = C.sideFinish(s, a[0]); }
     else if (x < .83) { f = 'giveChispas'; a = [pk(C.SIDE).id]; r = C.giveChispas(s, a[0]); }
@@ -167,13 +169,19 @@ cases.sc.push(scenario('discipulo', 11, 'fuego', 300), scenario('mercader', 22, 
   op('farmTick', [45], C.farmTick(s, 45)); op('farmWater', [3], C.farmWater(s, 3)); op('farmTick', [12], C.farmTick(s, 12)); op('farmHarvest', [3], C.farmHarvest(s, 3)); op('farmHarvest', [0], C.farmHarvest(s, 0));
   op('offline', [NOW + 9e6], C.offline(s, NOW + 9e6));
   for (let d2 = 0; d2 < 3; d2++) op('chestLoot', [500 + d2, d2], C.chestLoot(s, C.mulberry(500 + d2), d2)); op('bankBag', [{ o: 300, ch: 4, gem: 1, n: 3 }], C.bankBag(s, { o: 300, ch: 4, gem: 1, n: 3 }));
+  for (const id of ['cama', 'sofa', 'cama', 'nada']) op('furnBuy', [id], C.furnBuy(s, id)); op('tick', [4], C.tick(s, 4));
+  for (const id of ['tigre', 'grulla', 'dragon', 'tigre']) { op('styleBuy', [id], C.styleBuy(s, id)); op('combat', [], C.combat(s)); } op('styleSet', ['tigre'], C.styleSet(s, 'tigre')); op('combat', [], C.combat(s));
+  for (let k = 0; k < 70; k++) op('killReward', ['eco', 200, 900 + k], C.killReward(s, 'eco', 200, C.mulberry(900 + k))); op('combat', [], C.combat(s));
+  for (const [rk, lg] of [[1, 'plata'], [5, 'oro'], [1, 'bronce'], [1, 'leyenda'], [40, 'zzz']]) op('applyTour', [rk, lg], C.applyTour(s, rk, lg));
+  op('setLook', ['hair', 2], C.setLook(s, 'hair', 2)); op('setPet', ['gato'], C.setPet(s, 'gato'));
+  { const fld = C.makeField(s, C.mulberry(321), 'oro'); op('makeFieldLg', [321, 'oro'], fld.slice(0, 3)); }
   C.FISH.forEach((fi, k) => op('fishCatch', [fi.id], C.fishCatch(s, fi.id))); for (let r2 = 1; r2 <= 4; r2++) op('cookRound', [r2], C.cookRound(s, r2));
   for (const [st, en] of [['d1', 'compartir'], ['d1', 'corona'], ['d5', 'corona'], ['d8', '']]) { s.story.i = C.STI[st]; s.ending = en; op('setStory', [C.STI[st], en], C.stepDialog(s, 'd')); }
   s.story.i = 0; s.ending = ''; op('setStory', [0, ''], C.stepDialog(s, 'd'));
   s.cnt.taps = 600; s.cnt.kills = 1200; op('setCnt', [{ taps: 600, kills: 1200 }]); op('achCheck', [], C.achCheck(s)); op('achCheck', [], C.achCheck(s));
   cases.sc.push(sc);
 }
-const goldSrc = '--!nonstrict\n-- ARCHIVO GENERADO por tools/gen-roblox.js — casos calculados con el núcleo JS (versión ' + C.VERSION + '). NO EDITAR.\nreturn ' + lua(cases, '', 1) + '\n';
+const goldSrc = '--!nocheck\n-- ARCHIVO GENERADO por tools/gen-roblox.js — casos calculados con el núcleo JS (versión ' + C.VERSION + '). NO EDITAR.\nreturn ' + lua(cases, '', 1) + '\n';
 fs.writeFileSync(OUT('server/Golden.luau'), goldSrc);
 const nOps = cases.sc.reduce((a, s) => a + s.ops.length, 0);
 console.log('Datos.luau ' + (datosSrc.length / 1024).toFixed(0) + ' KB (verificado) · Golden.luau ' + (goldSrc.length / 1024).toFixed(0) + ' KB · ' + (cases.rng.length + cases.fn.length + nOps) + ' casos');

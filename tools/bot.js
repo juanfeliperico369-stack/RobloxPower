@@ -34,9 +34,10 @@ async function run(b, i, port) {
     for (const k of ['w', 'd', 's', 'a']) { await p.keyboard.down(k); await sleep(350); await p.keyboard.press('j'); await p.keyboard.press('l'); await p.keyboard.up(k); }
     await p.keyboard.press('k'); await flush();
   });
-  for (const z of ['plaza', 'dojo', 'forja', 'huertos', 'tierras', 'bosque', 'coliseo']) {
+  for (const z of ['plaza', 'villa', 'dojo', 'forja', 'huertos', 'tierras', 'bosque', 'coliseo']) {
     await step('zona ' + z, async () => {
       await E(z => __bdp.go(z), z); await sleep(250); await flush();
+      const zbad = await E(z => { const C = __bdp.C, bad = __bdp.MAP.portals.filter(q => !C.ZONES[q.to]).map(q => 'portal→' + q.to); if (!C.ZONES[z] || document.getElementById('zN').textContent !== C.ZONES[z].n) bad.push('título de zona ' + z); return bad; }, z); if (zbad.length) errs.push('zona mal registrada: ' + zbad.join(', '));
       const inter = await E(() => __bdp.MAP.inter.filter(it => !it.when || it.when()).map(it => ({ id: it.id, x: it.x, y: it.y })));
       for (const it of inter) {
         await E(it => { const P = __bdp.P; P.x = it.x; P.y = it.y + 20; }, it); await sleep(120);
@@ -91,6 +92,7 @@ async function run(b, i, port) {
       if (st.a === 'strat') { await p.click('#ov [data-a="strat"]'); continue; }
       if (st.a === 'cineOk') { await p.click('#ov [data-a="cineOk"]'); continue; }
       if (st.a === 'resOk') { await shot('bot-result.png'); await p.click('#ov [data-a="resOk"]'); await sleep(500); await flush(); break; }
+      if (st.m === 'cerco') { for (let t = 0; t < 12; t++) { await E(() => { __bdp.inp.atk = 1; __bdp.keys.a = Math.random() < .5 ? 1 : 0; }); await sleep(70); } await shot('bot-cerco.png'); await E(() => { __bdp.keys.a = 0; __bdp.cercoSkip(); }); continue; }
       if (st.m === 'duel') {
         for (let t = 0; t < 8; t++) { await E(() => { __bdp.inp.atk = 1; __bdp.inp.sk = 1; }); await sleep(60); }
         if (g < 8) await shot('bot-duel.png');

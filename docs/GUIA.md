@@ -73,6 +73,11 @@ El autor no quiere lucrar con el descuido de los niños. Reglas de diseño que s
 - **Accesibilidad (v0.3):** Ajustes → *Texto grande* (`cfg.big`) y *Modo calma* (`cfg.calm`: sin sacudidas ni destellos, para fotosensibilidad). Los avisos de ataque llevan rayas blancas además del rojo (daltonismo).
 - **Clanes (`CLANS`, v0.4):** 3 clanes (🔥 Llama Roja +5% entrenar FUE · 🍃 Viento Verde +5% TEC · 🌊 Marea Azul +5% ESP y +5% oro del negocio). Se eligen con la Capitana Sol (Plaza) o Menú → Clan; cambio libre cada 24 h. Puntos semanales: enemigo 1, edificio 1, kata/respiración perfecta 0.5, saco 0.2, yunque 0.05, fragmento 10, gato 5, torneo `max(1,(101−puesto)/5)`. Semana = lunes a domingo UTC (`weekKey`). El total de los otros miembros (bots) se simula determinista (`clanBase`: 2500–5000 por semana, proporcional al avance de la semana). Cierre (`clanWeek`): TODOS reciben premio (1.º +30, 2.º +20, 3.º +15 ◆) + aporte personal (+5/+10/+15 ◆ con 50/200/500 pts). Los miembros del clan son los bots con índice `i % 3`.
 - **Jefes por anillo (v0.4):** Rey Eco (anillo 1, sombra, golpe en área e invoca Ecos) y Alfa de Ceniza (anillo 2, fuego, avisa con una franja roja y embiste en línea recta). Reaparecen a los 90 s; chispas garantizadas. Misión secundaria de Kira “El Alfa de Ceniza”.
+- **Ligas (`LEAGUES`, v0.8) — “los torneos de los mejores”:** Bronce (120 ⚡), Plata (1.500), Oro (8.000), Leyendas (40.000). Cada liga: rivales ×pw (1/1.1/1.2/1.3), premios de oro ×rw (1/2.5/6/15), gemas ×gm (1/1.5/2/3) y Noche más larga (75/85/95/105 s, +1 sombra por liga). La pérdida por puesto NO cambia. Trofeo = mejor puesto por liga (`s.trof`); títulos de liga que no pisan títulos de historia. `makeField(s,R,lg)`, `applyTour(s,rk,lg)`, `aliveAt(t,T)`.
+- **Torneo en 3 fases (v0.8):** 1) la Noche (100 → 32); 2) **El Cerco** (`mode 'cerco'`, 60 s, 32 → 16): la niebla cierra un círculo (13.2 → 4.8 casillas), fuera de él −7% de vida cada 0.5 s, aparecen Ecos y lobos, las llamas curan 15%; rivales restantes `aliveAt2(t)`; 3) duelos desde octavos (`TR.round` empieza en 1). Caer en Noche/Cerco = puesto `rivales vivos + 1`.
+- **Villa Serena (v0.8, roleplay · hogar):** portal al noroeste de la Plaza. Casa propia con 8 muebles (`FURN`, oro) → **confort** (suma `cf`, +2% de recuperación de energía por punto); cama = descansar (energía completa); armario (`setLook`); los amigos te visitan; casas de vecinos. **Mascotas** (`PETS`): se ganan con secundarias (gato, zorrito, luciérnaga), nunca se compran; solo compañía.
+- **Maestría de brazalete (v0.8):** cada derrota con un brazalete equipado suma `m` (+1, jefes +5); nivel `min(10, floor(√(m/15)))`; +4% de poder especial por nivel.
+- **Estilos de artes marciales (`STYLES`, v0.8):** se aprenden con la Maestra Ren (oro): Tigre (3.er golpe ×2.2), Grulla (−12% espera entre golpes, +5% crítico), Dragón (+50% aura por golpe, especial +10%).
 - **Bosque de la Niebla (v0.7, terror · supervivencia):** al sur de las Tierras Rotas. Oscuridad con linterna compartida con la Noche (`LAN`), sombras que se congelan con la luz, susurros y latidos (terror leve), llamas que recargan la luz, 8 cofres por visita (el mapa cambia cada vez). Lo de los cofres va a una BOLSA: solo se cobra al salir por el portal (`bankBag`); si las sombras te tumban, la bolsa se pierde (no se pierde nada más). `chestLoot(s, R, profundidad)`: más al sur = más premio. NPC: Guardabosques Elio (secundaria “Lo que guarda la niebla”).
 - **Huertos del Valle (v0.7, tycoon de granja):** al norte de la Forja. 16 parcelas; tocar = regar (+15%, 1 energía) o cosechar. Mesa de la Granja: parcelas (`200·1.35^n`), abono (`300·1.6^nivel`, −15% tiempo y +10% valor) y ayudantes (`1500·2^n`, cada uno cosecha 4 parcelas solo al 60%, también sin conexión). Tiempo `30·0.85^nivel/√magia`, valor `20·(1+0.05·parcelas)·magia·(1+0.1·nivel)`. NPC: Abuela Rosa (secundaria “La primera cosecha”).
 - **Gestos de roleplay (v0.7):** 💬 → Saludar, Bailar, Sentarse; los jugadores-bot también los usan.
@@ -130,6 +135,23 @@ node tools/assets.js       # (si cambia el arte) regenerar íconos → luego bui
 - Herramientas: Roblox Studio + **Rojo** (sincroniza archivos `.luau` del repo con Studio). Opcional: el conector MCP oficial de Roblox Studio para que una IA opere Studio desde el PC del autor.
 - Mapeo: `core.js` → ModuleScript `Rules` (mismas fórmulas en Luau, servidor autoritativo); guardado → DataStoreService (con reintentos y bloqueo de sesión); gemas → Robux vía MarketplaceService (Developer Products para consumibles, Game Passes para brazaletes permanentes); torneo → servidor dedicado por evento (TeleportService a un lugar “Coliseo”), 100 jugadores reales o rellenados con NPC; chat → TextChatService (filtro obligatorio de Roblox).
 - Zonas → Places o regiones del mismo Place con StreamingEnabled. La Noche → iluminación `Lighting` + linterna `SpotLight` + IA de sombras que se congela con raycast de visión.
+
+## 9 bis. Lista de control de la idea original (estado en v0.8.0)
+| Pedido en la idea original | Estado |
+|---|---|
+| RPG de fantasía, estilo cómic/anime crudo, acción con poderes de brazaletes | ✅ 7 elementos, afinidades, combos, esquiva, maestría |
+| Zonas de clicker/entrenamiento físico | ✅ Dojo: saco (ritmo), katas (precisión), respiración; estilos marciales |
+| Mundo sociable/roleplay sin peleas, lugares de paz | ✅ Plaza, Villa Serena (casa, muebles, armario, mascotas), amigos, clanes, gestos, chat seguro |
+| Poder → magia → dinero: Tycoon con clicker | ✅ Ciudad Forja (6 edificios, yunque, elixires) + Huertos del Valle (granja) |
+| Zona de farmeo derrotando a otros | ✅ Tierras Rotas (3 anillos, rivales PvP, 3 jefes) |
+| Torneo mundial con terror y supervivencia, largo y estratégico | ✅ 3 fases (Noche, Cerco, duelos) + estrategia entre duelos + ligas |
+| Gancho: pierdes el % de poder de tu puesto entre 100 | ✅ regla exacta + Legado + tope del primer torneo |
+| Poder al gastar Robux en mejores brazaletes | ✅ tienda de gemas simulada (sin cajas aleatorias); en Roblox: Developer Products |
+| Terror y supervivencia como géneros | ✅ la Noche + Bosque de la Niebla |
+| Historia seria que madura; villano central | ✅ 4 actos, 2 finales, Códice, 10 secundarias; Vant |
+| Mapa extenso por zonas según el origen | ✅ 8 zonas, 3 orígenes |
+| HTML sin internet, PWA, exportar partida, APK, bot de pruebas, bitácora, guía | ✅ |
+| Versión Roblox | ⏳ reglas portadas y verificadas (Luau = JS); falta construir en Studio mapas 3D, combate e interfaz |
 
 ## 10. Pendiente / ideas
 - Port a Roblox: el intento de verificar el port a Luau descargando el ejecutable `luau` fue bloqueado por la política del entorno (código externo); hace falta que el autor lo autorice o hacerlo en su PC con Roblox Studio + Rojo.

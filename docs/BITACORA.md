@@ -2,6 +2,17 @@
 
 Formato: una entrada por sesión, la más reciente arriba. Máximo ~10 líneas: qué cambió, qué se probó, qué falta.
 
+## 2026-11-12 · v0.8.0 · Todo lo que faltaba de la idea original
+1. Nuevo: **ligas del torneo** (Bronce, Plata, Oro, Leyendas): rivales más fuertes, Noche más larga y premios mayores; trofeos y títulos por liga.
+2. Nuevo: **El Cerco**, fase 2 del torneo (supervivencia estratégica, 32 → 16): círculo de niebla que se cierra, Ecos, llamas que curan. El torneo ahora es Noche → Cerco → duelos.
+3. Nuevo: **Villa Serena** (roleplay): casa propia, 8 muebles con confort (energía más rápida), cama para descansar, armario, visitas de amigos, vecinos; **mascotas** que se ganan ayudando.
+4. Nuevo: **maestría de brazalete** (sube al usarlo) y **estilos de artes marciales** (Tigre, Grulla, Dragón) con la Maestra Ren.
+5. Flecha guía con ruta entre zonas (BFS); 4 logros nuevos (24 en total).
+6. Port Luau completo de lo nuevo: **3731/3731 casos idénticos a JS**; análisis sin errores (Golden marcado `--!nocheck` por tamaño).
+7. Probado: check OK; sim 120×8 h OK con pruebas unitarias de ligas/cerco/casa/mascotas/estilos (5.285 torneos en las 4 ligas); bot 3 partidas OK por las 8 zonas y las 3 fases; celular modesto 61 fps.
+8. Corregido en revisión visual: la Villa no estaba en `ZONES` (título y portal).
+9. Estado: la lista de control de la idea original (GUIA §9 bis) queda completa en la versión HTML. Falta solo la construcción en Roblox Studio.
+
 ## 2026-11-10 · v0.7.0 · Zona de terror, tycoon de granja y roleplay
 1. Nuevo: **Bosque de la Niebla** (terror y supervivencia fuera del torneo): linterna que se gasta, sombras, susurros, cofres con bolsa que solo se cobra al salir con vida; mapa distinto en cada visita.
 2. Nuevo: **Huertos del Valle** (segundo tycoon): regar con clics, cosechar, comprar parcelas/abono y contratar ayudantes que trabajan sin conexión.

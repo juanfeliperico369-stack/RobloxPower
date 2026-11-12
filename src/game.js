@@ -47,8 +47,8 @@ var SFX = {
   step: function () { noise(.03, .03, 300); }
 };
 function sfx(n) { try { if (AC && SFX[n]) SFX[n](); } catch (e) { } }
-var SCALES = { bosque: [0, 1, 6], huertos: [0, 2, 4, 7, 9, 11], plaza: [0, 2, 4, 7, 9], dojo: [0, 3, 5, 7, 10], forja: [0, 2, 4, 5, 7], tierras: [0, 1, 5, 7, 8], coliseo: [0, 3, 6, 7, 10], night: [0, 1, 6], duel: [0, 3, 5, 6, 7] };
-var ROOTS = { bosque: 98, huertos: 262, plaza: 220, dojo: 196, forja: 233, tierras: 174.6, coliseo: 164.8, night: 110, duel: 146.8 };
+var SCALES = { bosque: [0, 1, 6], huertos: [0, 2, 4, 7, 9, 11], plaza: [0, 2, 4, 7, 9], dojo: [0, 3, 5, 7, 10], forja: [0, 2, 4, 5, 7], tierras: [0, 1, 5, 7, 8], coliseo: [0, 3, 6, 7, 10], night: [0, 1, 6], cerco: [0, 1, 5, 6, 8], villa: [0, 4, 7, 9, 11], duel: [0, 3, 5, 6, 7] };
+var ROOTS = { bosque: 98, huertos: 262, plaza: 220, dojo: 196, forja: 233, tierras: 174.6, coliseo: 164.8, night: 110, cerco: 130.8, villa: 246.9, duel: 146.8 };
 function musicTick() {
   if (!AC || !S || !S.cfg.mus || !MAP) return;
   var z = MAP.id, sc = SCALES[z] || SCALES.plaza, rt = ROOTS[z] || 220, spb = z === 'duel' ? .14 : z === 'night' ? .5 : .2;
@@ -72,6 +72,8 @@ var TH = {
   night:   { f: ['#1a1524', '#16121f'], p: '#221c2f', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#000' },
   bosque:  { f: ['#1f2a22', '#1b251e'], p: '#2a2f26', w: ['#3a3a46', '#1c1c24'], tr: ['#222', '#111'], wa: '#223', bg: '#050806' },
   huertos: { f: ['#7fb24a', '#76a843'], p: '#b08a52', w: ['#8a5a2b', '#5a3825'], tr: ['#3f9a5a', '#25693b'], wa: '#39c8ff', alt: '#6b4423', bg: '#2f4a1f' },
+  cerco:   { f: ['#3a2a44', '#352640'], p: '#463352', w: ['#2c2542', '#16121f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0612' },
+  villa:   { f: ['#a8d67a', '#9fce72'], p: '#e3d3b0', w: ['#f2e8d5', '#b8a583'], tr: ['#3f9a5a', '#25693b'], wa: '#39c8ff', alt: '#d9b98a', bg: '#2f4a1f' },
   duel:    { f: ['#6a2a22', '#62261f'], p: '#7a3328', w: ['#26262e', '#0b0b0f'], tr: ['#222', '#111'], wa: '#223', bg: '#0b0b0f' }
 };
 var NPCZ = { ren: 'dojo', tobias: 'forja', kira: 'tierras', pip: 'plaza', heraldo: 'coliseo', dax: 'tierras', nima: 'plaza', sol: 'plaza', vant: 'coliseo', elio: 'bosque', rosa: 'huertos' };
@@ -153,7 +155,7 @@ var MAPS = {};
 function buildPlaza() {
   var m = newMap('plaza', 35, 29), R = C.mulberry(11);
   tRect(m, 1, 13, 33, 3, 1); tRect(m, 16, 1, 3, 27, 1); tRect(m, 12, 9, 11, 11, 1);
-  border(m, [[17, 0], [17, 28], [0, 14], [34, 14]]); fragsIn(m);
+  border(m, [[17, 0], [17, 28], [0, 14], [34, 14], [6, 0]]); fragsIn(m); tRect(m, 5, 1, 3, 12, 1); portal(m, 6, 1, 'villa', 'N');
   tRect(m, 15, 12, 5, 5, 2); block(m, 17, 14, 1, 1, 62, ['#f0b429', '#a8740c'], { statue: 1 });
   portal(m, 17, 1, 'coliseo', 'N'); portal(m, 17, 27, 'tierras', 'S'); portal(m, 1, 14, 'dojo', 'W'); portal(m, 33, 14, 'forja', 'E');
   npc(m, 'pip', 13, 10); npc(m, 'sol', 24, 11);
@@ -232,7 +234,7 @@ function buildColiseo() {
   MAPS.coliseo = m; return m;
 }
 function buildArena(kind) {
-  var big = kind === 'night', n = big ? 30 : 18, rad = big ? 13.6 : 7.6, m = newMap(kind, n, n), c = n / 2, R = C.mulberry(big ? 66 : 77);
+  var big = kind !== 'duel', n = big ? 30 : 18, rad = big ? 13.6 : 7.6, m = newMap(kind, n, n), c = n / 2, R = C.mulberry(big ? 66 : 77);
   for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) if (Math.hypot(i + .5 - c, j + .5 - c) > rad) tSet(m, i, j, 9);
   wallRuns(m, function (i, j) { return tAt(m, i, j) === 9 && (tAt(m, i + 1, j) !== 9 || tAt(m, i - 1, j) !== 9 || tAt(m, i, j + 1) !== 9 || tAt(m, i, j - 1) !== 9); }, big ? 40 : 30);
   if (big) scatter(m, R, 16, function (mm, x, y) { block(mm, x, y, 1, 1, 70, mm.th.w, { pillar: 1 }); }, 3, 3, 27, 27, function (x, y) { return Math.hypot(x - c, y - c) < 4; });
@@ -242,7 +244,7 @@ function buildArena(kind) {
 }
 function getMap(id) {
   if (MAPS[id]) return MAPS[id];
-  var b = { plaza: buildPlaza, dojo: buildDojo, forja: buildForja, tierras: buildTierras, coliseo: buildColiseo, bosque: buildBosque, huertos: buildHuertos }[id];
+  var b = { plaza: buildPlaza, dojo: buildDojo, forja: buildForja, tierras: buildTierras, coliseo: buildColiseo, bosque: buildBosque, huertos: buildHuertos, villa: buildVilla }[id];
   var m = b(); renderGround(m); return m;
 }
 
@@ -421,6 +423,8 @@ function drawObj(g, o) {
       g.fillStyle = 'rgba(255,255,255,.55)'; for (var k2 = 0; k2 < 6; k2++) { var yy = (time * 90 + k2 * 22) % 120; g.fillRect(X - 50 + k2 * 18, Y - 30 + yy * .5, 3, 10); }
     } else if (o.d === 'sign') {
       rr(g, X - 2, Y - 30, 4, 30, '#5a3825'); rr(g, X - 46, Y - 44, 92, 18, PAP); g.fillStyle = INK; g.font = '700 10px Cuerpo, sans-serif'; g.textAlign = 'center'; g.fillText(o.txt, X, Y - 31);
+    } else if (o.d === 'furn') {
+      rr(g, X - 15, Y - 22, 30, 22, PAP); ctext(g, o.ic, X, Y - 11, 20, '#fff', 0, 'sans-serif');
     } else if (o.d === 'cofre') {
       rr(g, X - 14, Y - 20, 28, 18, '#7a4a2a'); rr(g, X - 14, Y - 26, 28, 8, '#a8740c'); g.fillStyle = '#f0b429'; g.fillRect(X - 3, Y - 20, 6, 7); g.strokeRect(X - 3, Y - 20, 6, 7);
     } else if (o.d === 'plot') {
@@ -522,12 +526,12 @@ function attack() {
   if (P.dead || P.atkCd > 0) return;
   var cs = P.cs, tg = nearestFoe(P, 130); if (tg) face(P, tg.x, tg.y);
   P.combo = time - P.lastAtk < .75 ? (P.combo + 1) % 3 : 0; P.lastAtk = time;
-  var mul = [1, 1.1, 1.7][P.combo]; P.atkCd = cs.cd * (P.combo === 2 ? 1.35 : 1); P.atkA = .16;
+  var mul = [1, 1.1, cs.combo3 || 1.7][P.combo]; P.atkCd = cs.cd * (P.combo === 2 ? 1.35 : 1); P.atkA = .16;
   addFx({ k: 'slash', x: P.x + P.fx * 10, y: P.y - 20 + P.fy * 10, a: Math.atan2(P.fy, P.fx), r: 34, c: brzColor(), life: .16 });
   sfx('swing');
   var hit = 0;
   foes().forEach(function (f) { if (inArc(P, f, 60 + f.r, 1.15)) { var cr = Math.random() < cs.crit; dmgFoe(f, cs.atk * mul * (cr ? 1.8 : 1), cr || P.combo === 2, P.fx, P.fy, P.combo === 2 ? 300 : 150); hit++; } });
-  if (hit) { P.aura = Math.min(100, P.aura + 7 * hit); hitstop = P.combo === 2 ? .07 : .04; shake(P.combo === 2 ? 7 : 3); vib(12); }
+  if (hit) { P.aura = Math.min(100, P.aura + 7 * (cs.auraHit || 1) * hit); hitstop = P.combo === 2 ? .07 : .04; shake(P.combo === 2 ? 7 : 3); vib(12); }
 }
 function dmgFoe(f, d, big, kx, ky, kb) {
   if (f.hp <= 0) return;
@@ -630,7 +634,7 @@ function playerDown() {
     if (MAP.id === 'bosque') { var nb = BAG ? BAG.n : 0; BAG = null; setTimeout(function () { toast(nb ? 'La niebla se quedó con tu bolsa (' + nb + ' cofres). La próxima vez, sal antes.' : 'La niebla te expulsó. Respira y vuelve a intentarlo.', 'bad'); P.dead = 0; P.hp = P.cs.maxHp; go('tierras', 'respawn2'); }, 1400); return; }
     var lost = Math.floor(S.oro * .05); S.oro -= lost;
     setTimeout(function () { toast('Te derrotaron. Perdiste ' + C.fmt(lost) + ' de oro. ¡Levántate!', 'bad'); P.dead = 0; P.hp = P.cs.maxHp; go(MAP.id === 'tierras' ? 'tierras' : MAP.id, 'respawn'); }, 1400);
-  } else if (mode === 'night') setTimeout(function () { nightLose(); }, 1300);
+  } else if (mode === 'night' || mode === 'cerco') setTimeout(function () { nightLose(); }, 1300);
   else if (mode === 'duel') setTimeout(function () { duelEnd(false); }, 1300);
 }
 
@@ -704,7 +708,7 @@ function updProj(p, dt) {
 }
 
 /* ---------- bots sociales ---------- */
-var BOTN = { plaza: 7, dojo: 5, forja: 4, tierras: 5, coliseo: 5, huertos: 3 };
+var BOTN = { plaza: 7, dojo: 5, forja: 4, tierras: 5, coliseo: 5, huertos: 3, villa: 3 };
 function spawnBots(id) {
   var n = BOTN[id] || 0, used = {};
   for (var i = 0; i < n; i++) {
@@ -750,6 +754,39 @@ function quickChat(t) {
 }
 
 /* ---------- grupo de amigos (aliados que te siguen y pelean contigo) ---------- */
+/* mascota: te sigue a todas partes (solo compañía) */
+function spawnPet() { if (S.pet && C.petOwned(S, S.pet)) ents.push({ k: 'pet', id: S.pet, x: P.x + 24, y: P.y + 10, r: 6, walk: 0, mv: 0, dir: 3 }); }
+function updPet(e, dt) {
+  var tx = P.x - P.fx * 30 + 14, ty = P.y - P.fy * 30 + 8, dx = tx - e.x, dy = ty - e.y, l = Math.hypot(dx, dy); e.mv = 0;
+  if (l > 400) { e.x = tx; e.y = ty; } else if (l > 14) { var sp = Math.min(l * 4, 300); e.x += dx / l * sp * dt; e.y += dy / l * sp * dt; e.mv = 1; e.walk += dt * 12; e.dir = dx < 0 ? 2 : 3; }
+}
+function drawPet(g, e) {
+  var x = e.x, y = e.y, b = e.mv ? Math.abs(Math.sin(e.walk)) * 3 : 0; g.save(); g.translate(x, y - b); if (e.dir === 2) g.scale(-1, 1); g.lineWidth = 2; g.strokeStyle = INK;
+  if (e.id === 'luci') { var fy = -26 + Math.sin(time * 4) * 5; g.fillStyle = 'rgba(255,241,168,.35)'; g.beginPath(); g.arc(0, fy, 10, 0, TAU); g.fill(); g.fillStyle = '#fff1a8'; g.beginPath(); g.arc(0, fy, 4, 0, TAU); g.fill(); g.stroke(); g.restore(); return; }
+  var c = e.id === 'zorro' ? '#ff7a2e' : '#f0b429';
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, 0, 9, 3, 0, 0, TAU); g.fill();
+  g.fillStyle = c; g.beginPath(); g.ellipse(0, -7, 9, 6, 0, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(8, -13, 6, 0, TAU); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(4, -17); g.lineTo(5, -24); g.lineTo(9, -18); g.moveTo(9, -18); g.lineTo(12, -24); g.lineTo(13, -16); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-8, -8); g.quadraticCurveTo(-17, -16 + Math.sin(time * 6) * 3, -12, -20); g.stroke();
+  if (e.id === 'zorro') { g.fillStyle = '#fff'; g.beginPath(); g.arc(11, -11, 2.5, 0, TAU); g.fill(); }
+  g.fillStyle = INK; g.fillRect(9, -15, 2, 2); g.restore();
+}
+/* ---------- Villa Serena: tu casa (roleplay) ---------- */
+var FSLOT = { cama: [10, 7], planta: [17, 7], lampara: [14, 7], mesa: [13, 10], alfombra: [15, 10], estante: [11, 9], sofa: [16, 9], acuario: [10, 11] };
+function buildVilla() {
+  var m = newMap('villa', 28, 24), R = C.mulberry(77);
+  tRect(m, 12, 13, 3, 10, 1); tRect(m, 1, 18, 26, 2, 1); border(m, [[13, 23]]); fragsIn(m);
+  tRect(m, 9, 6, 10, 7, 3);
+  wallRuns(m, function (i, j) { return ((j === 5 && i >= 8 && i <= 19) || ((i === 8 || i === 19) && j >= 5 && j <= 12) || (j === 13 && i >= 8 && i <= 19 && Math.abs(i - 13) > 1)); }, 22, ['#e0262f', '#8a1219']);
+  C.FURN.forEach(function (f) { var q = FSLOT[f.id]; deco(m, 'furn', q[0], q[1], { fid: f.id, ic: f.ic, when: function () { return !!S.house.f[f.id]; } }); });
+  inter(m, 'cama', 10.5 * T, 8.2 * T, 'DESCANSAR', function () { emote(P, 'sentar'); S.en = C.enMax(S); toast('Descansaste en tu cama: energía completa 😴', 'ok'); sfx('up'); }, function () { return !!S.house.f.cama; });
+  block(m, 15, 14, 2, 1, 22, ['#f0b429', '#a8740c'], { sign: 'MI CASA' }); inter(m, 'casa', 16 * T, 15.6 * T, 'MI CASA · MUEBLES Y ARMARIO', function () { openPanel('casa'); });
+  [[2, 4, '#39c8ff'], [22, 4, '#a42cff'], [2, 12, '#2dffb3'], [22, 12, '#ff8fb8']].forEach(function (h, k) { block(m, h[0], h[1], 4, 3, 46, [h[2], shade(h[2], .6)], { sign: 'CASA DE ' + S.bots[(k * 7 + 3) % 99].n.slice(0, 9).toUpperCase() }); });
+  tRect(m, 21, 20, 4, 2, 2); deco(m, 'lamp', 10, 15); deco(m, 'lamp', 17, 15);
+  portal(m, 13, 22, 'plaza', 'S');
+  scatter(m, R, 14, tree, 1, 1, 27, 22);
+  MAPS.villa = m; return m;
+}
 function spawnParty() {
   S.party.forEach(function (bi, k) { var b = S.bots[bi]; if (!b) return; ents.push({ k: 'ally', bi: bi, name: b.n, el: b.el, look: botLook(b.h), x: P.x - 40 + k * 80, y: P.y + 30, r: 12, dir: 0, walk: 0, mv: 0, atkA: 0, cd: 0, slot: k, stuck: 0 }); });
 }
@@ -813,12 +850,13 @@ function loadZone(id, from) {
   if (from === 'respawn2') a = MAP.arrive.bosque || a;
   if (!a) { var n = MAP.npcs[0]; a = n ? { x: n.x, y: n.y + T * 1.4 } : MAP.spawn; }
   P.x = a.x; P.y = a.y; P.portCd = 1; cam.x = P.x; cam.y = P.y;
-  ents.push(P); spawnParty(); spawnBots(id); spawnT = 0;
+  ents.push(P); spawnParty(); spawnPet(); spawnBots(id); spawnT = 0;
+  if (id === 'villa') S.friends.slice(0, 4).forEach(function (f, k) { var b = S.bots[f.bi]; if (b) ents.push({ k: 'bot', bi: f.bi, name: b.n, el: b.el, x: (11 + k * 2) * T, y: 10.5 * T, r: 12, dir: 0, walk: 0, mv: 0, look: botLook(b.h), t: rnd(2, 6), chatT: rnd(3, 9), atkA: 0, stuck: 0 }); });
   if (id === 'tierras') { MAP.golemT = MAP.golemT || 0; for (var i = 0; i < 6; i++) spawnFoes(1); }
   if (MAP.dark) { LAN.fuel = 100; LAN.t = 0; LAN.whT = 15; BAG = { o: 0, ch: 0, gem: 0, n: 0 }; for (i = 0; i < 6; i++) addLlama(); for (i = 0; i < 4; i++) addShadow(); $('tbar').hidden = false; document.body.classList.add('tour'); }
   if (id === 'huertos') for (i = 0; i < S.farm.auto; i++) { var hp2 = freeSpot(0); if (hp2) ents.push({ k: 'cont', name: 'Ayudante ' + (i + 1), el: 'tierra', look: { skin: '#e0ac69', shirt: '#2dffb3', pants: '#5a3825', hair: '#5a3825', cap: '#f0b429' }, x: hp2.x, y: hp2.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); }
   C.ev(S, 'visit', { z: id });
-  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Al sur está el Bosque de la Niebla (zona de terror).', bosque: 'ZONA DE TERROR: tu linterna se gasta. Las sombras se congelan con tu luz. Los cofres solo son tuyos si SALES por el portal.', huertos: 'Toca una parcela para REGAR (+15%) o COSECHAR. Mejora la granja y contrata ayudantes en la mesa.', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
+  var ZT = { plaza: 'En la Plaza puedes hacer amigos (toca 💬 y di «¿Amigos?») y unirte a un clan con la Capitana Sol.', forja: 'Tu negocio gana oro aunque no juegues. Compra edificios en la MESA DEL TYCOON.', tierras: 'Tres anillos: más lejos del portal = más peligro y más premio. Al sur está el Bosque de la Niebla (zona de terror).', villa: 'Esta es tu casa. Compra muebles (dan confort: tu energía se recupera más rápido), cambia tu ropa y recibe a tus amigos.', bosque: 'ZONA DE TERROR: tu linterna se gasta. Las sombras se congelan con tu luz. Los cofres solo son tuyos si SALES por el portal.', huertos: 'Toca una parcela para REGAR (+15%) o COSECHAR. Mejora la granja y contrata ayudantes en la mesa.', coliseo: 'El Torneo Mundial: pierdes el % de poder de tu puesto. Habla con el Heraldo cuando tengas 120 de Poder.', dojo: 'Entrena con ritmo en el saco, precisión en las katas y calma en la cascada.' };
   if (ZT[id]) tip('z_' + id, ZT[id], 1);
   zoneTitle(); hudFull();
 }
@@ -832,6 +870,12 @@ function findInter() {
 function interact() { if (curInter && !P.dead && mode === 'world') { sfx('ui'); curInter.act(); } }
 
 /* ---------- objetivo (flecha guía) ---------- */
+var ZG = { plaza: ['coliseo', 'tierras', 'dojo', 'forja', 'villa'], dojo: ['plaza'], forja: ['plaza', 'huertos'], tierras: ['plaza', 'bosque'], coliseo: ['plaza'], huertos: ['forja'], bosque: ['tierras'], villa: ['plaza'] };
+function hop(a, z) { /* siguiente zona en el camino más corto de a → z */
+  var prev = {}, q = [a]; prev[a] = a;
+  while (q.length) { var c = q.shift(); if (c === z) break; (ZG[c] || []).forEach(function (n) { if (!(n in prev)) { prev[n] = c; q.push(n); } }); }
+  if (!(z in prev)) return 'plaza'; var x = z; while (prev[x] !== a) x = prev[x]; return x;
+}
 function objTarget() {
   var o = C.stepObj(S); if (!o) return null;
   var z = null, id = null;
@@ -843,7 +887,7 @@ function objTarget() {
   else if (o.k === 'tourney' || o.k === 'boss') { z = 'coliseo'; id = 'npc:heraldo'; }
   else if (o.k === 'fish') { z = 'plaza'; id = 'pesca'; }
   if (!z || mode !== 'world') return null;
-  if (MAP.id !== z) { var to = MAP.id === 'plaza' ? z : 'plaza'; for (var i = 0; i < MAP.portals.length; i++) if (MAP.portals[i].to === to) return { x: MAP.portals[i].x, y: MAP.portals[i].y, por: 1 }; return null; }
+  if (MAP.id !== z) { var to = hop(MAP.id, z); for (var i = 0; i < MAP.portals.length; i++) if (MAP.portals[i].to === to) return { x: MAP.portals[i].x, y: MAP.portals[i].y, por: 1 }; return null; }
   if (id === 'golem') { var g = null; ents.forEach(function (e) { if (e.type === 'golem' && !e.dead) g = e; }); return g ? { x: g.x, y: g.y - 40 } : { x: 39.5 * T, y: 18 * T }; }
   if (!id) return null;
   for (var k = 0; k < MAP.inter.length; k++) { var it = MAP.inter[k]; if (it.id === id && (!it.when || it.when())) return { x: it.x, y: it.y - 40 }; }
@@ -864,6 +908,7 @@ function update(dt) {
     if (e.k === 'foe' && !e.dead) { if (e.type === 'sombra') updShadow(e, dt); else updFoe(e, dt); }
     else if (e.k === 'bot') updBot(e, dt);
     else if (e.k === 'ally') updAlly(e, dt);
+    else if (e.k === 'pet') updPet(e, dt);
     else if (e.k === 'proj') updProj(e, dt);
     else if (e.k === 'cont') updCont(e, dt);
     if (e.bub) { e.bub.life -= dt; if (e.bub.life <= 0) e.bub = null; }
@@ -873,6 +918,7 @@ function update(dt) {
   updFx(dt);
   if (mode === 'night') updNight(dt);
   else if (mode === 'world' && MAP.dark && BAG) updForest(dt);
+  else if (mode === 'cerco') updCerco(dt);
   else if (mode === 'duel') updDuel(dt);
 }
 function render() {
@@ -907,10 +953,12 @@ function render() {
     else if (e.k === 'npc') drawAvatar(ctx, e.x, e.y, e.look, { dir: Math.hypot(P.x - e.x, P.y - e.y) < 120 ? (P.y < e.y - 20 ? 1 : P.x < e.x - 30 ? 2 : P.x > e.x + 30 ? 3 : 0) : 0, el: C.NPC[e.key].c });
     else if (e.k === 'bot' || e.k === 'cont' || e.k === 'ally') drawAvatar(ctx, e.x, e.y - emoY(e), e.look, { dir: e.dir, walk: e.walk, mv: e.mv, atk: emoA(e) || e.atkA, el: C.EL[e.el].c });
     else if (e.k === 'foe') drawFoe(ctx, e);
+    else if (e.k === 'pet') drawPet(ctx, e);
     else if (e.k === 'proj') { ctx.fillStyle = e.c; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x - 3, e.y - 3, e.r * .35, 0, TAU); ctx.fill(); }
   }
   drawFx(ctx);
   if (mode === 'night' || MAP.dark) drawDark();
+  if (mode === 'cerco') drawCerco();
   /* etiquetas, barras y globos */
   var k2 = Z * DPR; ctx.setTransform(k2, 0, 0, k2, (W / 2 - (cam.x + sx) * Z) * DPR, (H / 2 - (cam.y + sy) * Z) * DPR);
   for (i = 0; i < list.length; i++) {
@@ -953,12 +1001,13 @@ function arrow(o) {
 
 /* ---------- torneo: la Noche ---------- */
 
-function tourStart() {
-  if (C.poder(S) < C.TOUR.req) { toast('Necesitas ' + C.TOUR.req + ' de Poder para inscribirte.', 'bad'); return; }
-  TR = { field: C.makeField(S, Math.random), P: Math.max(C.poder(S), C.TOUR.req), t: 0, out: 0, round: 0, buf: { atk: 1, hp: 1, au: 1 }, fuel: 100, whisp: 0, beatT: 0, pendT: 0 };
+function tourStart(lg) {
+  var L = C.league(lg);
+  if (C.poder(S) < L.req) { toast('Necesitas ' + C.fmt(L.req) + ' de Poder para la ' + L.n + '.', 'bad'); return; }
+  TR = { L: L, field: C.makeField(S, Math.random, L.id), P: Math.max(C.poder(S), C.TOUR.req) * L.pw, t: 0, out: 0, round: 0, buf: { atk: 1, hp: 1, au: 1 }, fuel: 100, whisp: 0, beatT: 0, pendT: 0 };
   TR.order = C.nightOrder(TR.field, TR.P, Math.random);
   C.setPend(S, 100); save();
-  cinematic('LA NOCHE DEL ECLIPSE', 'Fase 1 · Sobrevive 75 segundos. Las sombras se congelan con tu luz.', function () { loadNight(); });
+  cinematic('LA NOCHE DEL ECLIPSE', L.ic + ' ' + L.n + ' · Fase 1 de 3 · Sobrevive ' + L.night + ' segundos. Las sombras se congelan con tu luz.', function () { loadNight(); });
 }
 function loadNight() {
   MAP = buildArena('night'); renderGround(MAP); mode = 'night'; ents = []; fx = [];
@@ -1052,8 +1101,8 @@ function updShadow(e, dt) {
 }
 function updNight(dt) {
   TR.t += dt; LAN.t = TR.t; LAN.fuel = Math.max(0, LAN.fuel - 1.45 * dt); lanternPick();
-  TR.shT += dt; var want = Math.min(9, 3 + Math.floor(TR.t / 11)), have = ents.filter(function (e) { return e.type === 'sombra'; }).length; if (have < want && TR.shT > 2) { TR.shT = 0; addShadow(); }
-  var alive = C.aliveAt(TR.t);
+  TR.shT += dt; var want = Math.min(9 + TR.L.i, 3 + TR.L.i + Math.floor(TR.t / 11)), have = ents.filter(function (e) { return e.type === 'sombra'; }).length; if (have < want && TR.shT > 2) { TR.shT = 0; addShadow(); }
+  var alive = C.aliveAt(TR.t, TR.L.night);
   while (99 - TR.out > alive && TR.out < TR.order.length) {
     var fi = TR.order[TR.out++], b = TR.field[fi]; feed('✖ <b>' + b.n + '</b> cayó en la oscuridad');
     ents.forEach(function (e) { if (e.k === 'cont' && e.fi === fi) { e.dead = 1; parts(e.x, e.y - 20, '#000', 12); txt(e.x, e.y - 60, '¡AAAH!', '#fff', 18); } });
@@ -1062,7 +1111,7 @@ function updNight(dt) {
   heartbeat(dt);
   if (TR.t > 22 && TR.whisp === 0) { TR.whisp = 1; whisper('…tu poder… será mío…'); }
   if (TR.t > 50 && TR.whisp === 1) { TR.whisp = 2; whisper('…nadie vale nada sin poder…'); }
-  var left = Math.max(0, C.TOUR.nightT - TR.t);
+  var left = Math.max(0, TR.L.night - TR.t);
   tbar('NOCHE · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · LUZ <b>' + Math.round(LAN.fuel) + '%</b>');
   if (left <= 0 && !P.dead) nightWin();
 }
@@ -1089,11 +1138,45 @@ function drawDark() {
 function nightLose() { var rk = 99 - TR.out + 1; finishTour(rk); }
 function nightWin() {
   mode = 'pause'; sfx('win');
+  C.setPend(S, 32); save(); $('tbar').hidden = true;
+  banner('¡SOBREVIVISTE!', 'Top 32 · Fase 2: El Cerco');
+  setTimeout(function () { cinematic('EL CERCO', 'Fase 2 de 3 · La niebla se cierra durante 60 s. Quédate dentro del círculo, esquiva a los Ecos y usa las llamas para curarte. Pasan 16.', loadCerco); }, 1600);
+}
+/* ---------- torneo fase 2: El Cerco (supervivencia estratégica, de 32 a 16) ---------- */
+function loadCerco() {
+  MAP = buildArena('cerco'); renderGround(MAP); mode = 'cerco'; ents = []; fx = [];
+  P.buf = TR.buf; refreshCombat(); P.dead = 0; P.hp = Math.max(P.hp, P.cs.maxHp * .6); P.x = MAP.spawn.x; P.y = MAP.spawn.y; cam.x = P.x; cam.y = P.y; ents.push(P);
+  var vis = TR.order.slice(TR.order.length - (S.cfg.q ? 10 : 6)); vis.forEach(function (fi) { var pos = freeSpot(100), b = TR.field[fi]; if (pos) ents.push({ k: 'cont', fi: fi, name: b.n, el: b.el, look: botLook(b.h), x: pos.x, y: pos.y, r: 12, dir: 0, walk: 0, mv: 0, t: 0, atkA: 0, stuck: 0 }); });
+  for (var i = 0; i < 4; i++) addLlama();
+  TR.ct = 0; TR.cs = 0; TR.cd2 = 0; TR.pendT = 0; zoneTitle(); hudFull(); $('tbar').hidden = false; document.body.classList.add('tour');
+}
+function cercoR() { return (13.2 - 8.4 * C.clamp(TR.ct / C.TOUR.cercoT, 0, 1)) * T; }
+function updCerco(dt) {
+  TR.ct += dt; var cx = MAP.spawn.x, cy = MAP.spawn.y, r = cercoR();
+  MAP.objs = MAP.objs.filter(function (o) { if (o.ll && Math.hypot(o.x - P.x, o.y - P.y) < 30) { heal(P.cs.maxHp * .15); sfx('coin'); txt(P.x, P.y - 60, '+15% VIDA', '#2dffb3', 18); setTimeout(function () { if (mode === 'cerco') { var a = rnd(0, TAU), d = rnd(0, cercoR() * .8); MAP.objs.push({ t: 'deco', d: 'llama', x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, k: cy + Math.sin(a) * d, ll: 1 }); } }, 4000); return false; } return true; });
+  TR.cd2 -= dt; if (Math.hypot(P.x - cx, P.y - cy) > r && TR.cd2 <= 0 && !P.dead) { TR.cd2 = .5; P.iT = 0; hurtP(P.cs.maxHp * .07); txt(P.x, P.y - 80, '¡VUELVE AL CÍRCULO!', '#c77dff', 15, .6); }
+  TR.cs -= dt; var nf = foes().length;
+  if (TR.cs <= 0 && nf < 5 + TR.L.i) { TR.cs = 3.2; var a2 = rnd(0, TAU), d2 = Math.min(r * .9, 260), fx2 = P.x + Math.cos(a2) * d2, fy2 = P.y + Math.sin(a2) * d2; if (!hitT(fx2, fy2, 12)) { var f = mkFoe(Math.random() < .6 ? 'eco' : 'lobo', fx2, fy2, TR.P * .5); f.st = 'chase'; f.aggro = 2000; ents.push(f); parts(fx2, fy2 - 10, '#a42cff', 8); } }
+  ents.forEach(function (e) { if (e.k === 'cont') { var d3 = Math.hypot(e.x - cx, e.y - cy); if (d3 > r - 30) { e.tx = cx + (e.x - cx) / d3 * (r - 80) * Math.random(); e.ty = cy + (e.y - cy) / d3 * (r - 80) * Math.random(); } } });
+  var alive = C.aliveAt2(TR.ct);
+  while (99 - TR.out > alive && TR.out < TR.order.length) { var fi = TR.order[TR.out++], b = TR.field[fi]; feed('✖ <b>' + b.n + '</b> quedó fuera del cerco'); ents.forEach(function (e) { if (e.k === 'cont' && e.fi === fi) { e.dead = 1; parts(e.x, e.y - 20, '#a42cff', 12); } }); }
+  TR.pendT -= dt; if (TR.pendT <= 0) { TR.pendT = 1; C.setPend(S, 99 - TR.out + 1); }
+  var left = Math.max(0, C.TOUR.cercoT - TR.ct);
+  tbar('CERCO · <b>' + Math.ceil(left) + 's</b> · QUEDAN <b>' + (99 - TR.out + (P.dead ? 0 : 1)) + '</b> · PASAN 16');
+  if (left <= 0 && !P.dead) cercoWin();
+}
+function drawCerco() {
+  var cx = MAP.spawn.x, cy = MAP.spawn.y, r = cercoR();
+  ctx.fillStyle = 'rgba(120,40,200,' + (.3 + Math.sin(time * 3) * .06) + ')'; ctx.beginPath(); ctx.rect(cam.x - W / Z, cam.y - H / Z, W / Z * 2, H / Z * 2); ctx.arc(cx, cy, r, 0, TAU, true); ctx.fill('evenodd');
+  ctx.strokeStyle = '#c77dff'; ctx.lineWidth = 4; ctx.setLineDash([14, 8]); ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+}
+function cercoWin() {
+  mode = 'pause'; sfx('win'); ents.forEach(function (e) { if (e.k === 'foe') e.dead = 1; });
   var surv = TR.order.slice(TR.out).map(function (i) { return { i: i, p: TR.field[i].p }; });
   surv.push({ i: -1, p: C.poder(S) }); surv.sort(function (a, b) { return b.p - a.p; });
   var br = []; for (var k = 0; k < surv.length / 2; k++) { br.push(surv[k]); br.push(surv[surv.length - 1 - k]); }
-  TR.br = br; TR.round = 0; C.setPend(S, 32); save(); $('tbar').hidden = true;
-  banner('¡SOBREVIVISTE!', 'Top 32 · Ahora, los duelos');
+  TR.br = br; TR.round = 1; C.setPend(S, 16); save(); $('tbar').hidden = true;
+  banner('¡PASASTE EL CERCO!', 'Top 16 · Fase 3: los duelos');
   setTimeout(nextDuel, 1800);
 }
 function nextDuel() {
@@ -1135,7 +1218,7 @@ function duelEnd(won) {
 }
 function finishTour(rk) {
   mode = 'pause'; $('tbar').hidden = true;
-  var res = C.applyTour(S, rk); save(); refreshCombat();
+  var res = C.applyTour(S, rk, TR && TR.L ? TR.L.id : ''); save(); refreshCombat();
   S.bots.forEach(function (b) { if (Math.random() < .3) b.p *= 1 - Math.random() * .3; });
   showResults(res, function () {
     var go2 = function () { TR = null; P.buf = { atk: 1, hp: 1, au: 1 }; refreshCombat(); P.hp = P.cs.maxHp; loadZone('coliseo', 'arena'); storyCheck(true); };

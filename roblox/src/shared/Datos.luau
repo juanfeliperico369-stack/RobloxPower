@@ -2,7 +2,7 @@
 -- ARCHIVO GENERADO por tools/gen-roblox.js desde src/core.js — NO EDITAR A MANO.
 -- Índices: BLD[i].i y STI son base 0 (igual que en la versión HTML) para que las partidas sean compatibles.
 return {
-	VERSION = "0.7.0",
+	VERSION = "0.8.0",
 	SAVE_KEY = "bdp.save.v1",
 	M = "@m",
 	EL = {
@@ -221,6 +221,10 @@ return {
 		huertos = {
 			n = "Huertos del Valle",
 			k = "Tycoon · Granja"
+		},
+		villa = {
+			n = "Villa Serena",
+			k = "Roleplay · Hogar"
 		}
 	},
 	FOES = {
@@ -477,7 +481,9 @@ return {
 		cut = 32,
 		firstCap = 25,
 		legado = 0.25,
-		duelHp = 3
+		duelHp = 3,
+		cercoT = 60,
+		cut2 = 16
 	},
 	LOOK = {
 		skin = {"#f5d0a9", "#e0ac69", "#c68642", "#8d5524", "#ffdbac", "#a0e0ff"},
@@ -1428,6 +1434,34 @@ return {
 			v = "chest",
 			n = 25,
 			g = 20
+		}, {
+			id = "hogar",
+			t = "Hogar, dulce hogar",
+			d = "Compra 5 muebles para tu casa",
+			v = "furn",
+			n = 5,
+			g = 10
+		}, {
+			id = "maestria",
+			t = "Uno con el brazalete",
+			d = "Llega a maestría 5 con un brazalete",
+			v = "mast",
+			n = 5,
+			g = 10
+		}, {
+			id = "mejores",
+			t = "Entre los mejores",
+			d = "Compite en la Liga de Oro",
+			v = "lgoro",
+			n = 1,
+			g = 15
+		}, {
+			id = "artes",
+			t = "Artista marcial",
+			d = "Aprende los 3 estilos de combate",
+			v = "styles",
+			n = 3,
+			g = 15
 		}},
 	FISH = {{
 			id = "linterna",
@@ -1493,5 +1527,146 @@ return {
 			v = 900,
 			sp = 2.8,
 			i = 7
-		}}
+		}},
+	LEAGUES = {{
+			id = "bronce",
+			n = "Liga de Bronce",
+			ic = "🥉",
+			req = 120,
+			pw = 1,
+			rw = 1,
+			gm = 1,
+			night = 75,
+			title = "Campeón del Eclipse",
+			i = 0
+		}, {
+			id = "plata",
+			n = "Liga de Plata",
+			ic = "🥈",
+			req = 1500,
+			pw = 1.1,
+			rw = 2.5,
+			gm = 1.5,
+			night = 85,
+			title = "Campeón de Plata",
+			i = 1
+		}, {
+			id = "oro",
+			n = "Liga de Oro",
+			ic = "🥇",
+			req = 8000,
+			pw = 1.2,
+			rw = 6,
+			gm = 2,
+			night = 95,
+			title = "Campeón de Oro",
+			i = 2
+		}, {
+			id = "leyenda",
+			n = "Liga de Leyendas",
+			ic = "👑",
+			req = 40000,
+			pw = 1.3,
+			rw = 15,
+			gm = 3,
+			night = 105,
+			title = "Leyenda del Eclipse",
+			i = 3
+		}},
+	FURN = {{
+			id = "planta",
+			n = "Planta feliz",
+			ic = "🪴",
+			c = 150,
+			cf = 1,
+			i = 0
+		}, {
+			id = "cama",
+			n = "Cama mullida",
+			ic = "🛏️",
+			c = 300,
+			cf = 3,
+			i = 1
+		}, {
+			id = "lampara",
+			n = "Lámpara cálida",
+			ic = "💡",
+			c = 400,
+			cf = 2,
+			i = 2
+		}, {
+			id = "mesa",
+			n = "Mesa de té",
+			ic = "🍵",
+			c = 600,
+			cf = 2,
+			i = 3
+		}, {
+			id = "alfombra",
+			n = "Alfombra de cómic",
+			ic = "🟥",
+			c = 900,
+			cf = 2,
+			i = 4
+		}, {
+			id = "estante",
+			n = "Estante de trofeos",
+			ic = "🏆",
+			c = 2500,
+			cf = 4,
+			i = 5
+		}, {
+			id = "sofa",
+			n = "Sofá para amigos",
+			ic = "🛋️",
+			c = 5000,
+			cf = 5,
+			i = 6
+		}, {
+			id = "acuario",
+			n = "Acuario",
+			ic = "🐠",
+			c = 12000,
+			cf = 6,
+			i = 7
+		}},
+	PETS = {{
+			id = "gato",
+			n = "Bigotes Jr.",
+			ic = "🐱",
+			q = "gato",
+			how = "Completa «El gato de Pip»"
+		}, {
+			id = "zorro",
+			n = "Zorrito del Valle",
+			ic = "🦊",
+			q = "cosecha",
+			how = "Completa «La primera cosecha»"
+		}, {
+			id = "luci",
+			n = "Luciérnaga",
+			ic = "✨",
+			q = "niebla",
+			how = "Completa «Lo que guarda la niebla»"
+		}},
+	STYLES = {
+		tigre = {
+			n = "Estilo Tigre",
+			ic = "🐯",
+			c = 500,
+			d = "Golpes pesados: el tercer golpe del combo hace ×2.2 (normal ×1.7)."
+		},
+		grulla = {
+			n = "Estilo Grulla",
+			ic = "🕊️",
+			c = 2500,
+			d = "Golpes veloces: 12% menos de espera entre golpes y +5% de crítico."
+		},
+		dragon = {
+			n = "Estilo Dragón",
+			ic = "🐉",
+			c = 9000,
+			d = "El aura fluye: +50% de aura por golpe y poder especial +10%."
+		}
+	}
 }
